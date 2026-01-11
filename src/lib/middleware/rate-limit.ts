@@ -48,8 +48,8 @@ function getClientIP(request: NextRequest): string {
     return realIP;
   }
 
-  // Fallback to direct IP (development)
-  return request.ip || 'unknown';
+  // Fallback to unknown (development/local)
+  return 'unknown';
 }
 
 /**
