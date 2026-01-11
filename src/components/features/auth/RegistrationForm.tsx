@@ -88,8 +88,8 @@ export function RegistrationForm() {
         return;
       }
 
-      // Success - redirect to verification page
-      router.push(`/verify-email?email=${encodeURIComponent(data.email)}`);
+      // Success - redirect to pending verification page
+      router.push(`/verify-email/pending?email=${encodeURIComponent(data.email)}`);
     } catch (err) {
       setError('An unexpected error occurred. Please try again.');
       console.error('Registration error:', err);
