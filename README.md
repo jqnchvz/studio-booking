@@ -93,6 +93,62 @@ Check code quality:
 npm run lint
 ```
 
+## UI Components
+
+This project uses [shadcn/ui](https://ui.shadcn.com/) for UI components. Components are built with Radix UI and styled with Tailwind CSS.
+
+### Available Components
+
+- **Button** - Interactive buttons with multiple variants (default, secondary, destructive, outline, ghost, link)
+- **Card** - Container component with header, content, and footer sections
+- **Input** - Form input fields
+- **Label** - Accessible form labels
+- **Badge** - Small status indicators and labels
+- **Alert** - Notification and message components
+- **Dialog** - Modal dialogs and overlays
+- **Form** - Form components with react-hook-form integration
+
+### Component Usage
+
+Components are located in `src/components/ui/` and can be imported directly:
+
+```tsx
+import { Button } from '@/components/ui/button';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+
+export default function MyComponent() {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Hello World</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Button>Click me</Button>
+      </CardContent>
+    </Card>
+  );
+}
+```
+
+### Testing Components
+
+Visit `/ui-test` in development to see all components in action with different variants and configurations.
+
+### Adding New Components
+
+To add more shadcn/ui components:
+
+```bash
+npx shadcn@latest add [component-name]
+```
+
+Example:
+```bash
+npx shadcn@latest add dropdown-menu
+```
+
+See the full component list at [shadcn/ui components](https://ui.shadcn.com/docs/components).
+
 ## Project Structure
 
 ```
