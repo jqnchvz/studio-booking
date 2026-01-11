@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
           name: user.name,
           emailVerified: user.emailVerified,
         },
-        // Remove this in production - only for development/testing
+        // TODO(human):Remove this in production - only for development/testing
         verificationToken: user.verificationToken,
       },
       {
