@@ -114,3 +114,5 @@ logs/
 # Generated files
 .turbo
 .eslintcache
+
+/src/generated/prisma
