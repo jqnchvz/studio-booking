@@ -30,7 +30,7 @@ const requirements: Requirement[] = [
     test: (password) => /\d/.test(password),
   },
   {
-    label: 'One special character (@$!%*?&)',
+    label: 'One special character (@ $ ! % * ? &)',
     test: (password) => /[@$!%*?&]/.test(password),
   },
 ];
@@ -109,6 +109,8 @@ export function PasswordStrength({ password }: PasswordStrengthProps) {
           );
         })}
       </ul>
+
+      {/* TODO(human): Invalid special character warning */}
     </div>
   );
 }

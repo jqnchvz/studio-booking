@@ -26,7 +26,7 @@ export const registerSchema = z.object({
     .min(8, 'Password must be at least 8 characters')
     .regex(
       passwordRegex,
-      'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character'
+      'Password must contain uppercase, lowercase, number, and one of these special characters: @ $ ! % * ? &'
     ),
   name: z
     .string()
@@ -51,7 +51,7 @@ export const registerFormSchema = z
       .min(8, 'Password must be at least 8 characters')
       .regex(
         passwordRegex,
-        'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character'
+        'Password must contain uppercase, lowercase, number, and one of these special characters: @ $ ! % * ? &'
       ),
     confirmPassword: z.string().min(1, 'Please confirm your password'),
     name: z
