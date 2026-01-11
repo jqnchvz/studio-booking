@@ -50,6 +50,17 @@ Then edit `.env` with your actual values:
 - Redis URL
 - Application URL
 
+4. Set up the database:
+```bash
+# See prisma/README.md for detailed database setup instructions
+npm run db:migrate
+```
+
+Or push the schema directly for development:
+```bash
+npm run db:push
+```
+
 ### Development
 
 Run the development server:
