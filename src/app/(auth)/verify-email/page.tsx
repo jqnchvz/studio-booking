@@ -1,5 +1,6 @@
 'use client';
 
+import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Mail } from 'lucide-react';
 import {
@@ -11,7 +12,7 @@ import {
 } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
-export default function VerifyEmailPage() {
+function VerifyEmailContent() {
   const searchParams = useSearchParams();
   const email = searchParams.get('email');
 
@@ -69,5 +70,25 @@ export default function VerifyEmailPage() {
         </a>
       </p>
     </div>
+  );
+}
+
+export default function VerifyEmailPage() {
+  return (
+    <Suspense fallback={
+      <div className="space-y-6">
+        <div className="space-y-2 text-center">
+          <div className="flex justify-center mb-4">
+            <div className="rounded-full bg-primary/10 p-3">
+              <Mail className="h-6 w-6 text-primary" />
+            </div>
+          </div>
+          <h1 className="text-3xl font-bold tracking-tight">Check your email</h1>
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    }>
+      <VerifyEmailContent />
+    </Suspense>
   );
 }
