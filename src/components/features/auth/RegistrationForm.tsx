@@ -55,6 +55,18 @@ export function RegistrationForm() {
         body: JSON.stringify(registerData),
       });
 
+      // Debug logging
+      console.log('Response status:', response.status);
+      console.log('Response headers:', response.headers.get('content-type'));
+
+      // Check if response has content before parsing
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        console.error('Invalid response:', text);
+        throw new Error('Server returned an invalid response');
+      }
+
       const result = await response.json();
 
       if (!response.ok) {

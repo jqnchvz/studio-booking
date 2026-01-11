@@ -1,5 +1,7 @@
 'use client';
 
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertTriangle } from 'lucide-react';
 import { Check, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -70,6 +72,18 @@ export function PasswordStrength({ password }: PasswordStrengthProps) {
 
   const config = getStrengthConfig();
 
+   // Detect invalid special characters
+  const invalidChars = password
+    .split('')  // Split string into array of characters
+    .filter(char => {
+      // Keep only characters that are NOT letters, numbers, or allowed special chars
+      return /[^A-Za-z0-9@$!%*?&]/.test(char);
+    })
+    .filter((char, index, self) => self.indexOf(char) === index) // Remove duplicates
+    .join(', '); // Join with commas
+
+  const hasInvalidChars = invalidChars.length > 0;
+
   return (
     <div className="space-y-2 text-sm">
       {/* Strength Bar */}
@@ -110,7 +124,22 @@ export function PasswordStrength({ password }: PasswordStrengthProps) {
         })}
       </ul>
 
-      {/* TODO(human): Invalid special character warning */}
+              {/* Invalid character warning */}
+        {hasInvalidChars && (
+          <Alert className="border-amber-500/50 bg-amber-50 dark:bg-amber-950/20">
+            <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-500" />
+            <AlertDescription className="text-amber-800 dark:text-amber-300">
+              <span className="font-medium">Invalid characters detected:</span>{' '}
+              <code className="bg-amber-100 dark:bg-amber-900/30 px-1 py-0.5 rounded text-xs">
+                {invalidChars}
+              </code>
+              <br />
+              <span className="text-xs mt-1 block">
+                Only these special characters are allowed: @ $ ! % * ? &
+              </span>
+            </AlertDescription>
+          </Alert>
+        )}
     </div>
   );
 }
