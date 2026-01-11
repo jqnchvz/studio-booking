@@ -79,33 +79,120 @@ src/
 
 Every task should follow this workflow:
 
-1. **Create New Branch**: ALWAYS create a new branch before starting work
+1. **Fetch Jira Task**: Read and understand the complete task description
+   - Review Epic, Story, and related tasks for context
+   - Identify acceptance criteria and requirements
+
+2. **Transition to "In Progress"**: Update Jira task status
+   ```bash
+   # Use Atlassian MCP tools or Jira interface
+   # Status: "To Do" → "In Progress"
+   ```
+
+3. **Create New Branch**: ALWAYS create a new branch before starting work
    - Branch naming: `type_of_task/RES-X-task-title`
    - `type_of_task` must be either `feature` or `fix`
    - Example: `feature/RES-3-initialize-nextjs-project`
    - Example: `fix/RES-15-auth-token-expiration`
-2. **Read the Jira Issue**: Fetch and read the complete task description
-3. **Understand Context**: Review Epic, Story, and related tasks
+
 4. **Create Todo List**: Use TodoWrite tool to track subtasks
+
 5. **Implement**: Follow task requirements step by step
    - Make small, incremental commits as you work
    - Each commit should represent a logical unit of work
    - Use conventional commit format: `type(scope): description (RES-X)`
+
 6. **Test**: Verify functionality works as expected
-7. **Final Commit**: Commit any remaining changes
-8. **Push Branch**: Push all commits to remote repository
-9. **Create Pull Request**: Create PR for code review
-   - Use format: `[RES-X] Task Title`
-   - Include comprehensive PR description
-   - Link to Jira task
-10. **Code Review**: Address review comments if any
-11. **Merge**: After approval, merge PR to master
-12. **Update Jira**: Transition task status to "Done"
+
+7. **Add Jira Comment**: Document what was accomplished
+   - Summarize key changes and implementations
+   - Mention any important decisions or trade-offs
+   - List files created/modified
+   - Include any relevant technical notes
+
+8. **Final Commit**: Commit any remaining changes
+
+9. **Push Branch**: Push all commits to remote repository
+
+10. **Create Pull Request**: Create PR for code review
+    - Use format: `[RES-X] Task Title`
+    - Include comprehensive PR description
+    - Link to Jira task
+
+11. **Transition to "In Review"**: Update Jira task status
+    ```bash
+    # Status: "In Progress" → "In Review"
+    ```
+
+12. **Code Review**: Address review comments if any
+
+13. **Merge**: After approval, merge PR to master
+
+14. **Transition to "Done"**: Update Jira task status
+    ```bash
+    # Status: "In Review" → "Done"
+    ```
 
 > **IMPORTANT**:
 > - Never work directly on the master/main branch. Every task MUST have its own branch.
 > - Make small, incremental commits throughout development.
 > - Every task MUST go through a Pull Request before merging to master.
+> - Always keep Jira task status updated to reflect current work state.
+
+### 1.1 Jira Status Workflow
+
+```
+To Do → In Progress → In Review → Done
+  ↓         ↓            ↓          ↓
+Start    Coding      PR Created  PR Merged
+Task    + Commits
+```
+
+**Status Transitions:**
+
+1. **To Do → In Progress**
+   - When: As soon as you start working on the task
+   - Actions:
+     - Fetch and read task details
+     - Create feature/fix branch
+     - Begin implementation
+
+2. **Add Jira Comment (while In Progress)**
+   - When: After completing implementation, before creating PR
+   - Content should include:
+     ```
+     ✅ Implementation Complete
+
+     Summary:
+     - Brief overview of what was implemented
+
+     Key Changes:
+     - File 1: Description of changes
+     - File 2: Description of changes
+
+     Technical Notes:
+     - Any important decisions made
+     - Libraries/dependencies added
+     - Security considerations
+
+     Testing:
+     - How to test the changes
+     - Test cases covered
+     ```
+
+3. **In Progress → In Review**
+   - When: Immediately after creating the Pull Request
+   - Actions:
+     - PR has been created and is ready for review
+     - All commits are pushed
+     - Implementation is complete
+
+4. **In Review → Done**
+   - When: After PR has been merged to master
+   - Actions:
+     - PR is merged and branch is deleted
+     - Task is fully complete
+     - Ready to move to next task
 
 ### 2. Code Implementation Guidelines
 
@@ -684,26 +771,33 @@ gh pr merge --squash --delete-branch
 ## Notes for Claude Code
 
 When working on tasks:
-1. **ALWAYS create a new branch first** using format: `feature/RES-X-task-title` or `fix/RES-X-task-title`
-2. Read the Jira task description completely
-3. Use TodoWrite to track progress through subtasks
-4. Read existing files before making changes
-5. **Make small, incremental commits as you work** - don't wait until the end
+1. **Read Jira task description completely** - Fetch and understand requirements
+2. **Transition Jira to "In Progress"** - Update status as soon as work begins
+3. **ALWAYS create a new branch first** using format: `feature/RES-X-task-title` or `fix/RES-X-task-title`
+4. Use TodoWrite to track progress through subtasks
+5. Read existing files before making changes
+6. **Make small, incremental commits as you work** - don't wait until the end
    - Commit after each logical unit of work (file, function, feature)
    - Use conventional commit format: `type(scope): description (RES-X)`
    - Push commits regularly
-6. Test changes immediately after implementing
-7. Follow the patterns established in this guide
-8. Keep solutions simple and focused on requirements
-9. **When task is complete, create a Pull Request** with:
-   - Title: `[RES-X] Task Title`
-   - Comprehensive description of changes
-   - Link to Jira task
-10. After PR is merged, update Jira task status to "Done"
-11. Ask questions if requirements are unclear
+7. Test changes immediately after implementing
+8. Follow the patterns established in this guide
+9. Keep solutions simple and focused on requirements
+10. **Add Jira comment** documenting what was accomplished
+    - Summarize implementation
+    - List key changes and files
+    - Include technical notes
+11. **When task is complete, create a Pull Request** with:
+    - Title: `[RES-X] Task Title`
+    - Comprehensive description of changes
+    - Link to Jira task
+12. **Transition Jira to "In Review"** after creating PR
+13. **Transition Jira to "Done"** after PR is merged
+14. Ask questions if requirements are unclear
 
 Remember:
 - **Never work directly on master/main branch**
 - **Always commit in small increments** - don't make one giant commit at the end
 - **Every task MUST have a Pull Request for review** before merging
+- **Keep Jira status updated**: To Do → In Progress → In Review → Done
 - Quality over speed. It's better to implement correctly than quickly.
