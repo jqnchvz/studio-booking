@@ -1,0 +1,55 @@
+import { z } from 'zod';
+
+/**
+ * Password validation regex:
+ * - At least 8 characters
+ * - At least one uppercase letter
+ * - At least one lowercase letter
+ * - At least one number
+ * - At least one special character
+ */
+const passwordRegex =
+  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+
+/**
+ * User registration validation schema
+ */
+export const registerSchema = z.object({
+  email: z
+    .string()
+    .min(1, 'Email is required')
+    .email('Invalid email address')
+    .toLowerCase()
+    .trim(),
+  password: z
+    .string()
+    .min(8, 'Password must be at least 8 characters')
+    .regex(
+      passwordRegex,
+      'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character'
+    ),
+  name: z
+    .string()
+    .min(2, 'Name must be at least 2 characters')
+    .max(50, 'Name must not exceed 50 characters')
+    .trim(),
+});
+
+/**
+ * User login validation schema
+ */
+export const loginSchema = z.object({
+  email: z
+    .string()
+    .min(1, 'Email is required')
+    .email('Invalid email address')
+    .toLowerCase()
+    .trim(),
+  password: z.string().min(1, 'Password is required'),
+});
+
+/**
+ * Infer TypeScript types from schemas
+ */
+export type RegisterInput = z.infer<typeof registerSchema>;
+export type LoginInput = z.infer<typeof loginSchema>;
