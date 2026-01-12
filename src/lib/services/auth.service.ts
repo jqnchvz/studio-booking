@@ -76,6 +76,47 @@ export function verifyToken(token: string): { userId: string; type: string } | n
 }
 
 /**
+ * Validate user credentials for login
+ * @param email - User email
+ * @param password - Plain text password
+ * @returns User data (without password hash) if credentials are valid
+ * @throws Error if credentials are invalid or email not verified
+ */
+export async function validateCredentials(email: string, password: string) {
+  // Find user by email
+  const user = await db.user.findUnique({
+    where: { email },
+  });
+
+  // If user not found, throw generic error (don't reveal if email exists)
+  if (!user) {
+    throw new Error('Invalid credentials');
+  }
+
+  // Compare password
+  const isValidPassword = await verifyPassword(password, user.passwordHash);
+
+  if (!isValidPassword) {
+    throw new Error('Invalid credentials');
+  }
+
+  // Check if email is verified
+  if (!user.emailVerified) {
+    throw new Error('Email not verified');
+  }
+
+  // Return user without sensitive data
+  return {
+    id: user.id,
+    email: user.email,
+    name: user.name,
+    emailVerified: user.emailVerified,
+    isAdmin: user.isAdmin,
+    createdAt: user.createdAt,
+  };
+}
+
+/**
  * Create a new user in the database
  * @param data - User registration data
  * @returns Created user (without password hash)
