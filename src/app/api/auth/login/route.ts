@@ -52,8 +52,8 @@ export async function POST(request: NextRequest) {
     });
 
     // Set session cookie
-    const cookieConfig = setSessionCookie(token);
-    cookies().set(cookieConfig);
+    const { name, value, ...options } = setSessionCookie(token);
+    cookies().set(name, value, options);
 
     // Return success response with user data
     return NextResponse.json(
