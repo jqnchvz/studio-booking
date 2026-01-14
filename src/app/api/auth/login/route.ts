@@ -53,7 +53,8 @@ export async function POST(request: NextRequest) {
 
     // Set session cookie
     const { name, value, ...options } = setSessionCookie(token);
-    cookies().set(name, value, options);
+    const cookieStore = await cookies();
+    cookieStore.set(name, value, options);
 
     // Return success response with user data
     return NextResponse.json(
