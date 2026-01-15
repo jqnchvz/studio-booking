@@ -391,20 +391,228 @@ export async function createBookingWithPayment(data: BookingData) {
 
 ## Testing Strategy
 
-### Unit Tests
-- Test business logic in /lib/services
-- Test validation schemas
-- Test utility functions
+### Testing Framework
 
-### Integration Tests
-- Test API routes
-- Test database operations
-- Test authentication flow
+We use **Vitest** as our test runner with the following setup:
 
-### E2E Tests
-- Test critical user flows
-- Test booking process
-- Test payment integration
+```bash
+# Run all tests
+npm test
+
+# Run tests in watch mode (for development)
+npm run test:watch
+
+# Run tests with UI
+npm run test:ui
+
+# Run tests with coverage report
+npm run test:coverage
+
+# Run type checking
+npm run type-check
+```
+
+### Test File Structure
+
+Test files are colocated with the code they test:
+```
+src/
+├── lib/
+│   ├── auth/
+│   │   ├── session.ts
+│   │   └── session.test.ts       # Tests for session.ts
+│   ├── services/
+│   │   ├── auth.service.ts
+│   │   └── auth.service.test.ts  # Tests for auth.service.ts
+│   └── middleware/
+│       ├── rate-limit.ts
+│       └── rate-limit.test.ts    # Tests for rate-limit.ts
+```
+
+### Test Coverage Status
+
+Current test coverage:
+- ✅ **Session Management** (`src/lib/auth/session.ts`) - 13 tests
+  - JWT token generation and verification
+  - Cookie configuration
+  - Environment variable validation
+- ✅ **Auth Service** (`src/lib/services/auth.service.ts`) - 20 tests
+  - Password hashing and verification
+  - Credential validation
+  - Email verification token management
+- ✅ **Rate Limiting** (`src/lib/middleware/rate-limit.ts`) - 14 tests
+  - Request throttling
+  - IP-based tracking
+  - Configuration options
+
+**Total: 47 tests passing**
+
+### What to Test
+
+#### High Priority (Critical Auth Paths)
+✅ **Completed:**
+- Session utilities (JWT generation/verification)
+- Auth service (validateCredentials, password hashing)
+- Rate limiting middleware
+
+🔜 **Todo:**
+- API Routes:
+  - POST /api/auth/register
+  - POST /api/auth/verify-email
+  - POST /api/auth/login
+- Authentication middleware (when implemented)
+- Email sending service
+
+#### Medium Priority
+- Validation schemas (Zod)
+- Utility functions
+- Cookie management
+
+#### Lower Priority
+- UI components
+- E2E flows
+
+### Writing Tests
+
+#### Unit Tests Pattern
+
+```typescript
+// src/lib/utils/example.test.ts
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { yourFunction } from './example';
+
+describe('YourFunction', () => {
+  beforeEach(() => {
+    // Reset state before each test
+    vi.clearAllMocks();
+  });
+
+  it('should do what it is supposed to do', () => {
+    const result = yourFunction('input');
+    expect(result).toBe('expected output');
+  });
+
+  it('should handle edge cases', () => {
+    expect(() => yourFunction('')).toThrow('Invalid input');
+  });
+});
+```
+
+#### Mocking Database Calls
+
+```typescript
+import { describe, it, expect, vi } from 'vitest';
+import { db } from '@/lib/db';
+
+// Mock the database module
+vi.mock('@/lib/db', () => ({
+  db: {
+    user: {
+      findUnique: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+    },
+  },
+}));
+
+describe('Function with DB calls', () => {
+  it('should query database correctly', async () => {
+    // Setup mock
+    vi.mocked(db.user.findUnique).mockResolvedValueOnce({
+      id: 'user-123',
+      email: 'test@example.com',
+      // ... other fields
+    });
+
+    // Test your function
+    const result = await yourFunction();
+
+    // Verify
+    expect(db.user.findUnique).toHaveBeenCalledWith({
+      where: { email: 'test@example.com' },
+    });
+    expect(result).toBeDefined();
+  });
+});
+```
+
+#### Testing Environment Variables
+
+```typescript
+describe('Function requiring env vars', () => {
+  it('should throw if env var is missing', () => {
+    const originalValue = process.env.JWT_SECRET;
+    delete process.env.JWT_SECRET;
+
+    expect(() => yourFunction()).toThrow('JWT_SECRET environment variable is not set');
+
+    // Restore
+    process.env.JWT_SECRET = originalValue;
+  });
+});
+```
+
+### CI/CD Integration
+
+Tests run automatically on every push and pull request via GitHub Actions:
+
+```yaml
+# .github/workflows/ci.yml
+- Run on Node.js 18.x and 20.x
+- Execute linting, type checking, tests, and build
+- Set test environment variables
+- Fail PR if any check fails
+```
+
+### Test Best Practices
+
+1. **Test behavior, not implementation** - Focus on what the function does, not how
+2. **One assertion per test** - Keep tests focused and easy to debug
+3. **Use descriptive test names** - Clearly state what is being tested
+4. **Mock external dependencies** - Database, APIs, file system, etc.
+5. **Test edge cases** - Empty strings, null, undefined, boundary values
+6. **Clean up after tests** - Reset mocks and restore environment variables
+7. **Keep tests fast** - Avoid unnecessary delays or heavy operations
+
+### Example: Complete Test File
+
+```typescript
+// src/lib/auth/session.test.ts
+import { describe, it, expect } from 'vitest';
+import { generateToken, verifyToken } from './session';
+
+describe('Session Utilities', () => {
+  const mockPayload = {
+    userId: 'user-123',
+    email: 'test@example.com',
+  };
+
+  describe('generateToken', () => {
+    it('should generate a valid JWT token', () => {
+      const token = generateToken(mockPayload);
+
+      expect(token).toBeDefined();
+      expect(typeof token).toBe('string');
+      expect(token.split('.')).toHaveLength(3);
+    });
+
+    it('should encode payload data in token', () => {
+      const token = generateToken(mockPayload);
+      const decoded = verifyToken(token);
+
+      expect(decoded?.userId).toBe(mockPayload.userId);
+      expect(decoded?.email).toBe(mockPayload.email);
+    });
+  });
+
+  describe('verifyToken', () => {
+    it('should return null for invalid token', () => {
+      const decoded = verifyToken('invalid.token.here');
+      expect(decoded).toBeNull();
+    });
+  });
+});
+```
 
 ## Common Patterns
 
