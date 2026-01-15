@@ -30,7 +30,11 @@ export async function POST(request: NextRequest) {
         },
         {
           status: 429,
-          headers: getRateLimitHeaders(rateLimit.remaining, rateLimit.resetTime),
+          headers: getRateLimitHeaders(
+            rateLimit.remaining,
+            rateLimit.resetTime,
+            rateLimit.maxAttempts
+          ),
         }
       );
     }
@@ -71,7 +75,11 @@ export async function POST(request: NextRequest) {
       },
       {
         status: 200,
-        headers: getRateLimitHeaders(rateLimit.remaining, rateLimit.resetTime),
+        headers: getRateLimitHeaders(
+          rateLimit.remaining,
+          rateLimit.resetTime,
+          rateLimit.maxAttempts
+        ),
       }
     );
   } catch (error) {
