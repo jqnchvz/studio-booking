@@ -41,7 +41,7 @@ function VerifyEmailContent() {
     async function verifyEmail() {
       try {
         const response = await fetch(
-          `/api/auth/verify-email?token=${encodeURIComponent(token)}`
+          `/api/auth/verify-email?token=${encodeURIComponent(token!)}`
         );
 
         const data = await response.json();
