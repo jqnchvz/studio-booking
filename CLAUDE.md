@@ -15,9 +15,9 @@
 ## Tech Stack
 
 ### Core Technologies
-- **Framework**: Next.js 14+ (App Router)
+- **Framework**: Next.js 16+ (App Router)
 - **Language**: TypeScript (strict mode)
-- **Runtime**: Node.js 18.17+
+- **Runtime**: Node.js 20.19+ (LTS recommended)
 - **Package Manager**: npm
 
 ### Frontend
@@ -29,11 +29,18 @@
 
 ### Backend
 - **Database**: PostgreSQL
-- **ORM**: Prisma
+- **ORM**: Prisma 7.x
 - **Authentication**: JWT + bcrypt
 - **Session Store**: Redis
 - **Email**: Resend
 - **Payment Gateway**: MercadoPago
+
+### Development Tools
+- **Testing**: Vitest 4.x + Testing Library
+- **Linting**: ESLint 8.x (stable)
+- **Config**: eslint-config-next 14.x
+- **Code Formatting**: Prettier
+- **Type Checking**: TypeScript strict mode
 
 ## Project Structure
 
@@ -72,6 +79,267 @@ src/
 │   └── payment.ts
 └── middleware.ts          # Next.js middleware (auth, etc.)
 ```
+
+## Pre-Commit Checklist
+
+**MANDATORY: Run these checks before EVERY commit to avoid CI failures:**
+
+```bash
+# 1. Install dependencies (if package.json changed)
+npm install
+
+# 2. Generate Prisma types (if schema changed)
+npm run db:generate
+
+# 3. Run linter
+npm run lint
+
+# 4. Run type check
+npm run type-check
+
+# 5. Run all tests
+npm test
+
+# 6. Verify build succeeds
+npm run build
+```
+
+**If ANY of these fail, fix the issues before committing.**
+
+## Dependency Management Rules
+
+### Version Selection Strategy
+
+**IMPORTANT: Avoid bleeding-edge versions in production projects**
+
+1. **Prefer Stable Versions (N-1 or LTS)**
+   - Use proven, stable versions rather than latest
+   - Example: ESLint 8.x over 9.x, Node 20 LTS over latest
+   - Check compatibility matrices before upgrading
+
+2. **Check Node.js Requirements**
+   - ALWAYS verify Node.js version requirements when adding/upgrading packages
+   - Update CI workflow Node versions if requirements change
+   - Document minimum Node.js version in README
+
+3. **Dependency Compatibility**
+   - Test that all dependencies work together BEFORE committing
+   - Be especially careful with:
+     - Next.js + ESLint config versions
+     - Prisma + PostgreSQL adapter versions
+     - Testing libraries + framework versions
+
+4. **Lock File Management**
+   - **ALWAYS commit `package-lock.json`** to repository
+   - NEVER add `package-lock.json` to `.gitignore`
+   - Use `npm ci` in CI/CD (requires lock file)
+   - Use `npm install` in local development
+
+### Known Compatibility Issues
+
+| Package Combination | Issue | Solution |
+|-------------------|-------|----------|
+| Next.js 16 + ESLint 9 | Circular dependency errors | Use ESLint 8.x + eslint-config-next 14.x |
+| Prisma 7 | Requires Node 20+ | Update CI to Node 20+, document in README |
+| Vitest 4 | Requires Node 20+ | Ensure Node 20+ in development and CI |
+
+## CI/CD Setup Guidelines
+
+### Required CI Steps (in order)
+
+When setting up GitHub Actions or any CI/CD:
+
+```yaml
+1. Checkout code
+2. Setup Node.js (check dependencies for minimum version!)
+3. Install dependencies (npm ci)
+4. Generate Prisma types (npm run db:generate) ← CRITICAL
+5. Run linter (npm run lint)
+6. Run type check (npm run type-check)
+7. Run tests (npm test)
+8. Build project (npm run build)
+```
+
+### Common CI Pitfalls
+
+#### 1. Missing package-lock.json
+**Problem:** `npm ci` requires `package-lock.json`
+**Solution:** Remove from `.gitignore` and commit it
+```bash
+# Check if it's ignored
+cat .gitignore | grep package-lock
+
+# If found, remove the line and commit
+git add .gitignore package-lock.json
+git commit -m "fix(ci): commit package-lock.json for reproducible builds"
+```
+
+#### 2. Prisma Types Not Generated
+**Problem:** TypeScript can't find `PrismaClient` type
+**Solution:** Always run `npm run db:generate` before type-checking
+```yaml
+- name: Generate Prisma types
+  run: npm run db:generate
+```
+
+#### 3. Node.js Version Mismatch
+**Problem:** Dependencies require Node 20+ but CI uses Node 18
+**Solution:** Check `package.json` for engine requirements, update CI matrix
+```json
+"engines": {
+  "node": ">=20.19.0"
+}
+```
+
+#### 4. ESLint Configuration Errors
+**Problem:** ESLint 9 flat config incompatibility
+**Solution:** Use ESLint 8.x with traditional .eslintrc.json
+```bash
+npm install -D eslint@^8 eslint-config-next@14
+```
+
+#### 5. Environment Variables Missing
+**Problem:** Tests fail because required env vars aren't set
+**Solution:** Set test env vars in CI configuration
+```yaml
+env:
+  JWT_SECRET: test-jwt-secret-ci
+  SESSION_SECRET: test-session-secret-ci
+  NODE_ENV: test
+```
+
+## Testing Infrastructure Requirements
+
+### Before Adding Tests
+
+1. **Install testing framework**
+   ```bash
+   npm install -D vitest @vitest/ui @testing-library/react @testing-library/jest-dom
+   ```
+
+2. **Create configuration files**
+   - `vitest.config.ts` - Vitest configuration
+   - `vitest.setup.ts` - Test environment setup
+
+3. **Add test scripts to package.json**
+   ```json
+   {
+     "test": "vitest run",
+     "test:watch": "vitest",
+     "test:ui": "vitest --ui",
+     "test:coverage": "vitest run --coverage"
+   }
+   ```
+
+4. **Verify setup works BEFORE writing tests**
+   ```bash
+   npm test  # Should run (even with 0 tests)
+   ```
+
+### TypeScript in Tests
+
+**Common Issues:**
+
+1. **Read-only property assignments** (NODE_ENV, etc.)
+   ```typescript
+   // ❌ Wrong - TypeScript error
+   process.env.NODE_ENV = 'test';
+
+   // ✅ Correct - Type assertion
+   (process.env as any).NODE_ENV = 'test';
+   ```
+
+2. **Incomplete mock objects**
+   ```typescript
+   // ❌ Wrong - Missing required fields
+   const mockUser = {
+     id: 'user-123',
+     email: 'test@example.com',
+   };
+
+   // ✅ Correct - All Prisma model fields
+   const mockUser = {
+     id: 'user-123',
+     email: 'test@example.com',
+     name: 'Test User',
+     passwordHash: 'hash',
+     emailVerified: true,
+     isAdmin: false,
+     createdAt: new Date(),
+     updatedAt: new Date(),
+     verificationToken: null,
+     verificationTokenExpiry: null,
+     resetToken: null,      // Don't forget these!
+     resetTokenExpiry: null,
+   };
+   ```
+
+3. **Missing type definitions**
+   ```bash
+   # If you get "Could not find declaration file" errors
+   npm install -D @types/package-name
+
+   # Common ones for this project:
+   npm install -D @types/pg @types/bcrypt @types/jsonwebtoken
+   ```
+
+## Common Mistakes and How to Avoid Them
+
+### 1. Forgetting to Test Locally
+
+**Mistake:** Committing code without running tests locally, discovering failures in CI
+
+**Prevention:**
+- Use pre-commit hooks (optional but recommended)
+- ALWAYS run the full checklist above before committing
+- If tests take too long, at least run type-check and lint
+
+### 2. Using Incompatible Dependency Versions
+
+**Mistake:** Upgrading to latest versions without checking compatibility
+
+**Prevention:**
+- Check release notes before upgrading major versions
+- Test locally with new versions before committing
+- Update CI if Node.js requirements change
+
+### 3. Not Understanding CI Error Messages
+
+**Mistake:** Making random changes hoping to fix CI
+
+**Prevention:**
+- Read the FULL error message in CI logs
+- Look for specific errors like:
+  - "Module has no exported member" → Missing type generation
+  - "Unsupported engine" → Node.js version mismatch
+  - "Cannot find module" → Missing dependency or types
+- Fix the root cause, not the symptoms
+
+### 4. Committing Generated Files
+
+**Mistake:** Committing Prisma generated files or build artifacts
+
+**Already in .gitignore:**
+```
+.next/
+/dist/
+/build/
+/src/generated/prisma
+```
+
+**Prevention:** Always check `.gitignore` before adding new generated files
+
+### 5. Breaking Changes Without Testing
+
+**Mistake:** Changing core config files without verifying everything still works
+
+**Prevention:**
+- After modifying:
+  - `package.json` → Run `npm install && npm run build`
+  - `.eslintrc.json` → Run `npm run lint`
+  - `tsconfig.json` → Run `npm run type-check`
+  - `vitest.config.ts` → Run `npm test`
+  - `prisma/schema.prisma` → Run `npm run db:generate && npm run type-check`
 
 ## Development Workflow
 
@@ -1009,3 +1277,113 @@ Remember:
 - **Every task MUST have a Pull Request for review** before merging
 - **Keep Jira status updated**: To Do → In Progress → In Review → Done
 - Quality over speed. It's better to implement correctly than quickly.
+
+---
+
+## 🚀 Quick Reference Card
+
+### Essential Commands (Run Before Every Commit)
+
+```bash
+npm install              # Install/update dependencies
+npm run db:generate      # Generate Prisma types
+npm run lint            # Check code style
+npm run type-check      # Check TypeScript types
+npm test                # Run all tests
+npm run build           # Verify build works
+```
+
+### Common CI Fixes
+
+| Error Message | Cause | Fix |
+|--------------|-------|-----|
+| `npm ci requires package-lock.json` | Lock file not committed | Remove from `.gitignore` and commit |
+| `Module has no exported member 'PrismaClient'` | Types not generated | Add `npm run db:generate` to CI before type-check |
+| `Unsupported engine: node 18.x` | Node version too old | Update CI to Node 20.x+ |
+| `Converting circular structure to JSON` | ESLint 9 incompatibility | Downgrade to ESLint 8.x + eslint-config-next 14.x |
+| `Cannot assign to 'NODE_ENV'` | Read-only property in tests | Use `(process.env as any).NODE_ENV = 'test'` |
+| `Could not find declaration file` | Missing @types package | Install `@types/package-name` |
+
+### Testing Checklist
+
+```bash
+# Before writing tests:
+✅ Install vitest and testing libraries
+✅ Create vitest.config.ts
+✅ Create vitest.setup.ts
+✅ Add test scripts to package.json
+✅ Verify `npm test` runs (even with 0 tests)
+
+# When writing tests:
+✅ Mock database with vi.mock()
+✅ Include ALL Prisma model fields in mocks
+✅ Use (process.env as any) for env vars
+✅ Install @types/package-name for type definitions
+✅ Test runs locally before committing
+```
+
+### CI/CD Pipeline Order
+
+```yaml
+1. Checkout code
+2. Setup Node.js 20.x/22.x
+3. Install dependencies (npm ci)
+4. Generate Prisma types ← CRITICAL, often forgotten
+5. Lint
+6. Type check
+7. Test
+8. Build
+```
+
+### Dependency Management
+
+```bash
+# Check Node requirements before installing
+npm info package-name engines
+
+# Install stable versions (not latest)
+npm install package@8  # Not package@latest
+
+# After adding dependencies:
+git add package.json package-lock.json
+npm run build  # Verify everything still works
+```
+
+### Git Workflow
+
+```bash
+# Start new task
+git checkout master
+git pull origin master
+git checkout -b feature/RES-X-task-title
+
+# Work in small commits
+git add <files>
+git commit -m "type(scope): description (RES-X)"
+git push origin feature/RES-X-task-title
+
+# After each commit, run locally:
+npm run lint && npm run type-check && npm test
+```
+
+### When Things Break
+
+1. **Read the FULL error message** - don't guess
+2. **Check this document** - common issues are documented above
+3. **Run commands locally** - reproduce the CI failure
+4. **Fix root cause** - not symptoms
+5. **Test the fix** - run all checks before pushing
+
+### Remember
+
+- ✅ Commit `package-lock.json` (NEVER ignore it)
+- ✅ Run `db:generate` after schema changes
+- ✅ Test locally before pushing to CI
+- ✅ Use stable dependency versions (N-1)
+- ✅ Check Node.js requirements when upgrading
+- ✅ Small commits > one giant commit
+- ✅ Read error messages completely
+
+---
+
+**Last Updated:** 2026-01-16 - Added comprehensive CI/CD troubleshooting guide based on RES-77 implementation experience.
