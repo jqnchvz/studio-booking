@@ -102,35 +102,35 @@ describe('Session Utilities', () => {
 
     it('should set secure flag in production', () => {
       const originalEnv = process.env.NODE_ENV;
-      process.env.NODE_ENV = 'production';
+      (process.env as any).NODE_ENV ='production';
 
       const cookie = setSessionCookie(token);
       expect(cookie.secure).toBe(true);
 
       // Restore
-      process.env.NODE_ENV = originalEnv;
+      (process.env as any).NODE_ENV =originalEnv;
     });
 
     it('should not set secure flag in development', () => {
       const originalEnv = process.env.NODE_ENV;
-      process.env.NODE_ENV = 'development';
+      (process.env as any).NODE_ENV ='development';
 
       const cookie = setSessionCookie(token);
       expect(cookie.secure).toBe(false);
 
       // Restore
-      process.env.NODE_ENV = originalEnv;
+      (process.env as any).NODE_ENV =originalEnv;
     });
 
     it('should not set secure flag in test environment', () => {
       const originalEnv = process.env.NODE_ENV;
-      process.env.NODE_ENV = 'test';
+      (process.env as any).NODE_ENV ='test';
 
       const cookie = setSessionCookie(token);
       expect(cookie.secure).toBe(false);
 
       // Restore
-      process.env.NODE_ENV = originalEnv;
+      (process.env as any).NODE_ENV =originalEnv;
     });
   });
 

@@ -177,6 +177,8 @@ describe('Auth Service', () => {
       updatedAt: new Date('2024-01-01'),
       verificationToken: null,
       verificationTokenExpiry: null,
+      resetToken: null,
+      resetTokenExpiry: null,
     };
 
     it('should validate correct credentials and return user data', async () => {
