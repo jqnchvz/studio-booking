@@ -18,6 +18,13 @@ export default defineConfig({
         '**/test-*.mjs',
         '**/*.d.ts',
       ],
+      // Coverage thresholds - CI will fail if coverage drops below these values
+      thresholds: {
+        lines: 70,        // 70% of lines must be covered
+        functions: 70,    // 70% of functions must be covered
+        branches: 60,     // 60% of branches must be covered (lower for edge cases)
+        statements: 70,   // 70% of statements must be covered
+      },
     },
   },
   resolve: {
