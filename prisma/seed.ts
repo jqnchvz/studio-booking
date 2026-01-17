@@ -27,7 +27,7 @@ async function main() {
       id: 'basic-monthly',
       name: 'Plan Básico',
       description: 'Plan mensual básico con acceso a las funciones esenciales del estudio',
-      price: 999000, // 9,990 CLP in cents (9,990 * 100)
+      price: 9990, // 9,990 CLP (Chilean Pesos don't use cents)
       interval: 'monthly',
       features: [
         'Reservas ilimitadas',
@@ -46,7 +46,7 @@ async function main() {
       id: 'pro-monthly',
       name: 'Plan Pro',
       description: 'Plan mensual profesional con todas las funciones avanzadas',
-      price: 1999000, // 19,990 CLP in cents (19,990 * 100)
+      price: 19990, // 19,990 CLP (Chilean Pesos don't use cents)
       interval: 'monthly',
       features: [
         'Todo lo del Plan Básico',

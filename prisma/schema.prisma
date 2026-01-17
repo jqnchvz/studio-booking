@@ -30,7 +30,7 @@ model SubscriptionPlan {
   id          String   @id @default(cuid())
   name        String
   description String
-  price       Int      // Price in CLP cents (e.g., 9990 = 9,990 CLP)
+  price       Int      // Price in CLP (e.g., 9990 = $9.990 CLP)
   interval    String   // "monthly" or "yearly"
   features    Json     // Array of feature strings
   isActive    Boolean  @default(true)
