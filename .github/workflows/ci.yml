@@ -37,8 +37,8 @@ jobs:
       - name: Run type check
         run: npm run type-check
 
-      - name: Run tests
-        run: npm test
+      - name: Run tests with coverage
+        run: npm run test:coverage
         env:
           JWT_SECRET: test-jwt-secret-ci
           SESSION_SECRET: test-session-secret-ci
