@@ -100,7 +100,8 @@ export async function testMercadoPagoConnection(): Promise<boolean> {
           failure: `${mercadopagoConfig.appUrl}/test-failure`,
           pending: `${mercadopagoConfig.appUrl}/test-pending`,
         },
-        auto_return: 'approved',
+        // Don't use auto_return for test preference
+        // auto_return: 'approved',
       },
     });
 

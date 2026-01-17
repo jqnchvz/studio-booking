@@ -13,34 +13,39 @@
  *   - MERCADOPAGO_WEBHOOK_SECRET must be set in .env
  */
 
+// Load environment variables FIRST
 import { config } from 'dotenv';
-import { testMercadoPagoConnection } from '../src/lib/services/mercadopago.service';
-import { mercadopagoConfig } from '../src/lib/config/mercadopago.config';
-
-// Load environment variables
 config();
 
-console.log('');
-console.log('🧪 Testing MercadoPago SDK Connection');
-console.log('=====================================');
-console.log('');
-
-// Show configuration (masked)
-console.log('Configuration:');
-console.log(
-  `  Access Token: ${mercadopagoConfig.accessToken ? `${mercadopagoConfig.accessToken.substring(0, 15)}...` : '❌ NOT SET'}`
-);
-console.log(
-  `  Public Key: ${mercadopagoConfig.publicKey ? `${mercadopagoConfig.publicKey.substring(0, 15)}...` : '❌ NOT SET'}`
-);
-console.log(
-  `  Webhook Secret: ${mercadopagoConfig.webhookSecret ? '***' + mercadopagoConfig.webhookSecret.substring(mercadopagoConfig.webhookSecret.length - 4) : '❌ NOT SET'}`
-);
-console.log(`  App URL: ${mercadopagoConfig.appUrl}`);
-console.log('');
-
-// Test connection
+// Main test function using dynamic imports
 async function runTest() {
+  // Dynamically import modules AFTER dotenv is loaded
+  const { testMercadoPagoConnection } = await import(
+    '../src/lib/services/mercadopago.service.js'
+  );
+  const { mercadopagoConfig } = await import(
+    '../src/lib/config/mercadopago.config.js'
+  );
+
+  console.log('');
+  console.log('🧪 Testing MercadoPago SDK Connection');
+  console.log('=====================================');
+  console.log('');
+
+  // Show configuration (masked)
+  console.log('Configuration:');
+  console.log(
+    `  Access Token: ${mercadopagoConfig.accessToken ? `${mercadopagoConfig.accessToken.substring(0, 15)}...` : '❌ NOT SET'}`
+  );
+  console.log(
+    `  Public Key: ${mercadopagoConfig.publicKey ? `${mercadopagoConfig.publicKey.substring(0, 15)}...` : '❌ NOT SET'}`
+  );
+  console.log(
+    `  Webhook Secret: ${mercadopagoConfig.webhookSecret ? '***' + mercadopagoConfig.webhookSecret.substring(mercadopagoConfig.webhookSecret.length - 4) : '❌ NOT SET'}`
+  );
+  console.log(`  App URL: ${mercadopagoConfig.appUrl}`);
+  console.log('');
+
   try {
     const isConnected = await testMercadoPagoConnection();
 
@@ -81,4 +86,5 @@ async function runTest() {
   }
 }
 
+// Run the test
 runTest();
