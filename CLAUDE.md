@@ -680,6 +680,65 @@ npm run test:coverage
 npm run type-check
 ```
 
+### Test Coverage Requirements
+
+**Coverage enforcement is enabled in CI to maintain code quality.**
+
+#### Coverage Thresholds
+
+The project enforces minimum test coverage thresholds via Vitest:
+- **Lines**: 70%
+- **Functions**: 70%
+- **Branches**: 60% (lower due to edge cases in auth/payment)
+- **Statements**: 70%
+
+**CI will fail** if coverage drops below these thresholds.
+
+#### Priority Coverage Targets
+
+Different parts of the codebase have different coverage expectations:
+
+**🔴 Critical - Aim for 90%+ coverage:**
+- `src/lib/services/auth.service.ts` - Authentication logic
+- `src/lib/services/payment.service.ts` - Payment processing
+- `src/lib/services/mercadopago.service.ts` - MercadoPago integration
+- `src/lib/auth/session.ts` - Session management
+- `src/lib/auth/get-current-user.ts` - User retrieval
+
+**Rationale**: Bugs in these areas can cause:
+- Security vulnerabilities (auth bypass)
+- Lost revenue (payment failures)
+- Data breaches (session hijacking)
+
+**🟡 Important - Aim for 70-80% coverage:**
+- `src/lib/services/booking.service.ts` - Booking logic
+- `src/app/api/**/*.ts` - API route handlers
+- `src/lib/validations/*.ts` - Validation schemas
+- `src/lib/middleware/*.ts` - Middleware functions
+
+**🟢 Nice to Have - Aim for 50-60% coverage:**
+- `src/components/**/*.tsx` - UI components
+- `src/lib/utils/*.ts` - Utility functions
+- Type definitions
+
+#### Running Coverage
+
+```bash
+# Run tests with coverage report
+npm run test:coverage
+
+# View HTML coverage report (opens in browser)
+open coverage/index.html
+```
+
+#### Coverage Best Practices
+
+1. **Focus on behavior, not percentages**: 70% well-tested is better than 100% poorly-tested
+2. **Test edge cases**: Error handling, timeouts, race conditions
+3. **Prioritize critical paths**: Payment flows, authentication, booking logic
+4. **Don't chase 100%**: Some code (config files, type definitions) doesn't need tests
+5. **Update tests when refactoring**: Keep tests in sync with implementation
+
 ### Test File Structure
 
 Test files are colocated with the code they test:
