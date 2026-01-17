@@ -25,3 +25,17 @@ model User {
 
   @@map("users")
 }
+
+model SubscriptionPlan {
+  id          String   @id @default(cuid())
+  name        String
+  description String
+  price       Int      // Price in CLP cents (e.g., 9990 = 9,990 CLP)
+  interval    String   // "monthly" or "yearly"
+  features    Json     // Array of feature strings
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("subscription_plans")
+}
