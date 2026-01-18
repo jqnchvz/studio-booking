@@ -10,32 +10,55 @@ datasource db {
 }
 
 model User {
-  id                      String    @id @default(cuid())
-  email                   String    @unique
+  id                      String         @id @default(cuid())
+  email                   String         @unique
   name                    String
   passwordHash            String
-  emailVerified           Boolean   @default(false)
-  verificationToken       String?   @unique
+  emailVerified           Boolean        @default(false)
+  verificationToken       String?        @unique
   verificationTokenExpiry DateTime?
-  resetToken              String?   @unique
+  resetToken              String?        @unique
   resetTokenExpiry        DateTime?
-  isAdmin                 Boolean   @default(false)
-  createdAt               DateTime  @default(now())
-  updatedAt               DateTime  @updatedAt
+  isAdmin                 Boolean        @default(false)
+  createdAt               DateTime       @default(now())
+  updatedAt               DateTime       @updatedAt
+  subscription            Subscription?
 
   @@map("users")
 }
 
 model SubscriptionPlan {
-  id          String   @id @default(cuid())
-  name        String
-  description String
-  price       Int      // Price in CLP (e.g., 9990 = $9.990 CLP)
-  interval    String   // "monthly" or "yearly"
-  features    Json     // Array of feature strings
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id            String         @id @default(cuid())
+  name          String
+  description   String
+  price         Int            // Price in CLP (e.g., 9990 = $9.990 CLP)
+  interval      String         // "monthly" or "yearly"
+  features      Json           // Array of feature strings
+  isActive      Boolean        @default(true)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  subscriptions Subscription[]
 
   @@map("subscription_plans")
+}
+
+model Subscription {
+  id                 String           @id @default(cuid())
+  userId             String           @unique
+  user               User             @relation(fields: [userId], references: [id])
+  planId             String
+  plan               SubscriptionPlan @relation(fields: [planId], references: [id])
+  mercadopagoSubId   String?          @unique
+  preferenceId       String?          @unique
+  status             String           // active, cancelled, suspended, past_due, pending
+  planPrice          Int              // Price in CLP at time of subscription
+  nextBillingDate    DateTime
+  currentPeriodStart DateTime
+  currentPeriodEnd   DateTime
+  gracePeriodEnd     DateTime?
+  cancelledAt        DateTime?
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  @@map("subscriptions")
 }

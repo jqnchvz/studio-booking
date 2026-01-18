@@ -1,4 +1,4 @@
-import { MercadoPagoConfig, Payment, Preference } from 'mercadopago';
+import { MercadoPagoConfig, Payment, Preference, PreApproval } from 'mercadopago';
 import {
   mercadopagoConfig,
   validateMercadoPagoConfig,
@@ -66,6 +66,71 @@ export function getPaymentAPI(): Payment {
 export function getPreferenceAPI(): Preference {
   const client = getMercadoPagoClient();
   return new Preference(client);
+}
+
+/**
+ * Get PreApproval API instance
+ * Used for creating recurring payment subscriptions
+ * @returns PreApproval API instance
+ */
+export function getPreApprovalAPI(): PreApproval {
+  const client = getMercadoPagoClient();
+  return new PreApproval(client);
+}
+
+/**
+ * Create subscription preference for recurring monthly payments
+ * @param planId - Subscription plan ID
+ * @param userId - User ID
+ * @param planPrice - Plan price in CLP
+ * @param planName - Plan name for display
+ * @returns Preference with init_point URL for checkout
+ */
+export async function createSubscriptionPreference(
+  planId: string,
+  userId: string,
+  planPrice: number,
+  planName: string
+) {
+  try {
+    const preApprovalAPI = getPreApprovalAPI();
+
+    // Calculate period dates
+    const now = new Date();
+    const startDate = new Date(now);
+    const endDate = new Date(now);
+    endDate.setFullYear(endDate.getFullYear() + 1); // 1 year from now
+
+    // Create preapproval for recurring payment
+    const preApproval = await preApprovalAPI.create({
+      body: {
+        reason: planName,
+        auto_recurring: {
+          frequency: 1,
+          frequency_type: 'months',
+          transaction_amount: planPrice,
+          currency_id: 'CLP',
+          start_date: startDate.toISOString(),
+          end_date: endDate.toISOString(),
+        },
+        back_url: `${mercadopagoConfig.appUrl}/subscriptions/success`,
+        external_reference: `${userId}-${planId}`,
+        payer_email: undefined, // Will be filled by user during checkout
+        status: 'pending',
+      },
+    });
+
+    console.log('✅ Subscription preference created:', preApproval.id);
+
+    return {
+      id: preApproval.id,
+      init_point: preApproval.init_point,
+      preferenceId: preApproval.id,
+    };
+  } catch (error) {
+    console.error('❌ Error creating subscription preference:', error);
+    throw error;
+  }
 }
 
 /**
