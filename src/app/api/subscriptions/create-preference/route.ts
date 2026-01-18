@@ -86,24 +86,17 @@ export async function POST(request: NextRequest) {
     currentPeriodEnd.setMonth(currentPeriodEnd.getMonth() + 1); // 1 month from now
     const nextBillingDate = new Date(currentPeriodEnd);
 
-    // 7. Create MercadoPago preference
-    const preference = await createSubscriptionPreference(
-      plan.id,
-      user.id,
-      plan.price,
-      plan.name
-    );
-
-    // 8. Create or update subscription record in database
+    // 7. Create or update subscription record FIRST (before MercadoPago call)
+    // This prevents orphaned MercadoPago preferences if database write fails
     let subscription;
 
     if (existingSubscription) {
-      // Update existing subscription
+      // Update existing subscription with pending status, preferenceId will be set after MP call
       subscription = await db.subscription.update({
         where: { userId: user.id },
         data: {
           planId: plan.id,
-          preferenceId: preference.preferenceId,
+          preferenceId: null, // Will be set after MercadoPago call succeeds
           status: 'pending',
           planPrice: plan.price,
           nextBillingDate,
@@ -115,12 +108,12 @@ export async function POST(request: NextRequest) {
         },
       });
     } else {
-      // Create new subscription
+      // Create new subscription with pending status
       subscription = await db.subscription.create({
         data: {
           userId: user.id,
           planId: plan.id,
-          preferenceId: preference.preferenceId,
+          preferenceId: null, // Will be set after MercadoPago call succeeds
           status: 'pending',
           planPrice: plan.price,
           nextBillingDate,
@@ -130,7 +123,23 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // 9. Return success response with init_point URL
+    // 8. Create MercadoPago preference AFTER database record exists
+    const preference = await createSubscriptionPreference(
+      plan.id,
+      user.id,
+      plan.price,
+      plan.name
+    );
+
+    // 9. Update subscription with MercadoPago preference ID
+    subscription = await db.subscription.update({
+      where: { id: subscription.id },
+      data: {
+        preferenceId: preference.preferenceId,
+      },
+    });
+
+    // 10. Return success response with init_point URL
     return NextResponse.json(
       {
         success: true,
