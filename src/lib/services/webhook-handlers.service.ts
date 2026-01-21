@@ -1,4 +1,5 @@
 import { db } from '@/lib/db';
+import { fetchPaymentDetails } from './mercadopago.service';
 
 /**
  * MercadoPago Webhook Event Types
@@ -91,12 +92,119 @@ export async function handlePaymentCreated(paymentId: string): Promise<void> {
 export async function handlePaymentUpdated(paymentId: string): Promise<void> {
   console.log(`💳 Payment updated: ${paymentId}`);
 
-  // TODO (RES-19): Implement payment update logic
-  // - Fetch payment details from MercadoPago API
-  // - Check payment status (approved, rejected, etc.)
-  // - If approved: activate subscription, send confirmation email
-  // - If rejected: handle payment failure, update subscription status
-  // - Update Payment record in database
+  try {
+    // 1. Fetch payment details from MercadoPago
+    const payment = await fetchPaymentDetails(paymentId);
+
+    console.log(`📝 Processing payment ${paymentId}`);
+    console.log(`   Status: ${payment.status}`);
+    console.log(`   External Reference: ${payment.external_reference}`);
+
+    // 2. Parse external_reference to get userId and planId
+    // Format: "userId-planId" (set during preference creation)
+    if (!payment.external_reference) {
+      console.error(`❌ Payment ${paymentId} has no external_reference`);
+      return;
+    }
+
+    const [userId, planId] = payment.external_reference.split('-');
+    if (!userId || !planId) {
+      console.error(
+        `❌ Invalid external_reference format: ${payment.external_reference}`
+      );
+      return;
+    }
+
+    // 3. Find subscription
+    const subscription = await db.subscription.findUnique({
+      where: { userId },
+      include: { user: true, plan: true },
+    });
+
+    if (!subscription) {
+      console.error(`❌ Subscription not found for user ${userId}`);
+      return;
+    }
+
+    // 4. Handle payment based on status
+    if (payment.status === 'approved') {
+      console.log(`✅ Payment approved - activating subscription`);
+
+      // Calculate billing dates
+      const now = new Date();
+      const currentPeriodStart = new Date(now);
+      const currentPeriodEnd = new Date(now);
+      currentPeriodEnd.setMonth(currentPeriodEnd.getMonth() + 1); // 1 month from now
+      const nextBillingDate = new Date(currentPeriodEnd);
+
+      // Create or update payment record
+      const existingPayment = await db.payment.findUnique({
+        where: { mercadopagoId: payment.id!.toString() },
+      });
+
+      const paymentAmount = Math.round(payment.transaction_amount || 0);
+
+      if (existingPayment) {
+        // Update existing payment
+        await db.payment.update({
+          where: { id: existingPayment.id },
+          data: {
+            status: 'approved',
+            paidAt: new Date(payment.date_approved || now),
+            totalAmount: paymentAmount,
+            metadata: payment as object,
+          },
+        });
+        console.log(`   Updated existing payment record: ${existingPayment.id}`);
+      } else {
+        // Create new payment record
+        await db.payment.create({
+          data: {
+            userId,
+            subscriptionId: subscription.id,
+            mercadopagoId: payment.id!.toString(),
+            amount: paymentAmount,
+            penaltyFee: 0,
+            totalAmount: paymentAmount,
+            status: 'approved',
+            dueDate: currentPeriodStart,
+            paidAt: new Date(payment.date_approved || now),
+            metadata: payment as object,
+          },
+        });
+        console.log(`   Created payment record`);
+      }
+
+      // Activate subscription
+      await db.subscription.update({
+        where: { id: subscription.id },
+        data: {
+          status: 'active',
+          currentPeriodStart,
+          currentPeriodEnd,
+          nextBillingDate,
+          gracePeriodEnd: null,
+          cancelledAt: null,
+        },
+      });
+
+      console.log(`✅ Subscription activated for user ${subscription.user.email}`);
+      console.log(`   Period: ${currentPeriodStart.toISOString()} - ${currentPeriodEnd.toISOString()}`);
+      console.log(`   Next billing: ${nextBillingDate.toISOString()}`);
+
+      // TODO: Send confirmation email (RES-25)
+      console.log(`📧 TODO: Send subscription activated email to ${subscription.user.email}`);
+    } else if (payment.status === 'rejected') {
+      console.log(`❌ Payment rejected - handling failure`);
+      // TODO (RES-34): Handle payment failure logic
+      console.log(`📧 TODO: Send payment failed email to user`);
+    } else {
+      console.log(`⏳ Payment status: ${payment.status} - no action taken`);
+    }
+  } catch (error) {
+    console.error(`❌ Error handling payment.updated:`, error);
+    throw error;
+  }
 }
 
 /**
