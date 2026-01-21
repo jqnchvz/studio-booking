@@ -62,3 +62,14 @@ model Subscription {
 
   @@map("subscriptions")
 }
+
+model WebhookEvent {
+  id        String   @id @default(cuid())
+  eventType String
+  eventId   String   @unique
+  data      Json
+  processed Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@map("webhook_events")
+}
