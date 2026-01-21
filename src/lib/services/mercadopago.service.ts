@@ -196,3 +196,24 @@ export async function testMercadoPagoConnection(): Promise<boolean> {
 export function getMercadoPagoPublicKey(): string {
   return mercadopagoConfig.publicKey;
 }
+
+/**
+ * Fetch payment details from MercadoPago API
+ * @param paymentId - MercadoPago payment ID
+ * @returns Payment details from MercadoPago
+ */
+export async function fetchPaymentDetails(paymentId: string) {
+  try {
+    const paymentAPI = getPaymentAPI();
+    const payment = await paymentAPI.get({ id: paymentId });
+
+    console.log(`✅ Fetched payment details: ${paymentId}`);
+    console.log(`   Status: ${payment.status}`);
+    console.log(`   Amount: ${payment.transaction_amount} ${payment.currency_id}`);
+
+    return payment;
+  } catch (error) {
+    console.error(`❌ Error fetching payment ${paymentId}:`, error);
+    throw error;
+  }
+}

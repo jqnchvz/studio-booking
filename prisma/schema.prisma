@@ -23,6 +23,7 @@ model User {
   createdAt               DateTime       @default(now())
   updatedAt               DateTime       @updatedAt
   subscription            Subscription?
+  payments                Payment[]
 
   @@map("users")
 }
@@ -59,6 +60,7 @@ model Subscription {
   cancelledAt        DateTime?
   createdAt          DateTime         @default(now())
   updatedAt          DateTime         @updatedAt
+  payments           Payment[]
 
   @@map("subscriptions")
 }
@@ -72,4 +74,27 @@ model WebhookEvent {
   createdAt DateTime @default(now())
 
   @@map("webhook_events")
+}
+
+model Payment {
+  id             String       @id @default(cuid())
+  userId         String
+  user           User         @relation(fields: [userId], references: [id])
+  subscriptionId String
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id])
+  mercadopagoId  String       @unique
+  amount         Int          // Base amount in CLP (whole numbers, no cents)
+  penaltyFee     Int          @default(0) // Penalty fee in CLP
+  totalAmount    Int          // Total amount (amount + penaltyFee) in CLP
+  status         String       // pending, approved, rejected, refunded
+  dueDate        DateTime
+  paidAt         DateTime?
+  metadata       Json?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([userId])
+  @@index([subscriptionId])
+  @@index([mercadopagoId])
+  @@map("payments")
 }
