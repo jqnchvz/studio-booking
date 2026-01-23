@@ -17,7 +17,8 @@
     "db:studio": "prisma studio",
     "db:migrate": "prisma migrate dev",
     "db:generate": "prisma generate",
-    "db:seed": "tsx prisma/seed.ts"
+    "db:seed": "tsx prisma/seed.ts",
+    "email:preview": "email dev --dir emails --port 3001"
   },
   "repository": {
     "type": "git",
@@ -38,6 +39,7 @@
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-label": "^2.1.8",
     "@radix-ui/react-slot": "^1.2.4",
+    "@react-email/components": "^1.0.6",
     "@tailwindcss/postcss": "^4.1.18",
     "@types/bcrypt": "^6.0.0",
     "bcrypt": "^6.0.0",
@@ -50,13 +52,16 @@
     "pg": "^8.16.3",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
+    "react-email": "^5.2.5",
     "react-hook-form": "^7.71.0",
+    "resend": "^6.8.0",
     "tailwind-merge": "^3.4.0",
     "zod": "^4.3.5"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.3",
     "@eslint/js": "^9.39.2",
+    "@react-email/render": "^2.0.4",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.1",
     "@types/jsonwebtoken": "^9.0.10",
