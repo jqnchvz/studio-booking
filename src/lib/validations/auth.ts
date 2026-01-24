@@ -112,6 +112,25 @@ export const resetPasswordFormSchema = z
   });
 
 /**
+ * Profile update validation schema
+ */
+export const updateProfileSchema = z.object({
+  name: z
+    .string()
+    .min(2, 'Name must be at least 2 characters')
+    .max(50, 'Name must not exceed 50 characters')
+    .trim()
+    .optional(),
+  email: z
+    .string()
+    .min(1, 'Email is required')
+    .email('Invalid email address')
+    .toLowerCase()
+    .trim()
+    .optional(),
+});
+
+/**
  * Infer TypeScript types from schemas
  */
 export type RegisterInput = z.infer<typeof registerSchema>;
@@ -119,3 +138,4 @@ export type RegisterFormInput = z.infer<typeof registerFormSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
 export type ResetPasswordFormInput = z.infer<typeof resetPasswordFormSchema>;
+export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
