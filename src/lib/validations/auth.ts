@@ -79,8 +79,43 @@ export const loginSchema = z.object({
 });
 
 /**
+ * Password reset validation schema (API)
+ */
+export const resetPasswordSchema = z.object({
+  token: z.string().min(1, 'Reset token is required'),
+  newPassword: z
+    .string()
+    .min(8, 'Password must be at least 8 characters')
+    .regex(
+      passwordRegex,
+      'Password must contain uppercase, lowercase, number, and one of these special characters: @ $ ! % * ? &'
+    ),
+});
+
+/**
+ * Password reset form validation schema (with password confirmation)
+ */
+export const resetPasswordFormSchema = z
+  .object({
+    newPassword: z
+      .string()
+      .min(8, 'Password must be at least 8 characters')
+      .regex(
+        passwordRegex,
+        'Password must contain uppercase, lowercase, number, and one of these special characters: @ $ ! % * ? &'
+      ),
+    confirmPassword: z.string().min(1, 'Please confirm your password'),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: 'Passwords do not match',
+    path: ['confirmPassword'],
+  });
+
+/**
  * Infer TypeScript types from schemas
  */
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type RegisterFormInput = z.infer<typeof registerFormSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
+export type ResetPasswordFormInput = z.infer<typeof resetPasswordFormSchema>;
