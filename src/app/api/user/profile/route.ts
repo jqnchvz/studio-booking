@@ -215,17 +215,63 @@ export async function PATCH(request: NextRequest) {
       const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
       const verificationUrl = `${appUrl}/verify-email?token=${updateData.verificationToken}`;
 
-      await sendEmail({
-        to: email,
-        subject: 'Verify your new email address - Reservapp',
-        template: VerifyEmail({
-          verificationUrl,
-          email,
-          name: updatedUser.name,
-        }),
-      });
+      try {
+        const emailResult = await sendEmail({
+          to: email,
+          subject: 'Verify your new email address - Reservapp',
+          template: VerifyEmail({
+            verificationUrl,
+            email,
+            name: updatedUser.name,
+          }),
+        });
 
-      console.log('✅ Verification email sent to new address:', email);
+        if (!emailResult.success) {
+          // Email send failed - rollback database changes
+          console.error('❌ Email send failed, rolling back changes:', emailResult.error);
+
+          await db.user.update({
+            where: { id: payload.userId },
+            data: {
+              email: currentUser.email,
+              emailVerified: currentUser.emailVerified,
+              verificationToken: null,
+              verificationTokenExpiry: null,
+            },
+          });
+
+          return NextResponse.json(
+            {
+              error: 'Email send failed',
+              message: 'Failed to send verification email. Please try again later.',
+            },
+            { status: 500 }
+          );
+        }
+
+        console.log('✅ Verification email sent to new address:', email);
+      } catch (emailError) {
+        // Email send threw exception - rollback database changes
+        console.error('❌ Email send exception, rolling back changes:', emailError);
+
+        await db.user.update({
+          where: { id: payload.userId },
+          data: {
+            email: currentUser.email,
+            emailVerified: currentUser.emailVerified,
+            verificationToken: null,
+            verificationTokenExpiry: null,
+          },
+        });
+
+        return NextResponse.json(
+          {
+            error: 'Email send failed',
+            message: 'Failed to send verification email. Please try again later.',
+          },
+          { status: 500 }
+        );
+      }
     }
 
     console.log('✅ Profile updated for user:', updatedUser.email);
