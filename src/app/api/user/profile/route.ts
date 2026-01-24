@@ -3,7 +3,7 @@ import { db } from '@/lib/db';
 import { verifyToken } from '@/lib/auth/session';
 import { updateProfileSchema } from '@/lib/validations/auth';
 import { sendEmail } from '@/lib/email/send-email';
-import VerifyEmail from '@root/emails/verify-email';
+import VerifyEmail from '../../../../../emails/verify-email';
 import { randomBytes } from 'crypto';
 
 /**
