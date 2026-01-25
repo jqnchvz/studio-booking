@@ -1,7 +1,8 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { verifyToken } from './src/lib/auth/session';
+import { db } from './src/lib/db';
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const sessionCookie = request.cookies.get('session');
   const { pathname } = request.nextUrl;
 
@@ -36,6 +37,33 @@ export function middleware(request: NextRequest) {
     const response = NextResponse.redirect(loginUrl);
     response.cookies.delete('session');
     return response;
+  }
+
+  // Check subscription status for reservation routes
+  if (pathname.startsWith('/reservations')) {
+    try {
+      const subscription = await db.subscription.findUnique({
+        where: { userId: payload.userId },
+        select: { status: true },
+      });
+
+      // Block access if subscription is suspended
+      if (subscription && subscription.status === 'suspended') {
+        const paymentRequiredUrl = new URL('/dashboard/subscription', request.url);
+        paymentRequiredUrl.searchParams.set('reason', 'suspended');
+        return NextResponse.redirect(paymentRequiredUrl);
+      }
+
+      // Also block if user has no subscription at all
+      if (!subscription) {
+        const subscribeUrl = new URL('/dashboard/subscribe', request.url);
+        return NextResponse.redirect(subscribeUrl);
+      }
+    } catch (error) {
+      console.error('Error checking subscription status in middleware:', error);
+      // On error, allow through (fail open rather than fail closed)
+      return NextResponse.next();
+    }
   }
 
   // Allow authenticated request
