@@ -233,45 +233,55 @@ export async function handlePaymentUpdated(paymentId: string): Promise<void> {
       }
 
       // Count consecutive failed payments for this subscription
-      const failedPayments = await db.payment.count({
-        where: {
-          subscriptionId: subscription.id,
-          status: 'rejected',
-        },
+      // Query recent payments to find consecutive failures from most recent
+      const recentPayments = await db.payment.findMany({
+        where: { subscriptionId: subscription.id },
+        orderBy: { createdAt: 'desc' },
+        take: 10, // Check last 10 payments
       });
 
-      console.log(`   Failed payments count: ${failedPayments}`);
+      let consecutiveFailures = 0;
+      for (const recentPayment of recentPayments) {
+        if (recentPayment.status === 'rejected') {
+          consecutiveFailures++;
+        } else if (recentPayment.status === 'approved') {
+          break; // Stop at first successful payment
+        }
+        // Skip other statuses (pending, etc.) without breaking
+      }
 
-      // Handle subscription status based on failure count
-      if (failedPayments >= 3) {
-        // 3rd+ failure: suspend subscription
+      console.log(`   Consecutive failed payments: ${consecutiveFailures}`);
+
+      // Handle subscription status based on consecutive failure count
+      if (consecutiveFailures >= 3) {
+        // 3rd+ consecutive failure: suspend subscription
         await db.subscription.update({
           where: { id: subscription.id },
           data: {
             status: 'suspended',
           },
         });
-        console.log(`⛔ Subscription suspended after ${failedPayments} failures`);
+        console.log(`⛔ Subscription suspended after ${consecutiveFailures} consecutive failures`);
         console.log(`📧 TODO: Send suspension notification to ${subscription.user.email}`);
-      } else if (failedPayments === 2) {
-        // 2nd failure: set to past_due, urgent retry
+      } else if (consecutiveFailures === 2) {
+        // 2nd consecutive failure: set to past_due, urgent retry
         await db.subscription.update({
           where: { id: subscription.id },
           data: {
             status: 'past_due',
           },
         });
-        console.log(`⚠️  Subscription past_due (${failedPayments} failures) - urgent retry needed`);
+        console.log(`⚠️  Subscription past_due (${consecutiveFailures} consecutive failures) - urgent retry needed`);
         console.log(`📧 TODO: Send urgent retry notification to ${subscription.user.email}`);
-      } else if (failedPayments === 1) {
-        // 1st failure: set to past_due
+      } else if (consecutiveFailures === 1) {
+        // 1st consecutive failure: set to past_due
         await db.subscription.update({
           where: { id: subscription.id },
           data: {
             status: 'past_due',
           },
         });
-        console.log(`⚠️  Subscription past_due (${failedPayments} failure) - retry notification needed`);
+        console.log(`⚠️  Subscription past_due (${consecutiveFailures} consecutive failure) - retry notification needed`);
         console.log(`📧 TODO: Send retry notification to ${subscription.user.email}`);
       }
     } else {

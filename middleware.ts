@@ -78,4 +78,7 @@ export const config = {
     '/admin/:path*',
     '/profile/:path*',
   ],
+  // Force Node.js runtime to allow Prisma database access
+  // Edge Runtime doesn't support Node.js APIs required by pg Pool
+  runtime: 'nodejs',
 };
