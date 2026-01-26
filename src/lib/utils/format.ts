@@ -1,22 +1,17 @@
 /**
- * Format amount in cents to Chilean Peso (CLP) string
- * @param amountInCents - Amount in cents (e.g., 999000 = $9.990 CLP)
- * @returns Formatted string (e.g., "$9.990")
+ * Formats a CLP amount as Chilean Peso currency.
+ * @param amount - Amount in CLP (e.g., 9990 = $9.990 CLP)
+ * @returns Formatted currency string (e.g., "$9.990")
  */
-export function formatCLP(amountInCents: number): string {
-  // Convert cents to pesos (divide by 100)
-  const pesos = amountInCents / 100;
-
+export function formatCLP(amount: number): string {
+  // Chilean Peso (CLP) is a zero-decimal currency
   // Format with thousand separators using Chilean format
-  // Chilean format uses "." for thousands and no decimal places for CLP
-  const formatted = new Intl.NumberFormat('es-CL', {
+  return new Intl.NumberFormat('es-CL', {
     style: 'currency',
     currency: 'CLP',
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
-  }).format(pesos);
-
-  return formatted;
+  }).format(amount);
 }
 
 /**

@@ -17,7 +17,7 @@ export interface SubscriptionPlan {
   id: string;
   name: string;
   description: string;
-  price: number; // in cents
+  price: number; // in CLP
   interval: string;
   features: string[];
   isActive: boolean;
