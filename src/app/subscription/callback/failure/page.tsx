@@ -1,12 +1,9 @@
-'use client';
-
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { XCircle, AlertCircle } from 'lucide-react';
 
 export default function FailurePage() {
-  const router = useRouter();
 
   return (
     <div className="container max-w-2xl py-16">
@@ -53,21 +50,16 @@ export default function FailurePage() {
 
           {/* Action Buttons */}
           <div className="space-y-3">
-            <Button
-              onClick={() => router.push('/dashboard/subscribe')}
-              className="w-full"
-              size="lg"
-            >
-              Intentar Nuevamente
-            </Button>
-            <Button
-              onClick={() => router.push('/dashboard')}
-              variant="outline"
-              className="w-full"
-              size="lg"
-            >
-              Volver al Dashboard
-            </Button>
+            <Link href="/dashboard/subscribe">
+              <Button className="w-full" size="lg">
+                Intentar Nuevamente
+              </Button>
+            </Link>
+            <Link href="/dashboard">
+              <Button variant="outline" className="w-full" size="lg">
+                Volver al Dashboard
+              </Button>
+            </Link>
           </div>
 
           {/* Support Contact */}
@@ -75,12 +67,8 @@ export default function FailurePage() {
             <p className="text-sm text-muted-foreground mb-3">
               ¿Necesitas ayuda?
             </p>
-            <Button
-              onClick={() => window.location.href = 'mailto:support@reservapp.com'}
-              variant="link"
-              className="text-primary"
-            >
-              Contactar Soporte
+            <Button asChild variant="link" className="text-primary">
+              <a href="mailto:support@reservapp.com">Contactar Soporte</a>
             </Button>
           </div>
         </CardContent>

@@ -1,12 +1,9 @@
-'use client';
-
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Clock, Info } from 'lucide-react';
 
 export default function PendingPage() {
-  const router = useRouter();
 
   return (
     <div className="container max-w-2xl py-16">
@@ -57,21 +54,16 @@ export default function PendingPage() {
 
           {/* Action Buttons */}
           <div className="space-y-3">
-            <Button
-              onClick={() => router.push('/dashboard')}
-              className="w-full"
-              size="lg"
-            >
-              Ir al Dashboard
-            </Button>
-            <Button
-              onClick={() => router.push('/dashboard/subscription')}
-              variant="outline"
-              className="w-full"
-              size="lg"
-            >
-              Ver Estado de Suscripción
-            </Button>
+            <Link href="/dashboard">
+              <Button className="w-full" size="lg">
+                Ir al Dashboard
+              </Button>
+            </Link>
+            <Link href="/dashboard/subscription">
+              <Button variant="outline" className="w-full" size="lg">
+                Ver Estado de Suscripción
+              </Button>
+            </Link>
           </div>
 
           {/* Help Section */}
@@ -79,12 +71,8 @@ export default function PendingPage() {
             <p className="text-sm text-muted-foreground mb-2">
               Si después de 24 horas no has recibido confirmación:
             </p>
-            <Button
-              onClick={() => window.location.href = 'mailto:support@reservapp.com'}
-              variant="link"
-              className="text-primary"
-            >
-              Contactar Soporte
+            <Button asChild variant="link" className="text-primary">
+              <a href="mailto:support@reservapp.com">Contactar Soporte</a>
             </Button>
           </div>
         </CardContent>
