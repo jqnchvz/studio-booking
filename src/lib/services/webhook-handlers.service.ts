@@ -196,8 +196,94 @@ export async function handlePaymentUpdated(paymentId: string): Promise<void> {
       console.log(`📧 TODO: Send subscription activated email to ${subscription.user.email}`);
     } else if (payment.status === 'rejected') {
       console.log(`❌ Payment rejected - handling failure`);
-      // TODO (RES-34): Handle payment failure logic
-      console.log(`📧 TODO: Send payment failed email to user`);
+
+      // Create or update payment record with rejected status
+      const existingPayment = await db.payment.findUnique({
+        where: { mercadopagoId: payment.id!.toString() },
+      });
+
+      const paymentAmount = Math.round(payment.transaction_amount || 0);
+
+      if (existingPayment) {
+        // Update existing payment
+        await db.payment.update({
+          where: { id: existingPayment.id },
+          data: {
+            status: 'rejected',
+            metadata: payment as object,
+          },
+        });
+        console.log(`   Updated existing payment record to rejected: ${existingPayment.id}`);
+      } else {
+        // Create new payment record
+        await db.payment.create({
+          data: {
+            userId,
+            subscriptionId: subscription.id,
+            mercadopagoId: payment.id!.toString(),
+            amount: paymentAmount,
+            penaltyFee: 0,
+            totalAmount: paymentAmount,
+            status: 'rejected',
+            dueDate: new Date(),
+            metadata: payment as object,
+          },
+        });
+        console.log(`   Created rejected payment record`);
+      }
+
+      // Count consecutive failed payments for this subscription
+      // Query recent payments to find consecutive failures from most recent
+      const recentPayments = await db.payment.findMany({
+        where: { subscriptionId: subscription.id },
+        orderBy: { createdAt: 'desc' },
+        take: 10, // Check last 10 payments
+      });
+
+      let consecutiveFailures = 0;
+      for (const recentPayment of recentPayments) {
+        if (recentPayment.status === 'rejected') {
+          consecutiveFailures++;
+        } else if (recentPayment.status === 'approved') {
+          break; // Stop at first successful payment
+        }
+        // Skip other statuses (pending, etc.) without breaking
+      }
+
+      console.log(`   Consecutive failed payments: ${consecutiveFailures}`);
+
+      // Handle subscription status based on consecutive failure count
+      if (consecutiveFailures >= 3) {
+        // 3rd+ consecutive failure: suspend subscription
+        await db.subscription.update({
+          where: { id: subscription.id },
+          data: {
+            status: 'suspended',
+          },
+        });
+        console.log(`⛔ Subscription suspended after ${consecutiveFailures} consecutive failures`);
+        console.log(`📧 TODO: Send suspension notification to ${subscription.user.email}`);
+      } else if (consecutiveFailures === 2) {
+        // 2nd consecutive failure: set to past_due, urgent retry
+        await db.subscription.update({
+          where: { id: subscription.id },
+          data: {
+            status: 'past_due',
+          },
+        });
+        console.log(`⚠️  Subscription past_due (${consecutiveFailures} consecutive failures) - urgent retry needed`);
+        console.log(`📧 TODO: Send urgent retry notification to ${subscription.user.email}`);
+      } else if (consecutiveFailures === 1) {
+        // 1st consecutive failure: set to past_due
+        await db.subscription.update({
+          where: { id: subscription.id },
+          data: {
+            status: 'past_due',
+          },
+        });
+        console.log(`⚠️  Subscription past_due (${consecutiveFailures} consecutive failure) - retry notification needed`);
+        console.log(`📧 TODO: Send retry notification to ${subscription.user.email}`);
+      }
     } else {
       console.log(`⏳ Payment status: ${payment.status} - no action taken`);
     }
