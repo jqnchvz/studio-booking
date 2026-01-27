@@ -4,8 +4,9 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { SubscriptionDetails } from '@/components/features/subscription/SubscriptionDetails';
 import { PaymentHistory } from '@/components/features/subscription/PaymentHistory';
+import { CancelSubscriptionModal } from '@/components/features/subscription/CancelSubscriptionModal';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, AlertCircle } from 'lucide-react';
+import { Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 
@@ -43,6 +44,8 @@ export default function SubscriptionPage() {
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancelSuccess, setCancelSuccess] = useState(false);
 
   useEffect(() => {
     async function fetchSubscription() {
@@ -76,8 +79,42 @@ export default function SubscriptionPage() {
   }, []);
 
   const handleCancelClick = () => {
-    // TODO: Implement cancel subscription modal (RES-61)
-    console.log('Cancel subscription clicked');
+    setShowCancelModal(true);
+  };
+
+  const handleConfirmCancel = async () => {
+    try {
+      const response = await fetch('/api/subscriptions/cancel', {
+        method: 'POST',
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to cancel subscription');
+      }
+
+      // Update subscription state with cancelled status
+      if (subscription) {
+        setSubscription({
+          ...subscription,
+          status: 'cancelled',
+          cancelledAt: data.subscription.cancelledAt,
+        });
+      }
+
+      // Show success message
+      setCancelSuccess(true);
+      setShowCancelModal(false);
+
+      // Hide success message after 5 seconds
+      setTimeout(() => {
+        setCancelSuccess(false);
+      }, 5000);
+    } catch (err) {
+      console.error('Error cancelling subscription:', err);
+      throw err; // Re-throw to let modal handle the error
+    }
   };
 
   if (isLoading) {
@@ -146,6 +183,17 @@ export default function SubscriptionPage() {
           </p>
         </div>
 
+        {/* Success Message */}
+        {cancelSuccess && (
+          <Alert className="border-green-200 bg-green-50 dark:bg-green-950">
+            <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
+            <AlertDescription className="text-green-900 dark:text-green-100">
+              Suscripción cancelada exitosamente. Tu acceso continuará hasta el final
+              del período actual.
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* Subscription Details */}
         <SubscriptionDetails
           subscription={subscription}
@@ -154,6 +202,15 @@ export default function SubscriptionPage() {
 
         {/* Payment History */}
         <PaymentHistory payments={subscription.payments} />
+
+        {/* Cancel Subscription Modal */}
+        <CancelSubscriptionModal
+          open={showCancelModal}
+          onOpenChange={setShowCancelModal}
+          planName={subscription.plan.name}
+          currentPeriodEnd={subscription.currentPeriodEnd}
+          onConfirm={handleConfirmCancel}
+        />
       </div>
     </div>
   );
