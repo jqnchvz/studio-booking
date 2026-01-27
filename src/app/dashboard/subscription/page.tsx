@@ -5,10 +5,22 @@ import { useRouter } from 'next/navigation';
 import { SubscriptionDetails } from '@/components/features/subscription/SubscriptionDetails';
 import { PaymentHistory } from '@/components/features/subscription/PaymentHistory';
 import { CancelSubscriptionModal } from '@/components/features/subscription/CancelSubscriptionModal';
+import { ChangePlanModal } from '@/components/features/subscription/ChangePlanModal';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Loader2, AlertCircle, CheckCircle2, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { formatCLP } from '@/lib/utils/format';
+
+interface Plan {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  interval: string;
+  features: string[];
+}
 
 interface Subscription {
   id: string;
@@ -19,14 +31,7 @@ interface Subscription {
   currentPeriodEnd: string;
   gracePeriodEnd: string | null;
   cancelledAt: string | null;
-  plan: {
-    id: string;
-    name: string;
-    description: string;
-    price: number;
-    interval: string;
-    features: string[];
-  };
+  plan: Plan;
   payments: Array<{
     id: string;
     amount: number;
@@ -42,29 +47,40 @@ interface Subscription {
 export default function SubscriptionPage() {
   const router = useRouter();
   const [subscription, setSubscription] = useState<Subscription | null>(null);
+  const [availablePlans, setAvailablePlans] = useState<Plan[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showCancelModal, setShowCancelModal] = useState(false);
+  const [showChangePlanModal, setShowChangePlanModal] = useState(false);
+  const [selectedNewPlan, setSelectedNewPlan] = useState<Plan | null>(null);
   const [cancelSuccess, setCancelSuccess] = useState(false);
+  const [changePlanSuccess, setChangePlanSuccess] = useState(false);
 
   useEffect(() => {
-    async function fetchSubscription() {
+    async function fetchData() {
       try {
-        const response = await fetch('/api/subscriptions/current');
-        const data = await response.json();
+        // Fetch subscription
+        const subResponse = await fetch('/api/subscriptions/current');
+        const subData = await subResponse.json();
 
-        if (!response.ok) {
-          if (response.status === 404) {
-            // No subscription found - redirect to subscribe page
+        if (!subResponse.ok) {
+          if (subResponse.status === 404) {
             setError('no_subscription');
             return;
           }
-          throw new Error(data.error || 'Failed to fetch subscription');
+          throw new Error(subData.error || 'Failed to fetch subscription');
         }
 
-        setSubscription(data.subscription);
+        setSubscription(subData.subscription);
+
+        // Fetch available plans
+        const plansResponse = await fetch('/api/subscription-plans');
+        if (plansResponse.ok) {
+          const plansData = await plansResponse.json();
+          setAvailablePlans(plansData.plans || []);
+        }
       } catch (err) {
-        console.error('Error fetching subscription:', err);
+        console.error('Error fetching data:', err);
         setError(
           err instanceof Error
             ? err.message
@@ -75,7 +91,7 @@ export default function SubscriptionPage() {
       }
     }
 
-    fetchSubscription();
+    fetchData();
   }, []);
 
   const handleCancelClick = () => {
@@ -116,6 +132,64 @@ export default function SubscriptionPage() {
       throw err; // Re-throw to let modal handle the error
     }
   };
+
+  const handleChangePlanClick = (plan: Plan) => {
+    setSelectedNewPlan(plan);
+    setShowChangePlanModal(true);
+  };
+
+  const handleConfirmChangePlan = async (newPlanId: string) => {
+    try {
+      const response = await fetch('/api/subscriptions/change-plan', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ newPlanId }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to change plan');
+      }
+
+      // Update subscription state with new plan
+      if (subscription && data.subscription) {
+        setSubscription({
+          ...subscription,
+          planPrice: data.subscription.planPrice,
+          plan: {
+            ...subscription.plan,
+            id: data.subscription.planId,
+            name: data.subscription.planName,
+            price: data.subscription.planPrice,
+          },
+        });
+      }
+
+      // Show success message
+      setChangePlanSuccess(true);
+      setShowChangePlanModal(false);
+
+      // Hide success message after 5 seconds
+      setTimeout(() => {
+        setChangePlanSuccess(false);
+      }, 5000);
+    } catch (err) {
+      console.error('Error changing plan:', err);
+      throw err; // Re-throw to let modal handle the error
+    }
+  };
+
+  // Filter out current plan from available plans
+  const otherPlans = availablePlans.filter(
+    (plan) => subscription && plan.id !== subscription.plan.id
+  );
+
+  // Show change plan section only for active subscriptions
+  const canChangePlan =
+    subscription && (subscription.status === 'active' || subscription.status === 'past_due');
 
   if (isLoading) {
     return (
@@ -183,7 +257,7 @@ export default function SubscriptionPage() {
           </p>
         </div>
 
-        {/* Success Message */}
+        {/* Success Messages */}
         {cancelSuccess && (
           <Alert className="border-green-200 bg-green-50 dark:bg-green-950">
             <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
@@ -194,11 +268,77 @@ export default function SubscriptionPage() {
           </Alert>
         )}
 
+        {changePlanSuccess && (
+          <Alert className="border-green-200 bg-green-50 dark:bg-green-950">
+            <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
+            <AlertDescription className="text-green-900 dark:text-green-100">
+              Plan cambiado exitosamente.
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* Subscription Details */}
         <SubscriptionDetails
           subscription={subscription}
           onCancelClick={handleCancelClick}
         />
+
+        {/* Change Plan Section */}
+        {canChangePlan && otherPlans.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Cambiar Plan</CardTitle>
+              <CardDescription>
+                Cambia a un plan diferente según tus necesidades
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4 md:grid-cols-2">
+                {otherPlans.map((plan) => {
+                  const isUpgrade = plan.price > subscription.planPrice;
+                  return (
+                    <div
+                      key={plan.id}
+                      className="p-4 border rounded-lg hover:border-primary transition-colors"
+                    >
+                      <div className="space-y-3">
+                        <div>
+                          <h3 className="font-semibold text-lg">{plan.name}</h3>
+                          <p className="text-sm text-muted-foreground">{plan.description}</p>
+                        </div>
+                        <div className="flex items-baseline gap-1">
+                          <span className="text-2xl font-bold">{formatCLP(plan.price)}</span>
+                          <span className="text-muted-foreground">/mes</span>
+                        </div>
+                        <ul className="space-y-1 text-sm">
+                          {plan.features.slice(0, 3).map((feature, idx) => (
+                            <li key={idx} className="flex items-start gap-2">
+                              <span className="text-primary">✓</span>
+                              <span>{feature}</span>
+                            </li>
+                          ))}
+                          {plan.features.length > 3 && (
+                            <li className="text-muted-foreground">
+                              +{plan.features.length - 3} más...
+                            </li>
+                          )}
+                        </ul>
+                        <Button
+                          onClick={() => handleChangePlanClick(plan)}
+                          variant={isUpgrade ? 'default' : 'outline'}
+                          className="w-full"
+                        >
+                          {isUpgrade ? 'Mejorar' : 'Cambiar'}
+                          <ArrowRight className="ml-2 h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Payment History */}
         <PaymentHistory payments={subscription.payments} />
@@ -211,6 +351,19 @@ export default function SubscriptionPage() {
           currentPeriodEnd={subscription.currentPeriodEnd}
           onConfirm={handleConfirmCancel}
         />
+
+        {/* Change Plan Modal */}
+        {selectedNewPlan && (
+          <ChangePlanModal
+            open={showChangePlanModal}
+            onOpenChange={setShowChangePlanModal}
+            currentPlan={subscription.plan}
+            newPlan={selectedNewPlan}
+            currentPeriodEnd={subscription.currentPeriodEnd}
+            nextBillingDate={subscription.nextBillingDate}
+            onConfirm={handleConfirmChangePlan}
+          />
+        )}
       </div>
     </div>
   );
