@@ -217,3 +217,33 @@ export async function fetchPaymentDetails(paymentId: string) {
     throw error;
   }
 }
+
+/**
+ * Cancel a subscription in MercadoPago
+ * @param subscriptionId - MercadoPago preapproval/subscription ID
+ * @returns Cancellation result
+ * @throws Error if cancellation fails
+ */
+export async function cancelSubscription(subscriptionId: string) {
+  try {
+    console.log(`🔄 Cancelling subscription: ${subscriptionId}`);
+
+    const preApprovalAPI = getPreApprovalAPI();
+
+    // Cancel the preapproval (subscription) in MercadoPago
+    const result = await preApprovalAPI.update({
+      id: subscriptionId,
+      body: {
+        status: 'cancelled',
+      },
+    });
+
+    console.log(`✅ Subscription cancelled in MercadoPago: ${subscriptionId}`);
+    console.log(`   Status: ${result.status}`);
+
+    return result;
+  } catch (error) {
+    console.error(`❌ Error cancelling subscription ${subscriptionId}:`, error);
+    throw error;
+  }
+}
