@@ -165,7 +165,8 @@ export async function POST(request: NextRequest) {
       planToUse.id,
       user.id,
       planToUse.price,
-      planToUse.name
+      planToUse.name,
+      user.email
     );
 
     console.log(`✅ MercadoPago preference created: ${preference.preferenceId}`);

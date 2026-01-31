@@ -128,7 +128,8 @@ export async function POST(request: NextRequest) {
       plan.id,
       user.id,
       plan.price,
-      plan.name
+      plan.name,
+      user.email
     );
 
     // 9. Update subscription with MercadoPago preference ID
