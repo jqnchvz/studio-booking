@@ -84,13 +84,15 @@ export function getPreApprovalAPI(): PreApproval {
  * @param userId - User ID
  * @param planPrice - Plan price in CLP
  * @param planName - Plan name for display
+ * @param payerEmail - User's email address for MercadoPago
  * @returns Preference with init_point URL for checkout
  */
 export async function createSubscriptionPreference(
   planId: string,
   userId: string,
   planPrice: number,
-  planName: string
+  planName: string,
+  payerEmail: string
 ) {
   try {
     const preApprovalAPI = getPreApprovalAPI();
@@ -115,7 +117,7 @@ export async function createSubscriptionPreference(
         },
         back_url: `${mercadopagoConfig.appUrl}/subscriptions/success`,
         external_reference: `${userId}-${planId}`,
-        payer_email: undefined, // Will be filled by user during checkout
+        payer_email: payerEmail,
         status: 'pending',
       },
     });

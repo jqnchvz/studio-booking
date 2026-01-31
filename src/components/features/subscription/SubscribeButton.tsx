@@ -35,8 +35,8 @@ export function SubscribeButton({ planId, planName }: SubscribeButtonProps) {
       }
 
       // Redirect to MercadoPago checkout
-      if (data.init_point) {
-        window.location.href = data.init_point;
+      if (data.data?.initPoint) {
+        window.location.href = data.data.initPoint;
       } else {
         throw new Error('No checkout URL received');
       }
