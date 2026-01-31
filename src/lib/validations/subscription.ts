@@ -13,3 +13,15 @@ export const createSubscriptionPreferenceSchema = z.object({
 export type CreateSubscriptionPreferenceInput = z.infer<
   typeof createSubscriptionPreferenceSchema
 >;
+
+/**
+ * Validation schema for reactivating subscription
+ */
+export const reactivateSubscriptionSchema = z.object({
+  newPlanId: z.string().uuid().optional(),
+});
+
+/**
+ * Type inference for reactivate subscription request
+ */
+export type ReactivateSubscriptionInput = z.infer<typeof reactivateSubscriptionSchema>;

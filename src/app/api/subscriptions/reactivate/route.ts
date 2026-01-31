@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { verifyToken } from '@/lib/auth/session';
+import { getCurrentUser } from '@/lib/auth/get-current-user';
 import { createSubscriptionPreference } from '@/lib/services/mercadopago.service';
+import { reactivateSubscriptionSchema } from '@/lib/validations/subscription';
 
 /**
  * POST /api/subscriptions/reactivate
@@ -23,48 +24,64 @@ export async function POST(request: NextRequest) {
   try {
     console.log('🔄 Subscription reactivation request received');
 
-    // 1. Get session from cookie
-    const sessionCookie = request.cookies.get('session');
+    // 1. Get and verify current user
+    const user = await getCurrentUser();
 
-    if (!sessionCookie) {
-      console.log('❌ No session cookie found');
+    if (!user) {
+      console.log('❌ No authenticated user found');
       return NextResponse.json(
-        { error: 'Unauthorized', message: 'No session found' },
+        { error: 'Unauthorized', message: 'Authentication required' },
         { status: 401 }
       );
     }
 
-    // 2. Verify session token
-    const payload = verifyToken(sessionCookie.value);
-
-    if (!payload) {
-      console.log('❌ Invalid session token');
+    // 2. Verify email is confirmed
+    if (!user.emailVerified) {
+      console.log('❌ Email not verified for user:', user.id);
       return NextResponse.json(
-        { error: 'Unauthorized', message: 'Invalid session' },
-        { status: 401 }
+        {
+          error: 'Email not verified',
+          message: 'Please verify your email address before reactivating your subscription',
+        },
+        { status: 403 }
       );
     }
 
-    // 3. Parse request body (optional newPlanId)
+    // 3. Parse and validate request body
     const body = await request.json().catch(() => ({}));
-    const { newPlanId } = body;
+    const result = reactivateSubscriptionSchema.safeParse(body);
+
+    if (!result.success) {
+      console.log('❌ Invalid request body:', result.error.issues);
+      return NextResponse.json(
+        {
+          error: 'Invalid input',
+          message: 'Invalid request data',
+          details: result.error.issues,
+        },
+        { status: 400 }
+      );
+    }
+
+    const { newPlanId } = result.data;
 
     // 4. Fetch user's subscription
     const subscription = await db.subscription.findUnique({
-      where: { userId: payload.userId },
+      where: { userId: user.id },
       include: {
         plan: {
           select: {
             id: true,
             name: true,
             price: true,
+            isActive: true,
           },
         },
       },
     });
 
     if (!subscription) {
-      console.log('❌ No subscription found for user:', payload.userId);
+      console.log('❌ No subscription found for user:', user.id);
       return NextResponse.json(
         {
           error: 'No subscription found',
@@ -75,8 +92,10 @@ export async function POST(request: NextRequest) {
     }
 
     // 5. Verify subscription can be reactivated
-    if (subscription.status !== 'cancelled' && subscription.status !== 'suspended') {
-      console.log('❌ Subscription is not cancelled or suspended:', subscription.status);
+    // Allow: cancelled, suspended, and pending (for retry scenarios)
+    const reactivatableStatuses = ['cancelled', 'suspended', 'pending'];
+    if (!reactivatableStatuses.includes(subscription.status)) {
+      console.log('❌ Subscription cannot be reactivated:', subscription.status);
       return NextResponse.json(
         {
           error: 'Cannot reactivate',
@@ -118,6 +137,17 @@ export async function POST(request: NextRequest) {
       planToUse = newPlan;
       console.log(`📝 Reactivating with new plan: ${newPlan.name}`);
     } else {
+      // Validate current plan is still active
+      if (!subscription.plan.isActive) {
+        console.log('❌ Current plan is no longer active:', subscription.plan.name);
+        return NextResponse.json(
+          {
+            error: 'Plan not available',
+            message: 'Your previous plan is no longer available. Please select a new plan.',
+          },
+          { status: 400 }
+        );
+      }
       console.log(`📝 Reactivating with current plan: ${planToUse.name}`);
     }
 
@@ -128,12 +158,24 @@ export async function POST(request: NextRequest) {
     currentPeriodEnd.setMonth(currentPeriodEnd.getMonth() + 1); // 1 month from now
     const nextBillingDate = new Date(currentPeriodEnd);
 
-    // 8. Update subscription to pending status (before creating MercadoPago preference)
+    // 8. Create MercadoPago payment preference FIRST
+    // This prevents DB corruption if MercadoPago call fails
+    console.log('🔄 Creating MercadoPago preference...');
+    const preference = await createSubscriptionPreference(
+      planToUse.id,
+      user.id,
+      planToUse.price,
+      planToUse.name
+    );
+
+    console.log(`✅ MercadoPago preference created: ${preference.preferenceId}`);
+
+    // 9. Only update database after MercadoPago succeeds
     const updatedSubscription = await db.subscription.update({
       where: { id: subscription.id },
       data: {
         planId: planToUse.id,
-        preferenceId: null, // Will be set after MercadoPago call succeeds
+        preferenceId: preference.preferenceId,
         status: 'pending',
         planPrice: planToUse.price,
         nextBillingDate,
@@ -146,24 +188,6 @@ export async function POST(request: NextRequest) {
     });
 
     console.log(`✅ Subscription updated to pending status for reactivation`);
-
-    // 9. Create new MercadoPago payment preference
-    const preference = await createSubscriptionPreference(
-      planToUse.id,
-      payload.userId,
-      planToUse.price,
-      planToUse.name
-    );
-
-    // 10. Update subscription with MercadoPago preference ID
-    await db.subscription.update({
-      where: { id: updatedSubscription.id },
-      data: {
-        preferenceId: preference.preferenceId,
-      },
-    });
-
-    console.log(`✅ MercadoPago preference created for reactivation: ${preference.preferenceId}`);
     console.log(`   Plan: ${planToUse.name}`);
     console.log(`   Price: ${planToUse.price} CLP`);
 

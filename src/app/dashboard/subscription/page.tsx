@@ -204,6 +204,8 @@ export default function SubscriptionPage() {
       // Redirect to MercadoPago checkout
       if (data.data?.initPoint) {
         window.location.href = data.data.initPoint;
+      } else {
+        throw new Error('No checkout URL received from server');
       }
     } catch (err) {
       console.error('Error reactivating subscription:', err);
