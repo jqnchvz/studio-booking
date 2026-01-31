@@ -247,3 +247,41 @@ export async function cancelSubscription(subscriptionId: string) {
     throw error;
   }
 }
+
+/**
+ * Update subscription amount in MercadoPago
+ * @param subscriptionId - MercadoPago preapproval/subscription ID
+ * @param newAmount - New monthly amount in CLP
+ * @returns Update result
+ * @throws Error if update fails
+ */
+export async function updateSubscriptionAmount(
+  subscriptionId: string,
+  newAmount: number
+) {
+  try {
+    console.log(`🔄 Updating subscription amount: ${subscriptionId}`);
+    console.log(`   New amount: ${newAmount} CLP`);
+
+    const preApprovalAPI = getPreApprovalAPI();
+
+    // Update the preapproval amount in MercadoPago
+    const result = await preApprovalAPI.update({
+      id: subscriptionId,
+      body: {
+        auto_recurring: {
+          transaction_amount: newAmount,
+          currency_id: 'CLP',
+        },
+      },
+    });
+
+    console.log(`✅ Subscription amount updated in MercadoPago: ${subscriptionId}`);
+    console.log(`   New amount: ${newAmount} CLP`);
+
+    return result;
+  } catch (error) {
+    console.error(`❌ Error updating subscription ${subscriptionId}:`, error);
+    throw error;
+  }
+}
