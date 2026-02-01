@@ -38,6 +38,13 @@ interface Subscription {
       newPlanPrice: number;
       effectiveDate: string;
     };
+    appliedPlanChange?: {
+      previousPlanName: string;
+      previousPlanPrice: number;
+      newPlanName: string;
+      newPlanPrice: number;
+      effectiveDate: string;
+    };
   } | null;
   plan: Plan;
   payments: Array<{
@@ -190,7 +197,7 @@ export default function SubscriptionPage() {
 
       // Handle upgrade vs downgrade
       if (data.upgrade?.appliedImmediately) {
-        // Upgrade: update UI immediately
+        // Upgrade: update UI immediately with new plan + metadata banner
         if (subscription && data.subscription) {
           setSubscription({
             ...subscription,
@@ -200,6 +207,15 @@ export default function SubscriptionPage() {
               id: data.subscription.planId,
               name: data.subscription.planName,
               price: data.subscription.planPrice,
+            },
+            metadata: {
+              appliedPlanChange: {
+                previousPlanName: subscription.plan.name,
+                previousPlanPrice: subscription.planPrice,
+                newPlanName: data.subscription.planName,
+                newPlanPrice: data.subscription.planPrice,
+                effectiveDate: subscription.nextBillingDate,
+              },
             },
           });
         }

@@ -192,6 +192,15 @@ export async function POST(request: NextRequest) {
         data: {
           planId: newPlanId,
           planPrice: newPrice,
+          metadata: {
+            appliedPlanChange: {
+              previousPlanName: subscription.plan.name,
+              previousPlanPrice: currentPrice,
+              newPlanName: newPlan.name,
+              newPlanPrice: newPrice,
+              effectiveDate: subscription.nextBillingDate.toISOString(),
+            },
+          },
         },
         include: {
           plan: {
