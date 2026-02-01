@@ -72,7 +72,32 @@ export default function SubscriptionPage() {
           throw new Error(subData.error || 'Failed to fetch subscription');
         }
 
-        setSubscription(subData.subscription);
+        let currentSubscription = subData.subscription;
+
+        // If subscription is pending, verify status with MercadoPago
+        if (currentSubscription.status === 'pending') {
+          try {
+            const verifyResponse = await fetch('/api/subscriptions/verify-status', {
+              method: 'POST',
+            });
+            if (verifyResponse.ok) {
+              const verifyData = await verifyResponse.json();
+              if (verifyData.subscription?.changed) {
+                // Re-fetch to get updated subscription with all relations
+                const refreshResponse = await fetch('/api/subscriptions/current');
+                if (refreshResponse.ok) {
+                  const refreshData = await refreshResponse.json();
+                  currentSubscription = refreshData.subscription;
+                }
+              }
+            }
+          } catch (verifyErr) {
+            console.error('Error verifying subscription status:', verifyErr);
+            // Non-critical: continue showing current status
+          }
+        }
+
+        setSubscription(currentSubscription);
 
         // Fetch available plans
         const plansResponse = await fetch('/api/subscription-plans');
@@ -233,7 +258,7 @@ export default function SubscriptionPage() {
 
   if (isLoading) {
     return (
-      <div className="container max-w-4xl py-16">
+      <div className="mx-auto max-w-4xl px-6 py-16">
         <div className="flex items-center justify-center py-16">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
@@ -243,7 +268,7 @@ export default function SubscriptionPage() {
 
   if (error === 'no_subscription') {
     return (
-      <div className="container max-w-4xl py-16">
+      <div className="mx-auto max-w-4xl px-6 py-16">
         <Alert>
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
@@ -268,7 +293,7 @@ export default function SubscriptionPage() {
 
   if (error) {
     return (
-      <div className="container max-w-4xl py-16">
+      <div className="mx-auto max-w-4xl px-6 py-16">
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>{error}</AlertDescription>
@@ -287,7 +312,7 @@ export default function SubscriptionPage() {
   }
 
   return (
-    <div className="container max-w-4xl py-8">
+    <div className="mx-auto max-w-4xl px-6 py-8">
       <div className="space-y-6">
         {/* Page Header */}
         <div>

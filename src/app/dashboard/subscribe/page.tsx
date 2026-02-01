@@ -49,7 +49,7 @@ export default function SubscribePage() {
 
   if (error) {
     return (
-      <div className="container max-w-4xl py-8">
+      <div className="mx-auto max-w-4xl px-6 py-8">
         <Alert variant="destructive">
           <AlertDescription>{error}</AlertDescription>
         </Alert>
@@ -58,7 +58,7 @@ export default function SubscribePage() {
   }
 
   return (
-    <div className="container max-w-6xl py-8 space-y-8">
+    <div className="mx-auto max-w-6xl px-6 py-8 space-y-8">
       {/* Header */}
       <div className="text-center space-y-2">
         <h1 className="text-3xl font-bold tracking-tight">Elige tu plan</h1>
