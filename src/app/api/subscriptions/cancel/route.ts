@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { Prisma } from '@prisma/client';
 import { verifyToken } from '@/lib/auth/session';
 import { cancelSubscription as cancelMercadoPagoSubscription } from '@/lib/services/mercadopago.service';
 
@@ -108,6 +109,7 @@ export async function POST(request: NextRequest) {
       data: {
         status: 'cancelled',
         cancelledAt: new Date(),
+        metadata: Prisma.DbNull,
       },
       include: {
         plan: {

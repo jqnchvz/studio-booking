@@ -3,6 +3,7 @@ import { ZodError } from 'zod';
 import { createSubscriptionPreferenceSchema } from '@/lib/validations/subscription';
 import { getCurrentUser } from '@/lib/auth/get-user';
 import { db } from '@/lib/db';
+import { Prisma } from '@prisma/client';
 import { createSubscriptionPreference } from '@/lib/services/mercadopago.service';
 
 /**
@@ -105,6 +106,7 @@ export async function POST(request: NextRequest) {
           mercadopagoSubId: null, // Will be set by webhook when payment succeeds
           cancelledAt: null,
           gracePeriodEnd: null,
+          metadata: Prisma.DbNull,
         },
       });
     } else {

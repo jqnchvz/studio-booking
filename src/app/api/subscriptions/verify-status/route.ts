@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth/get-user';
 import { db } from '@/lib/db';
+import { Prisma } from '@prisma/client';
 import { getPreApprovalStatus } from '@/lib/services/mercadopago.service';
 
 /**
@@ -84,6 +85,7 @@ export async function POST() {
         nextBillingDate: currentPeriodEnd,
         gracePeriodEnd: null,
         cancelledAt: null,
+        metadata: Prisma.DbNull,
       };
     } else if (preApproval.status === 'paused') {
       newStatus = 'suspended';

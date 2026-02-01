@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { Prisma } from '@prisma/client';
 import { getCurrentUser } from '@/lib/auth/get-current-user';
 import { createSubscriptionPreference } from '@/lib/services/mercadopago.service';
 import { reactivateSubscriptionSchema } from '@/lib/validations/subscription';
@@ -185,6 +186,7 @@ export async function POST(request: NextRequest) {
         mercadopagoSubId: null, // Will be set by webhook when payment succeeds
         cancelledAt: null, // Clear cancellation date
         gracePeriodEnd: null, // Clear grace period
+        metadata: Prisma.DbNull, // Clear any scheduled plan changes
       },
     });
 
