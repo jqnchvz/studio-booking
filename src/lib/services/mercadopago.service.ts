@@ -28,7 +28,6 @@ export function initializeMercadoPagoClient(): MercadoPagoConfig {
     accessToken: mercadopagoConfig.accessToken,
     options: {
       timeout: 5000,
-      idempotencyKey: 'studio-booking',
     },
   });
 
@@ -97,30 +96,25 @@ export async function createSubscriptionPreference(
   try {
     const preApprovalAPI = getPreApprovalAPI();
 
-    // Calculate period dates
-    const now = new Date();
-    const startDate = new Date(now);
-    const endDate = new Date(now);
-    endDate.setFullYear(endDate.getFullYear() + 1); // 1 year from now
+    // back_url is required by MercadoPago and must be a publicly accessible HTTPS URL
+    // In production, use the real domain (e.g., https://reservapp.cl)
+    // In development, use ngrok or a placeholder like https://google.com
+    const backUrl = mercadopagoConfig.backUrl || mercadopagoConfig.appUrl;
 
-    // Create preapproval for recurring payment
-    const preApproval = await preApprovalAPI.create({
-      body: {
-        reason: planName,
-        auto_recurring: {
-          frequency: 1,
-          frequency_type: 'months',
-          transaction_amount: planPrice,
-          currency_id: 'CLP',
-          start_date: startDate.toISOString(),
-          end_date: endDate.toISOString(),
-        },
-        back_url: `${mercadopagoConfig.appUrl}/subscriptions/success`,
-        external_reference: `${userId}-${planId}`,
-        payer_email: payerEmail,
-        status: 'pending',
+    const requestBody = {
+      reason: planName,
+      auto_recurring: {
+        frequency: 1,
+        frequency_type: 'months',
+        transaction_amount: planPrice,
+        currency_id: mercadopagoConfig.currencyId,
       },
-    });
+      back_url: backUrl,
+      external_reference: `${userId}-${planId}`,
+      payer_email: mercadopagoConfig.testPayerEmail || payerEmail,
+    };
+
+    const preApproval = await preApprovalAPI.create({ body: requestBody });
 
     console.log('✅ Subscription preference created:', preApproval.id);
 
@@ -131,6 +125,27 @@ export async function createSubscriptionPreference(
     };
   } catch (error) {
     console.error('❌ Error creating subscription preference:', error);
+    throw error;
+  }
+}
+
+/**
+ * Fetch preapproval (subscription) status from MercadoPago
+ * Used to verify payment status on callback return
+ * @param preapprovalId - MercadoPago preapproval ID (stored as preferenceId)
+ * @returns Preapproval details including status
+ */
+export async function getPreApprovalStatus(preapprovalId: string) {
+  try {
+    const preApprovalAPI = getPreApprovalAPI();
+    const preApproval = await preApprovalAPI.get({ id: preapprovalId });
+
+    console.log(`✅ Fetched preapproval status: ${preapprovalId}`);
+    console.log(`   Status: ${preApproval.status}`);
+
+    return preApproval;
+  } catch (error) {
+    console.error(`❌ Error fetching preapproval ${preapprovalId}:`, error);
     throw error;
   }
 }
