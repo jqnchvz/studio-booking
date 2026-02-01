@@ -54,7 +54,7 @@ export default function SubscriptionPage() {
   const [showChangePlanModal, setShowChangePlanModal] = useState(false);
   const [selectedNewPlan, setSelectedNewPlan] = useState<Plan | null>(null);
   const [cancelSuccess, setCancelSuccess] = useState(false);
-  const [changePlanSuccess, setChangePlanSuccess] = useState(false);
+  const [changePlanSuccess, setChangePlanSuccess] = useState<string | null>(null);
   const [isReactivating, setIsReactivating] = useState(false);
 
   useEffect(() => {
@@ -180,28 +180,43 @@ export default function SubscriptionPage() {
         throw new Error(data.message || 'Failed to change plan');
       }
 
-      // Update subscription state with new plan
-      if (subscription && data.subscription) {
-        setSubscription({
-          ...subscription,
-          planPrice: data.subscription.planPrice,
-          plan: {
-            ...subscription.plan,
-            id: data.subscription.planId,
-            name: data.subscription.planName,
-            price: data.subscription.planPrice,
-          },
+      // Handle upgrade vs downgrade
+      if (data.upgrade?.appliedImmediately) {
+        // Upgrade: update UI immediately
+        if (subscription && data.subscription) {
+          setSubscription({
+            ...subscription,
+            planPrice: data.subscription.planPrice,
+            plan: {
+              ...subscription.plan,
+              id: data.subscription.planId,
+              name: data.subscription.planName,
+              price: data.subscription.planPrice,
+            },
+          });
+        }
+        setChangePlanSuccess(`Plan mejorado a ${data.subscription.planName} exitosamente.`);
+      } else if (data.downgrade) {
+        // Downgrade: show scheduled message, don't update plan in UI
+        const effectiveDate = new Date(data.downgrade.effectiveDate);
+        const formattedDate = effectiveDate.toLocaleDateString('es-CL', {
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric',
         });
+        setChangePlanSuccess(
+          `Tu cambio al ${data.downgrade.newPlanName} se aplicará el ${formattedDate}, al inicio del próximo ciclo de facturación.`
+        );
+      } else {
+        setChangePlanSuccess('Plan cambiado exitosamente.');
       }
 
-      // Show success message
-      setChangePlanSuccess(true);
       setShowChangePlanModal(false);
 
-      // Hide success message after 5 seconds
+      // Hide success message after 8 seconds (longer for downgrade info)
       setTimeout(() => {
-        setChangePlanSuccess(false);
-      }, 5000);
+        setChangePlanSuccess(null);
+      }, 8000);
     } catch (err) {
       console.error('Error changing plan:', err);
       throw err; // Re-throw to let modal handle the error
@@ -337,7 +352,7 @@ export default function SubscriptionPage() {
           <Alert className="border-green-200 bg-green-50 dark:bg-green-950">
             <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
             <AlertDescription className="text-green-900 dark:text-green-100">
-              Plan cambiado exitosamente.
+              {changePlanSuccess}
             </AlertDescription>
           </Alert>
         )}

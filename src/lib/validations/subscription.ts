@@ -18,7 +18,7 @@ export type CreateSubscriptionPreferenceInput = z.infer<
  * Validation schema for reactivating subscription
  */
 export const reactivateSubscriptionSchema = z.object({
-  newPlanId: z.string().uuid().optional(),
+  newPlanId: z.string().min(1).optional(),
 });
 
 /**
