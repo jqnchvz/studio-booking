@@ -205,7 +205,20 @@ export default function SubscriptionPage() {
         }
         setChangePlanSuccess(`Plan mejorado a ${data.subscription.planName} exitosamente.`);
       } else if (data.downgrade) {
-        // Downgrade: show scheduled message, don't update plan in UI
+        // Downgrade: update metadata so the blue banner shows immediately
+        if (subscription) {
+          setSubscription({
+            ...subscription,
+            metadata: {
+              scheduledPlanChange: {
+                newPlanId: data.downgrade.newPlanId || '',
+                newPlanName: data.downgrade.newPlanName,
+                newPlanPrice: data.downgrade.newPlanPrice,
+                effectiveDate: data.downgrade.effectiveDate,
+              },
+            },
+          });
+        }
         const effectiveDate = new Date(data.downgrade.effectiveDate);
         const formattedDate = effectiveDate.toLocaleDateString('es-CL', {
           day: 'numeric',
