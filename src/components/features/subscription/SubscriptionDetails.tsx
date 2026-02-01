@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { formatCLP, formatChileanDate } from '@/lib/utils/format';
-import { Calendar, CreditCard, AlertCircle } from 'lucide-react';
+import { Calendar, CreditCard, AlertCircle, ArrowDown } from 'lucide-react';
 
 interface SubscriptionDetailsProps {
   subscription: {
@@ -22,6 +22,13 @@ interface SubscriptionDetailsProps {
     currentPeriodEnd: string;
     gracePeriodEnd: string | null;
     cancelledAt: string | null;
+    metadata: {
+      scheduledPlanChange?: {
+        newPlanName: string;
+        newPlanPrice: number;
+        effectiveDate: string;
+      };
+    } | null;
     plan: {
       name: string;
       description: string;
@@ -143,6 +150,23 @@ export function SubscriptionDetails({
             </div>
           )}
         </div>
+
+        {/* Scheduled Plan Change Notice */}
+        {subscription.metadata?.scheduledPlanChange && (
+          <div className="flex items-start gap-3 p-4 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200 dark:border-blue-900">
+            <ArrowDown className="w-5 h-5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
+            <div className="space-y-1">
+              <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                Cambio de plan programado
+              </p>
+              <p className="text-sm text-blue-700 dark:text-blue-300">
+                Tu plan cambiará a <span className="font-medium">{subscription.metadata.scheduledPlanChange.newPlanName}</span>{' '}
+                ({formatCLP(subscription.metadata.scheduledPlanChange.newPlanPrice)}/mes) el{' '}
+                {formatChileanDate(new Date(subscription.metadata.scheduledPlanChange.effectiveDate))}.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Features */}
         <div className="space-y-3 pt-4 border-t">

@@ -31,6 +31,14 @@ interface Subscription {
   currentPeriodEnd: string;
   gracePeriodEnd: string | null;
   cancelledAt: string | null;
+  metadata: {
+    scheduledPlanChange?: {
+      newPlanId: string;
+      newPlanName: string;
+      newPlanPrice: number;
+      effectiveDate: string;
+    };
+  } | null;
   plan: Plan;
   payments: Array<{
     id: string;
