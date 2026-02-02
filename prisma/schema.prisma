@@ -24,6 +24,7 @@ model User {
   updatedAt               DateTime       @updatedAt
   subscription            Subscription?
   payments                Payment[]
+  reservations            Reservation[]
 
   @@map("users")
 }
@@ -98,4 +99,55 @@ model Payment {
   @@index([subscriptionId])
   @@index([mercadopagoId])
   @@map("payments")
+}
+
+model Resource {
+  id           String                 @id @default(cuid())
+  name         String
+  description  String?
+  type         String                 // room, equipment, service
+  capacity     Int?
+  isActive     Boolean                @default(true)
+  metadata     Json?
+  createdAt    DateTime               @default(now())
+  updatedAt    DateTime               @updatedAt
+  reservations Reservation[]
+  availability ResourceAvailability[]
+
+  @@map("resources")
+}
+
+model Reservation {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  resourceId  String
+  resource    Resource @relation(fields: [resourceId], references: [id])
+  title       String
+  description String?
+  startTime   DateTime
+  endTime     DateTime
+  status      String   // pending, confirmed, cancelled, completed
+  attendees   Int      @default(1)
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
+  @@index([resourceId])
+  @@index([startTime, endTime])
+  @@map("reservations")
+}
+
+model ResourceAvailability {
+  id         String   @id @default(cuid())
+  resourceId String
+  resource   Resource @relation(fields: [resourceId], references: [id])
+  dayOfWeek  Int      // 0-6 (Sunday-Saturday)
+  startTime  String   // HH:MM format
+  endTime    String   // HH:MM format
+  isActive   Boolean  @default(true)
+
+  @@index([resourceId])
+  @@map("resource_availability")
 }
