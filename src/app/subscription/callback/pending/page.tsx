@@ -6,7 +6,7 @@ import { Clock, Info } from 'lucide-react';
 export default function PendingPage() {
 
   return (
-    <div className="container max-w-2xl py-16">
+    <div className="mx-auto max-w-2xl px-6 py-16">
       <Card className="border-yellow-200 shadow-lg">
         <CardHeader className="text-center space-y-4">
           <div className="mx-auto w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center">

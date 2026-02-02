@@ -192,6 +192,15 @@ export async function POST(request: NextRequest) {
         data: {
           planId: newPlanId,
           planPrice: newPrice,
+          metadata: {
+            appliedPlanChange: {
+              previousPlanName: subscription.plan.name,
+              previousPlanPrice: currentPrice,
+              newPlanName: newPlan.name,
+              newPlanPrice: newPrice,
+              effectiveDate: subscription.nextBillingDate.toISOString(),
+            },
+          },
         },
         include: {
           plan: {
@@ -241,13 +250,11 @@ export async function POST(request: NextRequest) {
         },
       };
 
-      // Update subscription with scheduled change (don't change plan yet)
+      // Store scheduled change in metadata (applied on next billing)
       const updatedSubscription = await db.subscription.update({
         where: { id: subscription.id },
         data: {
-          // Store scheduled change - will be applied on next billing
-          // We can add a metadata field to Subscription model or handle in webhook
-          // For now, we'll just schedule it to be applied on next webhook payment
+          metadata,
         },
         include: {
           plan: {

@@ -58,6 +58,7 @@ model Subscription {
   currentPeriodEnd   DateTime
   gracePeriodEnd     DateTime?
   cancelledAt        DateTime?
+  metadata           Json?            // Stores scheduled plan changes and other metadata
   createdAt          DateTime         @default(now())
   updatedAt          DateTime         @updatedAt
   payments           Payment[]

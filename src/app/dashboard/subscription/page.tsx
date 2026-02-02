@@ -8,7 +8,7 @@ import { CancelSubscriptionModal } from '@/components/features/subscription/Canc
 import { ChangePlanModal } from '@/components/features/subscription/ChangePlanModal';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, AlertCircle, CheckCircle2, ArrowRight } from 'lucide-react';
+import { Loader2, AlertCircle, CheckCircle2, ArrowRight, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { formatCLP } from '@/lib/utils/format';
@@ -31,6 +31,21 @@ interface Subscription {
   currentPeriodEnd: string;
   gracePeriodEnd: string | null;
   cancelledAt: string | null;
+  metadata: {
+    scheduledPlanChange?: {
+      newPlanId: string;
+      newPlanName: string;
+      newPlanPrice: number;
+      effectiveDate: string;
+    };
+    appliedPlanChange?: {
+      previousPlanName: string;
+      previousPlanPrice: number;
+      newPlanName: string;
+      newPlanPrice: number;
+      effectiveDate: string;
+    };
+  } | null;
   plan: Plan;
   payments: Array<{
     id: string;
@@ -54,7 +69,8 @@ export default function SubscriptionPage() {
   const [showChangePlanModal, setShowChangePlanModal] = useState(false);
   const [selectedNewPlan, setSelectedNewPlan] = useState<Plan | null>(null);
   const [cancelSuccess, setCancelSuccess] = useState(false);
-  const [changePlanSuccess, setChangePlanSuccess] = useState(false);
+  const [changePlanSuccess, setChangePlanSuccess] = useState<string | null>(null);
+  const [isReactivating, setIsReactivating] = useState(false);
 
   useEffect(() => {
     async function fetchData() {
@@ -71,7 +87,32 @@ export default function SubscriptionPage() {
           throw new Error(subData.error || 'Failed to fetch subscription');
         }
 
-        setSubscription(subData.subscription);
+        let currentSubscription = subData.subscription;
+
+        // If subscription is pending, verify status with MercadoPago
+        if (currentSubscription.status === 'pending') {
+          try {
+            const verifyResponse = await fetch('/api/subscriptions/verify-status', {
+              method: 'POST',
+            });
+            if (verifyResponse.ok) {
+              const verifyData = await verifyResponse.json();
+              if (verifyData.subscription?.changed) {
+                // Re-fetch to get updated subscription with all relations
+                const refreshResponse = await fetch('/api/subscriptions/current');
+                if (refreshResponse.ok) {
+                  const refreshData = await refreshResponse.json();
+                  currentSubscription = refreshData.subscription;
+                }
+              }
+            }
+          } catch (verifyErr) {
+            console.error('Error verifying subscription status:', verifyErr);
+            // Non-critical: continue showing current status
+          }
+        }
+
+        setSubscription(currentSubscription);
 
         // Fetch available plans
         const plansResponse = await fetch('/api/subscription-plans');
@@ -154,31 +195,103 @@ export default function SubscriptionPage() {
         throw new Error(data.message || 'Failed to change plan');
       }
 
-      // Update subscription state with new plan
-      if (subscription && data.subscription) {
-        setSubscription({
-          ...subscription,
-          planPrice: data.subscription.planPrice,
-          plan: {
-            ...subscription.plan,
-            id: data.subscription.planId,
-            name: data.subscription.planName,
-            price: data.subscription.planPrice,
-          },
+      // Handle upgrade vs downgrade
+      if (data.upgrade?.appliedImmediately) {
+        // Upgrade: update UI immediately with new plan + metadata banner
+        if (subscription && data.subscription) {
+          setSubscription({
+            ...subscription,
+            planPrice: data.subscription.planPrice,
+            plan: {
+              ...subscription.plan,
+              id: data.subscription.planId,
+              name: data.subscription.planName,
+              price: data.subscription.planPrice,
+            },
+            metadata: {
+              appliedPlanChange: {
+                previousPlanName: subscription.plan.name,
+                previousPlanPrice: subscription.planPrice,
+                newPlanName: data.subscription.planName,
+                newPlanPrice: data.subscription.planPrice,
+                effectiveDate: subscription.nextBillingDate,
+              },
+            },
+          });
+        }
+        setChangePlanSuccess(`Plan mejorado a ${data.subscription.planName} exitosamente.`);
+      } else if (data.downgrade) {
+        // Downgrade: update metadata so the blue banner shows immediately
+        if (subscription) {
+          setSubscription({
+            ...subscription,
+            metadata: {
+              scheduledPlanChange: {
+                newPlanId: data.downgrade.newPlanId || '',
+                newPlanName: data.downgrade.newPlanName,
+                newPlanPrice: data.downgrade.newPlanPrice,
+                effectiveDate: data.downgrade.effectiveDate,
+              },
+            },
+          });
+        }
+        const effectiveDate = new Date(data.downgrade.effectiveDate);
+        const formattedDate = effectiveDate.toLocaleDateString('es-CL', {
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric',
         });
+        setChangePlanSuccess(
+          `Tu cambio al ${data.downgrade.newPlanName} se aplicará el ${formattedDate}, al inicio del próximo ciclo de facturación.`
+        );
+      } else {
+        setChangePlanSuccess('Plan cambiado exitosamente.');
       }
 
-      // Show success message
-      setChangePlanSuccess(true);
       setShowChangePlanModal(false);
 
-      // Hide success message after 5 seconds
+      // Hide success message after 8 seconds (longer for downgrade info)
       setTimeout(() => {
-        setChangePlanSuccess(false);
-      }, 5000);
+        setChangePlanSuccess(null);
+      }, 8000);
     } catch (err) {
       console.error('Error changing plan:', err);
       throw err; // Re-throw to let modal handle the error
+    }
+  };
+
+  const handleReactivateClick = async (planId?: string) => {
+    try {
+      setIsReactivating(true);
+
+      const response = await fetch('/api/subscriptions/reactivate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ newPlanId: planId }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to reactivate subscription');
+      }
+
+      // Redirect to MercadoPago checkout
+      if (data.data?.initPoint) {
+        window.location.href = data.data.initPoint;
+      } else {
+        throw new Error('No checkout URL received from server');
+      }
+    } catch (err) {
+      console.error('Error reactivating subscription:', err);
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'No se pudo reactivar la suscripción. Por favor, intenta nuevamente.'
+      );
+      setIsReactivating(false);
     }
   };
 
@@ -191,9 +304,13 @@ export default function SubscriptionPage() {
   const canChangePlan =
     subscription && (subscription.status === 'active' || subscription.status === 'past_due');
 
+  // Show reactivate section for cancelled/suspended subscriptions
+  const canReactivate =
+    subscription && (subscription.status === 'cancelled' || subscription.status === 'suspended');
+
   if (isLoading) {
     return (
-      <div className="container max-w-4xl py-16">
+      <div className="mx-auto max-w-4xl px-6 py-16">
         <div className="flex items-center justify-center py-16">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
@@ -203,7 +320,7 @@ export default function SubscriptionPage() {
 
   if (error === 'no_subscription') {
     return (
-      <div className="container max-w-4xl py-16">
+      <div className="mx-auto max-w-4xl px-6 py-16">
         <Alert>
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
@@ -228,7 +345,7 @@ export default function SubscriptionPage() {
 
   if (error) {
     return (
-      <div className="container max-w-4xl py-16">
+      <div className="mx-auto max-w-4xl px-6 py-16">
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>{error}</AlertDescription>
@@ -247,7 +364,7 @@ export default function SubscriptionPage() {
   }
 
   return (
-    <div className="container max-w-4xl py-8">
+    <div className="mx-auto max-w-4xl px-6 py-8">
       <div className="space-y-6">
         {/* Page Header */}
         <div>
@@ -272,76 +389,199 @@ export default function SubscriptionPage() {
           <Alert className="border-green-200 bg-green-50 dark:bg-green-950">
             <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
             <AlertDescription className="text-green-900 dark:text-green-100">
-              Plan cambiado exitosamente.
+              {changePlanSuccess}
             </AlertDescription>
           </Alert>
         )}
 
-        {/* Subscription Details */}
-        <SubscriptionDetails
-          subscription={subscription}
-          onCancelClick={handleCancelClick}
-        />
-
-        {/* Change Plan Section */}
-        {canChangePlan && otherPlans.length > 0 && (
-          <Card>
+        {/* Reactivate Subscription Section - for cancelled/suspended */}
+        {canReactivate ? (
+          <Card className="border-2 border-primary">
             <CardHeader>
-              <CardTitle>Cambiar Plan</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <RefreshCw className="h-5 w-5" />
+                Reactivar Suscripción
+              </CardTitle>
               <CardDescription>
-                Cambia a un plan diferente según tus necesidades
+                {subscription.status === 'cancelled'
+                  ? 'Tu suscripción fue cancelada. Puedes reactivarla en cualquier momento.'
+                  : 'Tu suscripción está suspendida. Reactívala para continuar disfrutando de nuestros servicios.'}
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="grid gap-4 md:grid-cols-2">
-                {otherPlans.map((plan) => {
-                  const isUpgrade = plan.price > subscription.planPrice;
-                  return (
-                    <div
-                      key={plan.id}
-                      className="p-4 border rounded-lg hover:border-primary transition-colors"
-                    >
-                      <div className="space-y-3">
-                        <div>
-                          <h3 className="font-semibold text-lg">{plan.name}</h3>
-                          <p className="text-sm text-muted-foreground">{plan.description}</p>
-                        </div>
-                        <div className="flex items-baseline gap-1">
-                          <span className="text-2xl font-bold">{formatCLP(plan.price)}</span>
-                          <span className="text-muted-foreground">/mes</span>
-                        </div>
-                        <ul className="space-y-1 text-sm">
-                          {plan.features.slice(0, 3).map((feature, idx) => (
-                            <li key={idx} className="flex items-start gap-2">
-                              <span className="text-primary">✓</span>
-                              <span>{feature}</span>
-                            </li>
-                          ))}
-                          {plan.features.length > 3 && (
-                            <li className="text-muted-foreground">
-                              +{plan.features.length - 3} más...
-                            </li>
-                          )}
-                        </ul>
-                        <Button
-                          onClick={() => handleChangePlanClick(plan)}
-                          variant={isUpgrade ? 'default' : 'outline'}
-                          className="w-full"
-                        >
-                          {isUpgrade ? 'Mejorar' : 'Cambiar'}
-                          <ArrowRight className="ml-2 h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  );
-                })}
+            <CardContent className="space-y-6">
+              {/* Current Plan Info */}
+              <div className="p-4 border rounded-lg bg-muted/50">
+                <p className="text-sm font-medium text-muted-foreground mb-2">
+                  Plan Anterior
+                </p>
+                <div className="space-y-1">
+                  <p className="text-lg font-semibold">{subscription.plan.name}</p>
+                  <p className="text-2xl font-bold">{formatCLP(subscription.planPrice)}/mes</p>
+                </div>
               </div>
+
+              {/* Reactivate with Same Plan */}
+              <div className="space-y-3">
+                <Button
+                  onClick={() => handleReactivateClick()}
+                  disabled={isReactivating}
+                  size="lg"
+                  className="w-full"
+                >
+                  {isReactivating ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Procesando...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="mr-2 h-4 w-4" />
+                      Reactivar con {subscription.plan.name}
+                    </>
+                  )}
+                </Button>
+                <p className="text-sm text-center text-muted-foreground">
+                  o elige un plan diferente
+                </p>
+              </div>
+
+              {/* Other Plans for Reactivation */}
+              {availablePlans.length > 0 && (
+                <div className="space-y-4">
+                  <h3 className="font-semibold">Otros Planes Disponibles</h3>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    {availablePlans
+                      .filter((plan) => plan.id !== subscription.plan.id)
+                      .map((plan) => (
+                        <div
+                          key={plan.id}
+                          className="p-4 border rounded-lg hover:border-primary transition-colors"
+                        >
+                          <div className="space-y-3">
+                            <div>
+                              <h4 className="font-semibold text-lg">{plan.name}</h4>
+                              <p className="text-sm text-muted-foreground">
+                                {plan.description}
+                              </p>
+                            </div>
+                            <div className="flex items-baseline gap-1">
+                              <span className="text-2xl font-bold">
+                                {formatCLP(plan.price)}
+                              </span>
+                              <span className="text-muted-foreground">/mes</span>
+                            </div>
+                            <ul className="space-y-1 text-sm">
+                              {plan.features.slice(0, 3).map((feature, idx) => (
+                                <li key={idx} className="flex items-start gap-2">
+                                  <span className="text-primary">✓</span>
+                                  <span>{feature}</span>
+                                </li>
+                              ))}
+                              {plan.features.length > 3 && (
+                                <li className="text-muted-foreground">
+                                  +{plan.features.length - 3} más...
+                                </li>
+                              )}
+                            </ul>
+                            <Button
+                              onClick={() => handleReactivateClick(plan.id)}
+                              disabled={isReactivating}
+                              variant="outline"
+                              className="w-full"
+                            >
+                              Reactivar con este plan
+                              <ArrowRight className="ml-2 h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Info Alert */}
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  Al reactivar, serás redirigido a MercadoPago para completar el pago. Tu
+                  suscripción se activará una vez confirmado el pago.
+                </AlertDescription>
+              </Alert>
             </CardContent>
           </Card>
-        )}
+        ) : (
+          <>
+            {/* Subscription Details - for active/past_due */}
+            <SubscriptionDetails
+              subscription={subscription}
+              onCancelClick={handleCancelClick}
+            />
 
-        {/* Payment History */}
-        <PaymentHistory payments={subscription.payments} />
+            {/* Change Plan Section */}
+            {canChangePlan && otherPlans.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Cambiar Plan</CardTitle>
+                  <CardDescription>
+                    Cambia a un plan diferente según tus necesidades
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    {otherPlans.map((plan) => {
+                      const isUpgrade = plan.price > subscription.planPrice;
+                      return (
+                        <div
+                          key={plan.id}
+                          className="p-4 border rounded-lg hover:border-primary transition-colors"
+                        >
+                          <div className="space-y-3">
+                            <div>
+                              <h3 className="font-semibold text-lg">{plan.name}</h3>
+                              <p className="text-sm text-muted-foreground">
+                                {plan.description}
+                              </p>
+                            </div>
+                            <div className="flex items-baseline gap-1">
+                              <span className="text-2xl font-bold">
+                                {formatCLP(plan.price)}
+                              </span>
+                              <span className="text-muted-foreground">/mes</span>
+                            </div>
+                            <ul className="space-y-1 text-sm">
+                              {plan.features.slice(0, 3).map((feature, idx) => (
+                                <li key={idx} className="flex items-start gap-2">
+                                  <span className="text-primary">✓</span>
+                                  <span>{feature}</span>
+                                </li>
+                              ))}
+                              {plan.features.length > 3 && (
+                                <li className="text-muted-foreground">
+                                  +{plan.features.length - 3} más...
+                                </li>
+                              )}
+                            </ul>
+                            <Button
+                              onClick={() => handleChangePlanClick(plan)}
+                              variant={isUpgrade ? 'default' : 'outline'}
+                              className="w-full"
+                            >
+                              {isUpgrade ? 'Mejorar' : 'Cambiar'}
+                              <ArrowRight className="ml-2 h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Payment History */}
+            <PaymentHistory payments={subscription.payments} />
+          </>
+        )}
 
         {/* Cancel Subscription Modal */}
         <CancelSubscriptionModal

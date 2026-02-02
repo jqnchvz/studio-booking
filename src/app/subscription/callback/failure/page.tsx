@@ -6,7 +6,7 @@ import { XCircle, AlertCircle } from 'lucide-react';
 export default function FailurePage() {
 
   return (
-    <div className="container max-w-2xl py-16">
+    <div className="mx-auto max-w-2xl px-6 py-16">
       <Card className="border-red-200 shadow-lg">
         <CardHeader className="text-center space-y-4">
           <div className="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
