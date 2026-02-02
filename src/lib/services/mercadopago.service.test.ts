@@ -69,7 +69,6 @@ describe('MercadoPago Service', () => {
         accessToken: 'TEST-mock-access-token',
         options: {
           timeout: 5000,
-          idempotencyKey: 'studio-booking',
         },
       });
     });
