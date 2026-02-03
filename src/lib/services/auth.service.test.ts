@@ -5,6 +5,7 @@ import {
   generateVerificationToken,
   verifyToken,
   validateCredentials,
+  createUser,
 } from './auth.service';
 import { db } from '@/lib/db';
 
@@ -15,6 +16,7 @@ vi.mock('@/lib/db', () => ({
       findUnique: vi.fn(),
       create: vi.fn(),
       update: vi.fn(),
+      count: vi.fn(),
     },
   },
 }));
@@ -280,6 +282,82 @@ describe('Auth Service', () => {
       // Both should have the same generic error message
       expect(error1?.message).toBe('Invalid credentials');
       expect(error2?.message).toBe('Invalid credentials');
+    });
+  });
+
+  describe('createUser', () => {
+    const registerData = {
+      email: 'new@example.com',
+      password: 'NewPassword123!',
+      name: 'New User',
+    };
+
+    const createdUser = {
+      id: 'new-user-1',
+      email: 'new@example.com',
+      name: 'New User',
+      passwordHash: 'hashed',
+      emailVerified: false,
+      isAdmin: false,
+      createdAt: new Date('2024-01-01'),
+      updatedAt: new Date('2024-01-01'),
+      verificationToken: null,
+      verificationTokenExpiry: null,
+      resetToken: null,
+      resetTokenExpiry: null,
+    };
+
+    it('should set isAdmin to true for the first user', async () => {
+      vi.mocked(db.user.findUnique).mockResolvedValueOnce(null);
+      vi.mocked(db.user.count).mockResolvedValueOnce(0);
+      vi.mocked(db.user.create).mockResolvedValueOnce({
+        ...createdUser,
+        isAdmin: true,
+      });
+      vi.mocked(db.user.update).mockResolvedValueOnce(createdUser as never);
+
+      await createUser(registerData);
+
+      expect(db.user.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({ isAdmin: true }),
+      });
+    });
+
+    it('should set isAdmin to false for subsequent users', async () => {
+      vi.mocked(db.user.findUnique).mockResolvedValueOnce(null);
+      vi.mocked(db.user.count).mockResolvedValueOnce(5);
+      vi.mocked(db.user.create).mockResolvedValueOnce(createdUser);
+      vi.mocked(db.user.update).mockResolvedValueOnce(createdUser as never);
+
+      await createUser(registerData);
+
+      expect(db.user.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({ isAdmin: false }),
+      });
+    });
+
+    it('should throw error if user with email already exists', async () => {
+      vi.mocked(db.user.findUnique).mockResolvedValueOnce(createdUser);
+
+      await expect(createUser(registerData)).rejects.toThrow(
+        'User with this email already exists'
+      );
+      expect(db.user.create).not.toHaveBeenCalled();
+    });
+
+    it('should return user data without passwordHash', async () => {
+      vi.mocked(db.user.findUnique).mockResolvedValueOnce(null);
+      vi.mocked(db.user.count).mockResolvedValueOnce(1);
+      vi.mocked(db.user.create).mockResolvedValueOnce(createdUser);
+      vi.mocked(db.user.update).mockResolvedValueOnce(createdUser as never);
+
+      const result = await createUser(registerData);
+
+      expect(result).toHaveProperty('id');
+      expect(result).toHaveProperty('email');
+      expect(result).toHaveProperty('name');
+      expect(result).toHaveProperty('verificationToken');
+      expect(result).not.toHaveProperty('passwordHash');
     });
   });
 });

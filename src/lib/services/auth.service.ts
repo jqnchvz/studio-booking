@@ -136,6 +136,10 @@ export async function createUser(data: RegisterInput) {
   // Hash the password
   const passwordHash = await hashPassword(password);
 
+  // First user to register becomes admin
+  const userCount = await db.user.count();
+  const isAdmin = userCount === 0;
+
   // Create the user
   const user = await db.user.create({
     data: {
@@ -143,6 +147,7 @@ export async function createUser(data: RegisterInput) {
       name,
       passwordHash,
       emailVerified: false,
+      isAdmin,
     },
   });
 
