@@ -1,11 +1,23 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { handlePaymentUpdated } from './webhook-handlers.service';
+import {
+  handlePaymentUpdated,
+  isEventProcessed,
+  storeWebhookEvent,
+  markEventAsProcessed,
+  handlePaymentCreated,
+  handleSubscriptionCreated,
+  handleSubscriptionUpdated,
+  handleWebhookEvent,
+} from './webhook-handlers.service';
 
 // Mock the database
 const mockFindUnique = vi.fn();
 const mockFindMany = vi.fn();
 const mockCreate = vi.fn();
 const mockUpdate = vi.fn();
+const mockWebhookFindUnique = vi.fn();
+const mockWebhookCreate = vi.fn();
+const mockWebhookUpdate = vi.fn();
 
 vi.mock('@/lib/db', () => ({
   db: {
@@ -18,6 +30,11 @@ vi.mock('@/lib/db', () => ({
       findMany: (...args: unknown[]) => mockFindMany(...args),
       create: (...args: unknown[]) => mockCreate(...args),
       update: vi.fn(),
+    },
+    webhookEvent: {
+      findUnique: (...args: unknown[]) => mockWebhookFindUnique(...args),
+      create: (...args: unknown[]) => mockWebhookCreate(...args),
+      update: (...args: unknown[]) => mockWebhookUpdate(...args),
     },
   },
 }));
@@ -209,6 +226,162 @@ describe('handlePaymentUpdated - Grace Period Logic', () => {
           }),
         })
       );
+    });
+  });
+});
+
+describe('isEventProcessed', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('should return true if event is already processed', async () => {
+    mockWebhookFindUnique.mockResolvedValueOnce({
+      eventId: 'evt-1',
+      processed: true,
+    });
+
+    const result = await isEventProcessed('evt-1');
+
+    expect(result).toBe(true);
+    expect(mockWebhookFindUnique).toHaveBeenCalledWith({
+      where: { eventId: 'evt-1' },
+    });
+  });
+
+  it('should return false if event does not exist', async () => {
+    mockWebhookFindUnique.mockResolvedValueOnce(null);
+
+    const result = await isEventProcessed('evt-unknown');
+
+    expect(result).toBe(false);
+  });
+
+  it('should return false if event exists but is not processed', async () => {
+    mockWebhookFindUnique.mockResolvedValueOnce({
+      eventId: 'evt-1',
+      processed: false,
+    });
+
+    const result = await isEventProcessed('evt-1');
+
+    expect(result).toBe(false);
+  });
+});
+
+describe('storeWebhookEvent', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('should create a webhook event record', async () => {
+    const mockRecord = { id: 'wh-1', eventId: 'evt-1', processed: false };
+    mockWebhookCreate.mockResolvedValueOnce(mockRecord);
+
+    const result = await storeWebhookEvent('evt-1', 'payment.updated', {
+      data: { id: '123' },
+    });
+
+    expect(result).toEqual(mockRecord);
+    expect(mockWebhookCreate).toHaveBeenCalledWith({
+      data: {
+        eventId: 'evt-1',
+        eventType: 'payment.updated',
+        data: { data: { id: '123' } },
+        processed: false,
+      },
+    });
+  });
+});
+
+describe('markEventAsProcessed', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('should update the event as processed', async () => {
+    mockWebhookUpdate.mockResolvedValueOnce({});
+
+    await markEventAsProcessed('evt-1');
+
+    expect(mockWebhookUpdate).toHaveBeenCalledWith({
+      where: { eventId: 'evt-1' },
+      data: { processed: true },
+    });
+  });
+});
+
+describe('handlePaymentCreated', () => {
+  it('should log payment creation (placeholder)', async () => {
+    await expect(handlePaymentCreated('pay-123')).resolves.toBeUndefined();
+  });
+});
+
+describe('handleSubscriptionCreated', () => {
+  it('should log subscription creation (placeholder)', async () => {
+    await expect(
+      handleSubscriptionCreated('sub-123')
+    ).resolves.toBeUndefined();
+  });
+});
+
+describe('handleSubscriptionUpdated', () => {
+  it('should log subscription update (placeholder)', async () => {
+    await expect(
+      handleSubscriptionUpdated('sub-123')
+    ).resolves.toBeUndefined();
+  });
+});
+
+describe('handleWebhookEvent', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('should skip already processed events', async () => {
+    mockWebhookFindUnique.mockResolvedValueOnce({
+      eventId: '100',
+      processed: true,
+    });
+
+    await handleWebhookEvent({
+      id: 100,
+      action: 'updated',
+      api_version: 'v1',
+      data: { id: '12345' },
+      date_created: '2026-02-04T12:00:00Z',
+      live_mode: false,
+      type: 'payment',
+      user_id: 'mp-user-1',
+    });
+
+    // Should not store or process
+    expect(mockWebhookCreate).not.toHaveBeenCalled();
+  });
+
+  it('should process and mark a new event', async () => {
+    // Not processed yet
+    mockWebhookFindUnique.mockResolvedValueOnce(null);
+    mockWebhookCreate.mockResolvedValueOnce({ id: 'wh-1' });
+    mockWebhookUpdate.mockResolvedValueOnce({});
+
+    await handleWebhookEvent({
+      id: 200,
+      action: 'created',
+      api_version: 'v1',
+      data: { id: '99999' },
+      date_created: '2026-02-04T12:00:00Z',
+      live_mode: false,
+      type: 'payment',
+      user_id: 'mp-user-1',
+    });
+
+    // Should store the event
+    expect(mockWebhookCreate).toHaveBeenCalled();
+    // Should mark as processed
+    expect(mockWebhookUpdate).toHaveBeenCalledWith({
+      where: { eventId: '200' },
+      data: { processed: true },
     });
   });
 });
