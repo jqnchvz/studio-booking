@@ -197,93 +197,118 @@ export async function handlePaymentUpdated(paymentId: string): Promise<void> {
     } else if (payment.status === 'rejected') {
       console.log(`❌ Payment rejected - handling failure`);
 
-      // Create or update payment record with rejected status
-      const existingPayment = await db.payment.findUnique({
-        where: { mercadopagoId: payment.id!.toString() },
-      });
-
-      const paymentAmount = Math.round(payment.transaction_amount || 0);
-
-      if (existingPayment) {
-        // Update existing payment
-        await db.payment.update({
-          where: { id: existingPayment.id },
-          data: {
-            status: 'rejected',
-            metadata: payment as object,
-          },
+      // Use transaction to prevent race conditions when counting consecutive failures
+      // This ensures atomicity: insert payment → count failures → update subscription
+      await db.$transaction(async (tx) => {
+        // Create or update payment record with rejected status
+        const existingPayment = await tx.payment.findUnique({
+          where: { mercadopagoId: payment.id!.toString() },
         });
-        console.log(`   Updated existing payment record to rejected: ${existingPayment.id}`);
-      } else {
-        // Create new payment record
-        await db.payment.create({
-          data: {
-            userId,
-            subscriptionId: subscription.id,
-            mercadopagoId: payment.id!.toString(),
-            amount: paymentAmount,
-            penaltyFee: 0,
-            totalAmount: paymentAmount,
-            status: 'rejected',
-            dueDate: new Date(),
-            metadata: payment as object,
-          },
-        });
-        console.log(`   Created rejected payment record`);
-      }
 
-      // Count consecutive failed payments for this subscription
-      // Query recent payments to find consecutive failures from most recent
-      const recentPayments = await db.payment.findMany({
-        where: { subscriptionId: subscription.id },
-        orderBy: { createdAt: 'desc' },
-        take: 10, // Check last 10 payments
-      });
+        const paymentAmount = Math.round(payment.transaction_amount || 0);
 
-      let consecutiveFailures = 0;
-      for (const recentPayment of recentPayments) {
-        if (recentPayment.status === 'rejected') {
-          consecutiveFailures++;
-        } else if (recentPayment.status === 'approved') {
-          break; // Stop at first successful payment
+        if (existingPayment) {
+          // Update existing payment
+          await tx.payment.update({
+            where: { id: existingPayment.id },
+            data: {
+              status: 'rejected',
+              metadata: payment as object,
+            },
+          });
+          console.log(`   Updated existing payment record to rejected: ${existingPayment.id}`);
+        } else {
+          // Create new payment record
+          await tx.payment.create({
+            data: {
+              userId,
+              subscriptionId: subscription.id,
+              mercadopagoId: payment.id!.toString(),
+              amount: paymentAmount,
+              penaltyFee: 0,
+              totalAmount: paymentAmount,
+              status: 'rejected',
+              dueDate: new Date(),
+              metadata: payment as object,
+            },
+          });
+          console.log(`   Created rejected payment record`);
         }
-        // Skip other statuses (pending, etc.) without breaking
-      }
 
-      console.log(`   Consecutive failed payments: ${consecutiveFailures}`);
+        // Count consecutive failed payments for this subscription
+        // Query recent payments to find consecutive failures from most recent
+        const recentPayments = await tx.payment.findMany({
+          where: { subscriptionId: subscription.id },
+          orderBy: { createdAt: 'desc' },
+          take: 10, // Check last 10 payments
+        });
 
-      // Handle subscription status based on consecutive failure count
-      if (consecutiveFailures >= 3) {
-        // 3rd+ consecutive failure: suspend subscription
-        await db.subscription.update({
+        let consecutiveFailures = 0;
+        for (const recentPayment of recentPayments) {
+          if (recentPayment.status === 'rejected') {
+            consecutiveFailures++;
+          } else if (recentPayment.status === 'approved') {
+            break; // Stop at first successful payment
+          }
+          // Skip other statuses (pending, etc.) without breaking
+        }
+
+        console.log(`   Consecutive failed payments: ${consecutiveFailures}`);
+
+        // Re-fetch subscription status inside transaction to prevent TOCTOU race
+        // The grace period worker may have suspended the subscription while we were processing
+        const currentSubscription = await tx.subscription.findUnique({
           where: { id: subscription.id },
-          data: {
-            status: 'suspended',
-          },
+          select: { status: true },
         });
-        console.log(`⛔ Subscription suspended after ${consecutiveFailures} consecutive failures`);
-        console.log(`📧 TODO: Send suspension notification to ${subscription.user.email}`);
-      } else if (consecutiveFailures === 2) {
-        // 2nd consecutive failure: set to past_due, urgent retry
-        await db.subscription.update({
-          where: { id: subscription.id },
-          data: {
-            status: 'past_due',
-          },
-        });
-        console.log(`⚠️  Subscription past_due (${consecutiveFailures} consecutive failures) - urgent retry needed`);
-        console.log(`📧 TODO: Send urgent retry notification to ${subscription.user.email}`);
-      } else if (consecutiveFailures === 1) {
-        // 1st consecutive failure: set to past_due
-        await db.subscription.update({
-          where: { id: subscription.id },
-          data: {
-            status: 'past_due',
-          },
-        });
-        console.log(`⚠️  Subscription past_due (${consecutiveFailures} consecutive failure) - retry notification needed`);
-        console.log(`📧 TODO: Send retry notification to ${subscription.user.email}`);
-      }
+
+        // Don't overwrite if already suspended (by worker or previous webhook)
+        if (currentSubscription?.status === 'suspended') {
+          console.log(`⚠️  Subscription already suspended, skipping status update`);
+          return;
+        }
+
+        // Handle subscription status based on consecutive failure count
+        if (consecutiveFailures >= 3) {
+          // 3rd+ consecutive failure: suspend subscription immediately
+          await tx.subscription.update({
+            where: { id: subscription.id },
+            data: {
+              status: 'suspended',
+              gracePeriodEnd: null,
+            },
+          });
+          console.log(`⛔ Subscription suspended after ${consecutiveFailures} consecutive failures`);
+          console.log(`📧 TODO: Send suspension notification to ${subscription.user.email}`);
+        } else if (consecutiveFailures === 2) {
+          // 2nd consecutive failure: keep past_due, do NOT extend grace period
+          await tx.subscription.update({
+            where: { id: subscription.id },
+            data: {
+              status: 'past_due',
+              // gracePeriodEnd intentionally NOT updated — don't extend the grace period
+            },
+          });
+          console.log(`⚠️  Subscription past_due (${consecutiveFailures} consecutive failures) - urgent retry needed`);
+          console.log(`   Grace period not extended (set on first failure only)`);
+          console.log(`📧 TODO: Send urgent retry notification to ${subscription.user.email}`);
+        } else if (consecutiveFailures === 1) {
+          // 1st consecutive failure: set to past_due with 3-day grace period
+          const gracePeriodEnd = new Date();
+          gracePeriodEnd.setDate(gracePeriodEnd.getDate() + 3);
+
+          await tx.subscription.update({
+            where: { id: subscription.id },
+            data: {
+              status: 'past_due',
+              gracePeriodEnd,
+            },
+          });
+          console.log(`⚠️  Subscription past_due (${consecutiveFailures} consecutive failure)`);
+          console.log(`   Grace period set until: ${gracePeriodEnd.toISOString()}`);
+          console.log(`📧 TODO: Send payment failed notification to ${subscription.user.email} (3 days to retry)`);
+        }
+      });
     } else {
       console.log(`⏳ Payment status: ${payment.status} - no action taken`);
     }

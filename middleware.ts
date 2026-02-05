@@ -44,20 +44,34 @@ export async function middleware(request: NextRequest) {
     try {
       const subscription = await db.subscription.findUnique({
         where: { userId: payload.userId },
-        select: { status: true },
+        select: { status: true, gracePeriodEnd: true },
       });
 
+      // Block if user has no subscription at all
+      if (!subscription) {
+        const subscribeUrl = new URL('/dashboard/subscribe', request.url);
+        return NextResponse.redirect(subscribeUrl);
+      }
+
       // Block access if subscription is suspended
-      if (subscription && subscription.status === 'suspended') {
+      if (subscription.status === 'suspended') {
         const paymentRequiredUrl = new URL('/dashboard/subscription', request.url);
         paymentRequiredUrl.searchParams.set('reason', 'suspended');
         return NextResponse.redirect(paymentRequiredUrl);
       }
 
-      // Also block if user has no subscription at all
-      if (!subscription) {
-        const subscribeUrl = new URL('/dashboard/subscribe', request.url);
-        return NextResponse.redirect(subscribeUrl);
+      // Check grace period for past_due subscriptions
+      if (subscription.status === 'past_due') {
+        const now = new Date();
+        const graceExpired =
+          !subscription.gracePeriodEnd || subscription.gracePeriodEnd <= now;
+
+        if (graceExpired) {
+          const paymentRequiredUrl = new URL('/dashboard/subscription', request.url);
+          paymentRequiredUrl.searchParams.set('reason', 'grace_expired');
+          return NextResponse.redirect(paymentRequiredUrl);
+        }
+        // Grace period still active — allow access
       }
     } catch (error) {
       console.error('Error checking subscription status in middleware:', error);
