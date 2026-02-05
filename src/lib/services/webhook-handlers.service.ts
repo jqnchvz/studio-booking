@@ -254,35 +254,43 @@ export async function handlePaymentUpdated(paymentId: string): Promise<void> {
 
       // Handle subscription status based on consecutive failure count
       if (consecutiveFailures >= 3) {
-        // 3rd+ consecutive failure: suspend subscription
+        // 3rd+ consecutive failure: suspend subscription immediately
         await db.subscription.update({
           where: { id: subscription.id },
           data: {
             status: 'suspended',
+            gracePeriodEnd: null,
           },
         });
         console.log(`⛔ Subscription suspended after ${consecutiveFailures} consecutive failures`);
         console.log(`📧 TODO: Send suspension notification to ${subscription.user.email}`);
       } else if (consecutiveFailures === 2) {
-        // 2nd consecutive failure: set to past_due, urgent retry
+        // 2nd consecutive failure: keep past_due, do NOT extend grace period
         await db.subscription.update({
           where: { id: subscription.id },
           data: {
             status: 'past_due',
+            // gracePeriodEnd intentionally NOT updated — don't extend the grace period
           },
         });
         console.log(`⚠️  Subscription past_due (${consecutiveFailures} consecutive failures) - urgent retry needed`);
+        console.log(`   Grace period not extended (set on first failure only)`);
         console.log(`📧 TODO: Send urgent retry notification to ${subscription.user.email}`);
       } else if (consecutiveFailures === 1) {
-        // 1st consecutive failure: set to past_due
+        // 1st consecutive failure: set to past_due with 3-day grace period
+        const gracePeriodEnd = new Date();
+        gracePeriodEnd.setDate(gracePeriodEnd.getDate() + 3);
+
         await db.subscription.update({
           where: { id: subscription.id },
           data: {
             status: 'past_due',
+            gracePeriodEnd,
           },
         });
-        console.log(`⚠️  Subscription past_due (${consecutiveFailures} consecutive failure) - retry notification needed`);
-        console.log(`📧 TODO: Send retry notification to ${subscription.user.email}`);
+        console.log(`⚠️  Subscription past_due (${consecutiveFailures} consecutive failure)`);
+        console.log(`   Grace period set until: ${gracePeriodEnd.toISOString()}`);
+        console.log(`📧 TODO: Send payment failed notification to ${subscription.user.email} (3 days to retry)`);
       }
     } else {
       console.log(`⏳ Payment status: ${payment.status} - no action taken`);
