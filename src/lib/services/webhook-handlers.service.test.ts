@@ -15,9 +15,24 @@ const mockFindUnique = vi.fn();
 const mockFindMany = vi.fn();
 const mockCreate = vi.fn();
 const mockUpdate = vi.fn();
+const mockPaymentFindUnique = vi.fn();
 const mockWebhookFindUnique = vi.fn();
 const mockWebhookCreate = vi.fn();
 const mockWebhookUpdate = vi.fn();
+
+// Transaction client mirrors the main db client
+const txClient = {
+  subscription: {
+    findUnique: (...args: unknown[]) => mockFindUnique(...args),
+    update: (...args: unknown[]) => mockUpdate(...args),
+  },
+  payment: {
+    findUnique: (...args: unknown[]) => mockPaymentFindUnique(...args),
+    findMany: (...args: unknown[]) => mockFindMany(...args),
+    create: (...args: unknown[]) => mockCreate(...args),
+    update: vi.fn(),
+  },
+};
 
 vi.mock('@/lib/db', () => ({
   db: {
@@ -26,7 +41,7 @@ vi.mock('@/lib/db', () => ({
       update: (...args: unknown[]) => mockUpdate(...args),
     },
     payment: {
-      findUnique: vi.fn().mockResolvedValue(null), // No existing payment by default
+      findUnique: (...args: unknown[]) => mockPaymentFindUnique(...args),
       findMany: (...args: unknown[]) => mockFindMany(...args),
       create: (...args: unknown[]) => mockCreate(...args),
       update: vi.fn(),
@@ -35,6 +50,9 @@ vi.mock('@/lib/db', () => ({
       findUnique: (...args: unknown[]) => mockWebhookFindUnique(...args),
       create: (...args: unknown[]) => mockWebhookCreate(...args),
       update: (...args: unknown[]) => mockWebhookUpdate(...args),
+    },
+    $transaction: async (fn: (tx: typeof txClient) => Promise<unknown>) => {
+      return fn(txClient);
     },
   },
 }));
@@ -114,10 +132,14 @@ describe('handlePaymentUpdated - Grace Period Logic', () => {
       mockFetchPaymentDetails.mockResolvedValueOnce(
         mockMPPayment('rejected')
       );
+      // First call: initial subscription lookup
       mockFindUnique.mockResolvedValueOnce(mockSubscription());
+      mockPaymentFindUnique.mockResolvedValueOnce(null); // No existing payment
       mockCreate.mockResolvedValueOnce({ id: 'pay-new' });
       // 1 rejected payment = 1st consecutive failure
       mockFindMany.mockResolvedValueOnce([mockPaymentRecord('rejected')]);
+      // Second call: re-fetch status inside transaction (not suspended)
+      mockFindUnique.mockResolvedValueOnce({ status: 'active' });
       mockUpdate.mockResolvedValueOnce({});
 
       await handlePaymentUpdated('12345');
@@ -139,18 +161,22 @@ describe('handlePaymentUpdated - Grace Period Logic', () => {
       mockFetchPaymentDetails.mockResolvedValueOnce(
         mockMPPayment('rejected')
       );
+      // First call: initial subscription lookup
       mockFindUnique.mockResolvedValueOnce(
         mockSubscription({
           status: 'past_due',
           gracePeriodEnd: existingGraceEnd,
         })
       );
+      mockPaymentFindUnique.mockResolvedValueOnce(null); // No existing payment
       mockCreate.mockResolvedValueOnce({ id: 'pay-new' });
       // 2 rejected payments = 2nd consecutive failure
       mockFindMany.mockResolvedValueOnce([
         mockPaymentRecord('rejected'),
         mockPaymentRecord('rejected'),
       ]);
+      // Second call: re-fetch status inside transaction (not suspended)
+      mockFindUnique.mockResolvedValueOnce({ status: 'past_due' });
       mockUpdate.mockResolvedValueOnce({});
 
       await handlePaymentUpdated('12345');
@@ -174,12 +200,14 @@ describe('handlePaymentUpdated - Grace Period Logic', () => {
       mockFetchPaymentDetails.mockResolvedValueOnce(
         mockMPPayment('rejected')
       );
+      // First call: initial subscription lookup
       mockFindUnique.mockResolvedValueOnce(
         mockSubscription({
           status: 'past_due',
           gracePeriodEnd: new Date('2026-02-07T12:00:00Z'),
         })
       );
+      mockPaymentFindUnique.mockResolvedValueOnce(null); // No existing payment
       mockCreate.mockResolvedValueOnce({ id: 'pay-new' });
       // 3 rejected payments = 3rd consecutive failure
       mockFindMany.mockResolvedValueOnce([
@@ -187,6 +215,8 @@ describe('handlePaymentUpdated - Grace Period Logic', () => {
         mockPaymentRecord('rejected'),
         mockPaymentRecord('rejected'),
       ]);
+      // Second call: re-fetch status inside transaction (not suspended)
+      mockFindUnique.mockResolvedValueOnce({ status: 'past_due' });
       mockUpdate.mockResolvedValueOnce({});
 
       await handlePaymentUpdated('12345');
@@ -198,6 +228,34 @@ describe('handlePaymentUpdated - Grace Period Logic', () => {
           gracePeriodEnd: null,
         },
       });
+    });
+  });
+
+  describe('already suspended subscription', () => {
+    it('should NOT overwrite suspended status (TOCTOU protection)', async () => {
+      mockFetchPaymentDetails.mockResolvedValueOnce(
+        mockMPPayment('rejected')
+      );
+      // First call: initial subscription lookup (past_due at time of read)
+      mockFindUnique.mockResolvedValueOnce(
+        mockSubscription({
+          status: 'past_due',
+          gracePeriodEnd: new Date('2026-02-07T12:00:00Z'),
+        })
+      );
+      mockPaymentFindUnique.mockResolvedValueOnce(null);
+      mockCreate.mockResolvedValueOnce({ id: 'pay-new' });
+      mockFindMany.mockResolvedValueOnce([
+        mockPaymentRecord('rejected'),
+        mockPaymentRecord('rejected'),
+      ]);
+      // Second call: re-fetch reveals worker already suspended it
+      mockFindUnique.mockResolvedValueOnce({ status: 'suspended' });
+
+      await handlePaymentUpdated('12345');
+
+      // Should NOT call update because subscription is already suspended
+      expect(mockUpdate).not.toHaveBeenCalled();
     });
   });
 
