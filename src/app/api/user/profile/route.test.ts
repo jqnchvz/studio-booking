@@ -12,6 +12,9 @@ vi.mock('@/lib/db', () => ({
       findUnique: vi.fn(),
       update: vi.fn(),
     },
+    emailLog: {
+      create: vi.fn(),
+    },
   },
 }));
 
@@ -21,10 +24,11 @@ vi.mock('@/lib/auth/session', () => ({
 
 vi.mock('@/lib/email/send-email', () => ({
   sendEmail: vi.fn(),
+  sendEmailWithLogging: vi.fn(),
 }));
 
 vi.mock('../../../../../emails/verify-email', () => ({
-  default: vi.fn(() => '<div>Verification Email</div>'),
+  VerifyEmail: vi.fn(() => '<div>Verification Email</div>'),
 }));
 
 describe('GET /api/user/profile', () => {
@@ -242,7 +246,7 @@ describe('PATCH /api/user/profile', () => {
 
     vi.mocked(db.user.update).mockResolvedValue(updatedUser as any);
 
-    vi.mocked(emailModule.sendEmail).mockResolvedValue({
+    vi.mocked(emailModule.sendEmailWithLogging).mockResolvedValue({
       success: true,
       messageId: 'msg-123',
     });
@@ -267,7 +271,7 @@ describe('PATCH /api/user/profile', () => {
     expect(data.user.emailVerified).toBe(false);
     expect(data.emailChanged).toBe(true);
     expect(data.message).toContain('Please verify your new email address');
-    expect(emailModule.sendEmail).toHaveBeenCalled();
+    expect(emailModule.sendEmailWithLogging).toHaveBeenCalled();
     expect(db.user.update).toHaveBeenCalledWith(
       expect.objectContaining({
         where: { id: 'user-123' },
@@ -412,7 +416,7 @@ describe('PATCH /api/user/profile', () => {
       .mockResolvedValueOnce(currentUser as any); // Rollback
 
     // Mock email send failure
-    vi.mocked(emailModule.sendEmail).mockResolvedValue({
+    vi.mocked(emailModule.sendEmailWithLogging).mockResolvedValue({
       success: false,
       error: 'Email service unavailable',
     });
@@ -483,7 +487,7 @@ describe('PATCH /api/user/profile', () => {
       .mockResolvedValueOnce(currentUser as any); // Rollback
 
     // Mock email send exception
-    vi.mocked(emailModule.sendEmail).mockRejectedValue(
+    vi.mocked(emailModule.sendEmailWithLogging).mockRejectedValue(
       new Error('Network error')
     );
 
