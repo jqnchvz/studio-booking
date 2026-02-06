@@ -1,4 +1,6 @@
+import { Button, Heading, Section, Text } from '@react-email/components';
 import * as React from 'react';
+import { EmailLayout, styles } from './components/email-layout';
 
 interface VerifyEmailProps {
   verificationUrl: string;
@@ -7,51 +9,57 @@ interface VerifyEmailProps {
 }
 
 /**
- * Email verification template (placeholder)
- *
- * This is a basic template for email verification emails.
- * Will be enhanced with proper email styling in RES-65.
- *
- * For now, this serves as a reference for the email structure.
+ * Email verification template
+ * Sent when a user registers or changes their email address
  */
-export default function VerifyEmail({
+export function VerifyEmail({
   verificationUrl,
   email,
-  name,
+  name = 'there',
 }: VerifyEmailProps) {
   return (
-    <div>
-      <h1>Verify your email address</h1>
+    <EmailLayout preview="Verifica tu correo electronico para activar tu cuenta">
+      <Heading style={styles.heading}>Verifica tu correo electronico</Heading>
 
-      {name && <p>Hi {name},</p>}
+      <Text style={styles.text}>Hola {name},</Text>
 
-      <p>
-        Thanks for registering! Please verify your email address ({email}) by
-        clicking the link below:
-      </p>
+      <Text style={styles.text}>
+        Gracias por registrarte en Reservapp. Para completar tu registro y
+        activar tu cuenta, por favor verifica tu direccion de correo electronico
+        ({email}).
+      </Text>
 
-      <a href={verificationUrl}>Verify Email Address</a>
+      <Section style={styles.center}>
+        <Button href={verificationUrl} style={styles.button}>
+          Verificar correo electronico
+        </Button>
+      </Section>
 
-      <p>
-        Or copy and paste this URL into your browser:
-        <br />
-        {verificationUrl}
-      </p>
+      <Section style={styles.infoBox}>
+        <Text style={{ ...styles.textSmall, margin: 0 }}>
+          Si el boton no funciona, copia y pega el siguiente enlace en tu
+          navegador:
+        </Text>
+        <Text
+          style={{
+            ...styles.textSmall,
+            margin: '8px 0 0 0',
+            wordBreak: 'break-all',
+          }}
+        >
+          {verificationUrl}
+        </Text>
+      </Section>
 
-      <p>This link will expire in 24 hours.</p>
-
-      <p>
-        If you didn't create an account, you can safely ignore this email.
-      </p>
-
-      <p>
-        Best regards,
-        <br />
-        The Reservapp Team
-      </p>
-    </div>
+      <Text style={styles.textSmall}>
+        Este enlace expirara en 24 horas. Si no creaste una cuenta en Reservapp,
+        puedes ignorar este correo.
+      </Text>
+    </EmailLayout>
   );
 }
+
+export default VerifyEmail;
 
 /**
  * Plain text version of the email
@@ -59,20 +67,23 @@ export default function VerifyEmail({
 export function verifyEmailText({
   verificationUrl,
   email,
-  name,
+  name = 'there',
 }: VerifyEmailProps): string {
   return `
-Verify your email address
+Verifica tu correo electronico
 
-${name ? `Hi ${name},\n\n` : ''}Thanks for registering! Please verify your email address (${email}) by clicking the link below:
+Hola ${name},
 
+Gracias por registrarte en Reservapp. Para completar tu registro y activar tu cuenta, por favor verifica tu direccion de correo electronico (${email}).
+
+Haz clic en el siguiente enlace para verificar:
 ${verificationUrl}
 
-This link will expire in 24 hours.
+Este enlace expirara en 24 horas.
 
-If you didn't create an account, you can safely ignore this email.
+Si no creaste una cuenta en Reservapp, puedes ignorar este correo.
 
-Best regards,
-The Reservapp Team
+Saludos,
+El equipo de Reservapp
   `.trim();
 }
