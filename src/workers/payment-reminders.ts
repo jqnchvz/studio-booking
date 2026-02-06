@@ -36,11 +36,13 @@ async function hasReminderBeenSent(
   const today = getStartOfDay(new Date());
   const todayEnd = getEndOfDay(new Date());
 
-  // Check if we already sent a reminder for this due date and day count today
+  // Check if we already successfully sent a reminder for this due date and day count today
+  // Only check for 'sent' status - failed emails should be retried
   const existingReminder = await db.emailLog.findFirst({
     where: {
       userId,
       type: 'payment_reminder',
+      status: 'sent',
       createdAt: {
         gte: today,
         lte: todayEnd,
@@ -57,6 +59,7 @@ async function hasReminderBeenSent(
 
 /**
  * Send payment reminder for a subscription
+ * @returns true if email was sent successfully, false otherwise
  */
 async function sendPaymentReminder(
   subscription: {
@@ -68,7 +71,7 @@ async function sendPaymentReminder(
     plan: { name: string };
   },
   daysUntilDue: number
-): Promise<void> {
+): Promise<boolean> {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
   const paymentUrl = `${appUrl}/subscription/pay`;
 
@@ -76,7 +79,7 @@ async function sendPaymentReminder(
     `  📧 Sending ${daysUntilDue}-day reminder to ${subscription.user.email}`
   );
 
-  await sendEmailWithLogging({
+  const result = await sendEmailWithLogging({
     userId: subscription.user.id,
     type: 'payment_reminder',
     to: subscription.user.email,
@@ -100,6 +103,8 @@ async function sendPaymentReminder(
       dueDate: subscription.nextBillingDate.toISOString(),
     },
   });
+
+  return result.success;
 }
 
 /**
@@ -178,8 +183,14 @@ export async function checkPaymentReminders(): Promise<{
       }
 
       try {
-        await sendPaymentReminder(subscription, daysUntilDue);
-        sent++;
+        const success = await sendPaymentReminder(subscription, daysUntilDue);
+        if (success) {
+          sent++;
+        } else {
+          console.error(
+            `  ❌ Failed to send reminder to ${subscription.user.email}`
+          );
+        }
       } catch (error) {
         console.error(
           `  ❌ Failed to send reminder to ${subscription.user.email}:`,

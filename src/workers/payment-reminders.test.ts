@@ -61,7 +61,7 @@ describe('checkPaymentReminders', () => {
 
     // Return subscription only for 7-day check, empty for others
     vi.mocked(db.subscription.findMany)
-      .mockResolvedValueOnce([mockSubscription]) // 7-day check
+      .mockResolvedValueOnce([mockSubscription] as any) // 7-day check
       .mockResolvedValueOnce([]) // 3-day check
       .mockResolvedValueOnce([]); // 1-day check
     vi.mocked(db.emailLog.findFirst).mockResolvedValue(null); // No existing reminder
@@ -108,7 +108,7 @@ describe('checkPaymentReminders', () => {
     // Return nothing for 7-day check, one subscription for 3-day check
     vi.mocked(db.subscription.findMany)
       .mockResolvedValueOnce([]) // 7-day check
-      .mockResolvedValueOnce([mockSubscription]) // 3-day check
+      .mockResolvedValueOnce([mockSubscription] as any) // 3-day check
       .mockResolvedValueOnce([]); // 1-day check
 
     vi.mocked(db.emailLog.findFirst).mockResolvedValue(null);
@@ -150,7 +150,7 @@ describe('checkPaymentReminders', () => {
     vi.mocked(db.subscription.findMany)
       .mockResolvedValueOnce([]) // 7-day check
       .mockResolvedValueOnce([]) // 3-day check
-      .mockResolvedValueOnce([mockSubscription]); // 1-day check
+      .mockResolvedValueOnce([mockSubscription] as any); // 1-day check
 
     vi.mocked(db.emailLog.findFirst).mockResolvedValue(null);
     vi.mocked(emailModule.sendEmailWithLogging).mockResolvedValue({
@@ -190,7 +190,7 @@ describe('checkPaymentReminders', () => {
 
     // Return subscription only for 7-day check, empty for others
     vi.mocked(db.subscription.findMany)
-      .mockResolvedValueOnce([mockSubscription]) // 7-day check
+      .mockResolvedValueOnce([mockSubscription] as any) // 7-day check
       .mockResolvedValueOnce([]) // 3-day check
       .mockResolvedValueOnce([]); // 1-day check
     // Existing reminder found
@@ -284,7 +284,7 @@ describe('checkPaymentReminders', () => {
     ];
 
     vi.mocked(db.subscription.findMany)
-      .mockResolvedValueOnce(mockSubscriptions) // 7-day check
+      .mockResolvedValueOnce(mockSubscriptions as any) // 7-day check
       .mockResolvedValueOnce([]) // 3-day check
       .mockResolvedValueOnce([]); // 1-day check
 
@@ -329,13 +329,13 @@ describe('checkPaymentReminders', () => {
     ];
 
     vi.mocked(db.subscription.findMany)
-      .mockResolvedValueOnce(mockSubscriptions)
+      .mockResolvedValueOnce(mockSubscriptions as any)
       .mockResolvedValueOnce([])
       .mockResolvedValueOnce([]);
 
     vi.mocked(db.emailLog.findFirst).mockResolvedValue(null);
     vi.mocked(emailModule.sendEmailWithLogging)
-      .mockRejectedValueOnce(new Error('Email failed')) // First fails
+      .mockResolvedValueOnce({ success: false, error: 'Email failed' }) // First fails
       .mockResolvedValueOnce({ success: true, messageId: 'msg-2' }); // Second succeeds
 
     // Execute
