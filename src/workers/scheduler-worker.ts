@@ -3,6 +3,7 @@ import { createRedisConnection } from '@/lib/queue/redis';
 import { SCHEDULER_QUEUE_NAME, SchedulerJobData } from '@/lib/queue/scheduler-queue';
 import { checkPaymentReminders } from './payment-reminders';
 import { checkGracePeriods } from './check-grace-periods';
+import { applyPenalties } from './apply-penalties';
 
 /**
  * Process scheduled job
@@ -14,6 +15,10 @@ async function processScheduledJob(job: Job<SchedulerJobData>): Promise<void> {
   switch (job.name) {
     case 'check-payment-reminders':
       await checkPaymentReminders();
+      break;
+
+    case 'apply-penalties':
+      await applyPenalties();
       break;
 
     case 'check-grace-periods':
@@ -54,7 +59,7 @@ export function createSchedulerWorker(): Worker<SchedulerJobData> {
   });
 
   console.log('⏰ Scheduler worker started');
-  console.log('   Listening for: check-payment-reminders, check-grace-periods');
+  console.log('   Listening for: check-payment-reminders, apply-penalties, check-grace-periods');
 
   return worker;
 }
