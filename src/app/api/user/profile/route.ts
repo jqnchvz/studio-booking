@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { verifyToken } from '@/lib/auth/session';
 import { updateProfileSchema } from '@/lib/validations/auth';
-import { sendEmail } from '@/lib/email/send-email';
-import VerifyEmail from '../../../../../emails/verify-email';
+import { sendEmailWithLogging } from '@/lib/email/send-email';
+import { VerifyEmail } from '../../../../../emails/verify-email';
 import { randomBytes } from 'crypto';
 
 /**
@@ -216,14 +216,20 @@ export async function PATCH(request: NextRequest) {
       const verificationUrl = `${appUrl}/verify-email?token=${updateData.verificationToken}`;
 
       try {
-        const emailResult = await sendEmail({
+        const emailResult = await sendEmailWithLogging({
+          userId: payload.userId,
+          type: 'verification',
           to: email,
-          subject: 'Verify your new email address - Reservapp',
+          subject: 'Verifica tu nueva direccion de correo - Reservapp',
           template: VerifyEmail({
             verificationUrl,
             email,
             name: updatedUser.name,
           }),
+          metadata: {
+            action: 'email_change',
+            previousEmail: currentUser.email,
+          },
         });
 
         if (!emailResult.success) {

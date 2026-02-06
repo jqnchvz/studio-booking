@@ -1,5 +1,10 @@
 import { db } from '@/lib/db';
 import { fetchPaymentDetails } from './mercadopago.service';
+import { sendEmailWithLogging } from '@/lib/email/send-email';
+import { PaymentSuccess } from '../../../emails/payment-success';
+import { PaymentOverdue } from '../../../emails/payment-overdue';
+import { SubscriptionActivated } from '../../../emails/subscription-activated';
+import { SubscriptionSuspended } from '../../../emails/subscription-suspended';
 
 /**
  * MercadoPago Webhook Event Types
@@ -192,8 +197,48 @@ export async function handlePaymentUpdated(paymentId: string): Promise<void> {
       console.log(`   Period: ${currentPeriodStart.toISOString()} - ${currentPeriodEnd.toISOString()}`);
       console.log(`   Next billing: ${nextBillingDate.toISOString()}`);
 
-      // TODO: Send confirmation email (RES-25)
-      console.log(`📧 TODO: Send subscription activated email to ${subscription.user.email}`);
+      // Send payment success email
+      await sendEmailWithLogging({
+        userId: subscription.user.id,
+        type: 'payment_success',
+        to: subscription.user.email,
+        subject: 'Pago confirmado - Reservapp',
+        template: PaymentSuccess({
+          name: subscription.user.name,
+          amount: paymentAmount,
+          planName: subscription.plan.name,
+          paymentDate: new Date(payment.date_approved || now),
+          paymentId: payment.id!.toString(),
+          nextBillingDate,
+        }),
+        metadata: {
+          paymentId: payment.id!.toString(),
+          amount: paymentAmount,
+        },
+      });
+
+      // Send subscription activated email
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+      await sendEmailWithLogging({
+        userId: subscription.user.id,
+        type: 'subscription_activated',
+        to: subscription.user.email,
+        subject: 'Tu suscripcion ha sido activada - Reservapp',
+        template: SubscriptionActivated({
+          dashboardUrl: `${appUrl}/dashboard`,
+          name: subscription.user.name,
+          planName: subscription.plan.name,
+          planPrice: paymentAmount,
+          billingPeriod: subscription.plan.interval === 'monthly' ? 'mes' : 'ano',
+          activatedAt: now,
+        }),
+        metadata: {
+          subscriptionId: subscription.id,
+          planId: subscription.plan.id,
+        },
+      });
+
+      console.log(`📧 Emails sent to ${subscription.user.email}`);
     } else if (payment.status === 'rejected') {
       console.log(`❌ Payment rejected - handling failure`);
 
@@ -279,7 +324,29 @@ export async function handlePaymentUpdated(paymentId: string): Promise<void> {
             },
           });
           console.log(`⛔ Subscription suspended after ${consecutiveFailures} consecutive failures`);
-          console.log(`📧 TODO: Send suspension notification to ${subscription.user.email}`);
+
+          // Send suspension email (outside transaction to not block)
+          const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+          sendEmailWithLogging({
+            userId: subscription.user.id,
+            type: 'subscription_suspended',
+            to: subscription.user.email,
+            subject: 'Tu suscripcion ha sido suspendida - Reservapp',
+            template: SubscriptionSuspended({
+              paymentUrl: `${appUrl}/subscription/pay`,
+              name: subscription.user.name,
+              planName: subscription.plan.name,
+              suspendedAt: new Date(),
+              reason: 'payment_failed',
+              outstandingAmount: paymentAmount,
+            }),
+            metadata: {
+              subscriptionId: subscription.id,
+              consecutiveFailures,
+            },
+          }).catch((err) => console.error('Failed to send suspension email:', err));
+
+          console.log(`📧 Suspension notification sent to ${subscription.user.email}`);
         } else if (consecutiveFailures === 2) {
           // 2nd consecutive failure: keep past_due, do NOT extend grace period
           await tx.subscription.update({
@@ -291,7 +358,31 @@ export async function handlePaymentUpdated(paymentId: string): Promise<void> {
           });
           console.log(`⚠️  Subscription past_due (${consecutiveFailures} consecutive failures) - urgent retry needed`);
           console.log(`   Grace period not extended (set on first failure only)`);
-          console.log(`📧 TODO: Send urgent retry notification to ${subscription.user.email}`);
+
+          // Send urgent overdue email (outside transaction to not block)
+          const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+          const existingGracePeriod = subscription.gracePeriodEnd || new Date();
+          sendEmailWithLogging({
+            userId: subscription.user.id,
+            type: 'payment_overdue',
+            to: subscription.user.email,
+            subject: 'URGENTE: Tu pago esta vencido - Reservapp',
+            template: PaymentOverdue({
+              paymentUrl: `${appUrl}/subscription/pay`,
+              name: subscription.user.name,
+              baseAmount: paymentAmount,
+              penaltyFee: 0,
+              totalAmount: paymentAmount,
+              gracePeriodEnd: existingGracePeriod,
+              planName: subscription.plan.name,
+            }),
+            metadata: {
+              subscriptionId: subscription.id,
+              consecutiveFailures,
+            },
+          }).catch((err) => console.error('Failed to send overdue email:', err));
+
+          console.log(`📧 Urgent overdue notification sent to ${subscription.user.email}`);
         } else if (consecutiveFailures === 1) {
           // 1st consecutive failure: set to past_due with 3-day grace period
           const gracePeriodEnd = new Date();
@@ -306,7 +397,31 @@ export async function handlePaymentUpdated(paymentId: string): Promise<void> {
           });
           console.log(`⚠️  Subscription past_due (${consecutiveFailures} consecutive failure)`);
           console.log(`   Grace period set until: ${gracePeriodEnd.toISOString()}`);
-          console.log(`📧 TODO: Send payment failed notification to ${subscription.user.email} (3 days to retry)`);
+
+          // Send payment failed email (outside transaction to not block)
+          const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+          sendEmailWithLogging({
+            userId: subscription.user.id,
+            type: 'payment_overdue',
+            to: subscription.user.email,
+            subject: 'Tu pago ha fallado - Reservapp',
+            template: PaymentOverdue({
+              paymentUrl: `${appUrl}/subscription/pay`,
+              name: subscription.user.name,
+              baseAmount: paymentAmount,
+              penaltyFee: 0,
+              totalAmount: paymentAmount,
+              gracePeriodEnd,
+              planName: subscription.plan.name,
+            }),
+            metadata: {
+              subscriptionId: subscription.id,
+              consecutiveFailures,
+              gracePeriodEnd: gracePeriodEnd.toISOString(),
+            },
+          }).catch((err) => console.error('Failed to send payment failed email:', err));
+
+          console.log(`📧 Payment failed notification sent to ${subscription.user.email}`);
         }
       });
     } else {

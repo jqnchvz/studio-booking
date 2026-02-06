@@ -25,6 +25,7 @@ model User {
   subscription            Subscription?
   payments                Payment[]
   reservations            Reservation[]
+  emailLogs               EmailLog[]
 
   @@map("users")
 }
@@ -150,4 +151,22 @@ model ResourceAvailability {
 
   @@index([resourceId])
   @@map("resource_availability")
+}
+
+model EmailLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  type      String   // verification, password_reset, payment_reminder, payment_success, subscription_activated, etc.
+  recipient String
+  subject   String
+  status    String   // sent, failed, bounced
+  error     String?
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([type])
+  @@index([recipient])
+  @@map("email_logs")
 }

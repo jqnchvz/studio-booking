@@ -6,6 +6,8 @@ import {
   checkRateLimit,
   getRateLimitHeaders,
 } from '@/lib/middleware/rate-limit';
+import { sendEmailWithLogging } from '@/lib/email/send-email';
+import { VerifyEmail } from '../../../../../emails/verify-email';
 
 /**
  * POST /api/auth/register
@@ -37,9 +39,33 @@ export async function POST(request: NextRequest) {
     // Create user
     const user = await createUser(validatedData);
 
-    // TODO(human): Email sending implementation
-    // In production, send verification email here with user.verificationToken
-    // For now, we return the token in the response (development only)
+    // Send verification email
+    if (user.verificationToken) {
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+      const verificationUrl = `${appUrl}/verify-email?token=${user.verificationToken}`;
+
+      const emailResult = await sendEmailWithLogging({
+        userId: user.id,
+        type: 'verification',
+        to: user.email,
+        subject: 'Verifica tu correo electronico - Reservapp',
+        template: VerifyEmail({
+          verificationUrl,
+          email: user.email,
+          name: user.name,
+        }),
+        metadata: {
+          action: 'registration',
+        },
+      });
+
+      if (!emailResult.success) {
+        console.error('❌ Failed to send verification email:', emailResult.error);
+        // Continue with registration even if email fails - user can request resend
+      } else {
+        console.log('📧 Verification email sent to:', user.email);
+      }
+    }
 
     // Return success response
     return NextResponse.json(
@@ -52,8 +78,6 @@ export async function POST(request: NextRequest) {
           name: user.name,
           emailVerified: user.emailVerified,
         },
-        // TODO(human):Remove this in production - only for development/testing
-        verificationToken: user.verificationToken,
       },
       {
         status: 201,
