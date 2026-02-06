@@ -19,7 +19,12 @@
     "db:generate": "prisma generate",
     "db:seed": "tsx prisma/seed.ts",
     "email:preview": "email dev --dir emails --port 3001",
-    "check-grace-periods": "tsx src/workers/check-grace-periods.ts"
+    "check-grace-periods": "tsx src/workers/check-grace-periods.ts",
+    "check-payment-reminders": "tsx src/workers/payment-reminders.ts",
+    "worker:email": "tsx src/workers/email-worker.ts",
+    "worker:scheduler": "tsx src/workers/scheduler-worker.ts",
+    "jobs:setup": "tsx src/lib/queue/setup-jobs.ts",
+    "jobs:list": "tsx src/lib/queue/setup-jobs.ts list"
   },
   "repository": {
     "type": "git",
@@ -44,8 +49,10 @@
     "@tailwindcss/postcss": "^4.1.18",
     "@types/bcrypt": "^6.0.0",
     "bcrypt": "^6.0.0",
+    "bullmq": "^5.67.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "ioredis": "^5.9.2",
     "jsonwebtoken": "^9.0.3",
     "lucide-react": "^0.562.0",
     "mercadopago": "^2.12.0",
