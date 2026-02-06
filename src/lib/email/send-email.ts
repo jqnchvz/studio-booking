@@ -1,6 +1,20 @@
 import { resend, emailConfig } from './client';
 import { render } from '@react-email/render';
 import { ReactElement } from 'react';
+import { db } from '@/lib/db';
+
+/**
+ * Email types for logging
+ */
+export type EmailType =
+  | 'verification'
+  | 'password_reset'
+  | 'payment_reminder'
+  | 'payment_success'
+  | 'payment_overdue'
+  | 'subscription_activated'
+  | 'subscription_cancelled'
+  | 'subscription_suspended';
 
 /**
  * Email send options
@@ -13,6 +27,15 @@ export interface SendEmailOptions {
   replyTo?: string;
   cc?: string | string[];
   bcc?: string | string[];
+}
+
+/**
+ * Extended email options with logging
+ */
+export interface SendEmailWithLoggingOptions extends SendEmailOptions {
+  userId?: string;
+  type: EmailType;
+  metadata?: object;
 }
 
 /**
@@ -120,6 +143,103 @@ export async function sendTextEmail(
     };
   } catch (error) {
     console.error('❌ Unexpected error sending text email:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    };
+  }
+}
+
+/**
+ * Send an email with database logging
+ * Logs both successful sends and failures
+ *
+ * @param options - Email configuration options with logging
+ * @returns Result indicating success or failure
+ */
+export async function sendEmailWithLogging(
+  options: SendEmailWithLoggingOptions
+): Promise<SendEmailResult> {
+  const recipient = Array.isArray(options.to) ? options.to[0] : options.to;
+
+  try {
+    // Render React Email template to HTML
+    const html = await render(options.template);
+
+    // Send email via Resend
+    const { data, error } = await resend.emails.send({
+      from: options.from || emailConfig.from,
+      to: options.to,
+      subject: options.subject,
+      html,
+      replyTo: options.replyTo || emailConfig.replyTo,
+      cc: options.cc,
+      bcc: options.bcc,
+    });
+
+    if (error) {
+      console.error(`❌ Error sending ${options.type} email:`, error);
+
+      // Log failure
+      await db.emailLog.create({
+        data: {
+          userId: options.userId,
+          type: options.type,
+          recipient,
+          subject: options.subject,
+          status: 'failed',
+          error: error.message || 'Unknown error',
+          metadata: options.metadata,
+        },
+      });
+
+      return {
+        success: false,
+        error: error.message || 'Failed to send email',
+      };
+    }
+
+    console.log(`✅ ${options.type} email sent successfully:`, data?.id);
+
+    // Log success
+    await db.emailLog.create({
+      data: {
+        userId: options.userId,
+        type: options.type,
+        recipient,
+        subject: options.subject,
+        status: 'sent',
+        metadata: {
+          ...options.metadata,
+          messageId: data?.id,
+        },
+      },
+    });
+
+    return {
+      success: true,
+      messageId: data?.id,
+    };
+  } catch (error) {
+    console.error(`❌ Unexpected error sending ${options.type} email:`, error);
+
+    // Log failure
+    try {
+      await db.emailLog.create({
+        data: {
+          userId: options.userId,
+          type: options.type,
+          recipient,
+          subject: options.subject,
+          status: 'failed',
+          error: error instanceof Error ? error.message : 'Unknown error',
+          metadata: options.metadata,
+        },
+      });
+    } catch (logError) {
+      console.error('❌ Failed to log email error:', logError);
+    }
+
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
