@@ -37,7 +37,11 @@ export function AvailabilityCalendar({
   // 2. More than 14 days in the future
   // 3. Not in the resource's availability schedule
   function isDateDisabled(date: Date): boolean {
-    const dayOfWeek = date.getDay();
+    // IMPORTANT: Use Chile timezone to match the API's day-of-week calculation
+    // The API uses Chile timezone when checking ResourceAvailability.dayOfWeek
+    const dayOfWeek = new Date(
+      date.toLocaleString('en-US', { timeZone: 'America/Santiago' })
+    ).getDay();
 
     // Check if date is in the past
     if (date < today) {

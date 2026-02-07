@@ -32,19 +32,25 @@ export async function GET(
     const { id: resourceId } = await params;
     const duration = durationParam ? parseInt(durationParam, 10) : 60; // Default 60 minutes
 
-    // Parse date in Chile timezone
-    const requestedDate = new Date(dateParam);
-    if (isNaN(requestedDate.getTime())) {
+    // Parse date components from YYYY-MM-DD format
+    // Important: We use these components to create dates in local (Chile) timezone
+    // to avoid UTC midnight issues that shift dates across timezone boundaries
+    const [year, month, day] = dateParam.split('-').map(Number);
+
+    if (!year || !month || !day || month < 1 || month > 12 || day < 1 || day > 31) {
       return NextResponse.json(
         { error: 'Formato de fecha inválido' },
         { status: 400 }
       );
     }
 
-    // Get day of week in Chile timezone (0 = Sunday, 6 = Saturday)
-    const dayOfWeek = new Date(
-      requestedDate.toLocaleString('en-US', { timeZone: 'America/Santiago' })
-    ).getDay();
+    // Create date at noon to avoid any timezone boundary issues
+    // Using local constructor (new Date(y,m,d,h,m,s)) creates date in system's local timezone
+    const requestedDate = new Date(year, month - 1, day, 12, 0, 0);
+
+    // Get day of week (0 = Sunday, 6 = Saturday) in local timezone
+    // Since server runs in Chile timezone, this gives us Chile day-of-week
+    const dayOfWeek = requestedDate.getDay();
 
     // Fetch resource with availability schedule
     const resource = await db.resource.findUnique({
@@ -95,8 +101,8 @@ export async function GET(
         currentHour < endHour ||
         (currentHour === endHour && currentMinute < endMinute)
       ) {
-        const slotStart = new Date(requestedDate);
-        slotStart.setHours(currentHour, currentMinute, 0, 0);
+        // Create slot times in Chile timezone using the year/month/day from the requested date
+        const slotStart = new Date(year, month - 1, day, currentHour, currentMinute, 0, 0);
 
         const slotEnd = new Date(slotStart);
         slotEnd.setMinutes(slotEnd.getMinutes() + duration);
@@ -114,7 +120,7 @@ export async function GET(
 
         // Check for conflicts with existing reservations
         const conflicts = await db.$queryRaw<Array<{ id: string }>>`
-          SELECT id FROM "Reservation"
+          SELECT id FROM reservations
           WHERE "resourceId" = ${resourceId}
             AND status IN ('pending', 'confirmed')
             AND (
