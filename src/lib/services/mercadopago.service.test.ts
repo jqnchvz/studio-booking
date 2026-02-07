@@ -6,6 +6,7 @@ import {
   getPreferenceAPI,
   getMercadoPagoPublicKey,
   testMercadoPagoConnection,
+  createOverduePaymentPreference,
 } from './mercadopago.service';
 
 // Mock the MercadoPago SDK
@@ -206,6 +207,76 @@ describe('MercadoPago Service', () => {
       expect(result).toBe(false);
       expect(consoleSpy).toHaveBeenCalledWith(
         '❌ MercadoPago connection test failed:',
+        expect.any(Error)
+      );
+
+      consoleSpy.mockRestore();
+    });
+  });
+
+  describe('createOverduePaymentPreference', () => {
+    it('should create a one-time payment preference for overdue payment', async () => {
+      const mercadopago = await import('mercadopago');
+      const mockPreferenceCreate = (mercadopago as any).__mockPreferenceCreate;
+
+      mockPreferenceCreate.mockResolvedValueOnce({
+        id: 'preference-123',
+        init_point: 'https://www.mercadopago.com.ar/checkout/v1/redirect?pref_id=preference-123',
+      });
+
+      const { createOverduePaymentPreference } = await import('./mercadopago.service');
+      const result = await createOverduePaymentPreference(
+        'pay-123',
+        'user-456',
+        55000,
+        'Plan Mensual'
+      );
+
+      expect(result).toEqual({
+        id: 'preference-123',
+        init_point: 'https://www.mercadopago.com.ar/checkout/v1/redirect?pref_id=preference-123',
+      });
+
+      expect(mockPreferenceCreate).toHaveBeenCalledWith({
+        body: expect.objectContaining({
+          items: expect.arrayContaining([
+            expect.objectContaining({
+              id: 'pay-123',
+              title: 'Pago vencido - Plan Mensual',
+              description: 'Pago de suscripción con recargo por mora',
+              quantity: 1,
+              unit_price: 55000,
+              currency_id: 'CLP',
+            }),
+          ]),
+          external_reference: 'overdue-pay-123-user-456',
+          back_urls: expect.objectContaining({
+            success: expect.stringContaining('/subscription/callback/success'),
+            failure: expect.stringContaining('/subscription/callback/failure'),
+            pending: expect.stringContaining('/subscription/callback/pending'),
+          }),
+          auto_return: 'approved',
+          notification_url: expect.stringContaining('/api/webhooks/mercadopago'),
+        }),
+      });
+    });
+
+    it('should handle error when creating overdue payment preference', async () => {
+      const mercadopago = await import('mercadopago');
+      const mockPreferenceCreate = (mercadopago as any).__mockPreferenceCreate;
+
+      mockPreferenceCreate.mockRejectedValueOnce(new Error('MercadoPago API error'));
+
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+      const { createOverduePaymentPreference } = await import('./mercadopago.service');
+
+      await expect(
+        createOverduePaymentPreference('pay-123', 'user-456', 55000, 'Plan Mensual')
+      ).rejects.toThrow('MercadoPago API error');
+
+      expect(consoleSpy).toHaveBeenCalledWith(
+        '❌ Error creating overdue payment preference:',
         expect.any(Error)
       );
 

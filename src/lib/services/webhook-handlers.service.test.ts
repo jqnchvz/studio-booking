@@ -10,12 +10,18 @@ import {
   handleWebhookEvent,
 } from './webhook-handlers.service';
 
+// Mock send-email service
+vi.mock('./send-email', () => ({
+  sendEmailWithLogging: vi.fn().mockResolvedValue(undefined),
+}));
+
 // Mock the database
 const mockFindUnique = vi.fn();
 const mockFindMany = vi.fn();
 const mockCreate = vi.fn();
 const mockUpdate = vi.fn();
 const mockPaymentFindUnique = vi.fn();
+const mockPaymentUpdate = vi.fn();
 const mockWebhookFindUnique = vi.fn();
 const mockWebhookCreate = vi.fn();
 const mockWebhookUpdate = vi.fn();
@@ -30,7 +36,7 @@ const txClient = {
     findUnique: (...args: unknown[]) => mockPaymentFindUnique(...args),
     findMany: (...args: unknown[]) => mockFindMany(...args),
     create: (...args: unknown[]) => mockCreate(...args),
-    update: vi.fn(),
+    update: (...args: unknown[]) => mockPaymentUpdate(...args),
   },
 };
 
@@ -44,7 +50,7 @@ vi.mock('@/lib/db', () => ({
       findUnique: (...args: unknown[]) => mockPaymentFindUnique(...args),
       findMany: (...args: unknown[]) => mockFindMany(...args),
       create: (...args: unknown[]) => mockCreate(...args),
-      update: vi.fn(),
+      update: (...args: unknown[]) => mockPaymentUpdate(...args),
     },
     webhookEvent: {
       findUnique: (...args: unknown[]) => mockWebhookFindUnique(...args),
@@ -284,6 +290,134 @@ describe('handlePaymentUpdated - Grace Period Logic', () => {
           }),
         })
       );
+    });
+  });
+
+  describe('overdue payment flow', () => {
+    it('should handle overdue payment with "overdue-" prefix in external_reference', async () => {
+      const mockInternalPayment = {
+        id: 'pay123',
+        userId: 'user1',
+        subscriptionId: 'sub1',
+        mercadopagoId: null,
+        amount: 50000,
+        penaltyFee: 5000,
+        totalAmount: 55000,
+        status: 'pending',
+        dueDate: new Date('2026-01-01'),
+        paidAt: null,
+        metadata: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        subscription: {
+          id: 'sub1',
+          userId: 'user1',
+          planId: 'plan1',
+          status: 'past_due',
+          gracePeriodEnd: new Date('2026-02-07T12:00:00Z'),
+          planPrice: 50000,
+          user: { id: 'user1', email: 'test@example.com', name: 'Test User' },
+          plan: { id: 'plan1', name: 'Monthly', interval: 'monthly' },
+        },
+      };
+
+      mockFetchPaymentDetails.mockResolvedValueOnce(
+        mockMPPayment('approved', {
+          external_reference: 'overdue-pay123-user1',
+          date_approved: '2026-02-04T14:30:00Z',
+          transaction_amount: 55000,
+        })
+      );
+
+      // Mock db.payment.findUnique for internal payment lookup
+      mockPaymentFindUnique.mockResolvedValueOnce(mockInternalPayment);
+
+      // Mock db.payment.update (used by handleOverduePayment)
+      mockPaymentUpdate.mockResolvedValueOnce({});
+
+      // Mock db.subscription.update
+      mockUpdate.mockResolvedValueOnce({});
+
+      await handlePaymentUpdated('12345');
+
+      // Verify payment was updated
+      expect(mockPaymentUpdate).toHaveBeenCalledWith({
+        where: { id: 'pay123' },
+        data: expect.objectContaining({
+          status: 'approved',
+        }),
+      });
+
+      // Verify subscription was reactivated
+      expect(mockUpdate).toHaveBeenCalledWith({
+        where: { id: 'sub1' },
+        data: expect.objectContaining({
+          status: 'active',
+          gracePeriodEnd: null,
+        }),
+      });
+    });
+
+    it('should handle missing internal payment record for overdue payment', async () => {
+      mockFetchPaymentDetails.mockResolvedValueOnce(
+        mockMPPayment('approved', {
+          external_reference: 'overdue-pay999-user1',
+        })
+      );
+
+      mockPaymentFindUnique.mockResolvedValueOnce(null);
+
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+      await handlePaymentUpdated('12345');
+
+      expect(consoleSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Internal payment not found: pay999')
+      );
+
+      consoleSpy.mockRestore();
+    });
+
+    it('should handle rejected overdue payment gracefully', async () => {
+      const mockInternalPayment = {
+        id: 'payrejected',
+        userId: 'userxyz',
+        subscriptionId: 'sub123',
+        mercadopagoId: null,
+        amount: 60000,
+        penaltyFee: 6000,
+        totalAmount: 66000,
+        status: 'pending',
+        dueDate: new Date('2026-01-15'),
+        paidAt: null,
+        metadata: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        subscription: {
+          id: 'sub123',
+          userId: 'userxyz',
+          planId: 'plan2',
+          status: 'past_due',
+          gracePeriodEnd: new Date('2026-02-10T12:00:00Z'),
+          planPrice: 60000,
+          user: { id: 'userxyz', email: 'user@example.com', name: 'User XYZ' },
+          plan: { id: 'plan2', name: 'Premium', interval: 'monthly' },
+        },
+      };
+
+      mockFetchPaymentDetails.mockResolvedValueOnce(
+        mockMPPayment('rejected', {
+          external_reference: 'overdue-payrejected-userxyz',
+        })
+      );
+
+      mockPaymentFindUnique.mockResolvedValueOnce(mockInternalPayment);
+
+      await handlePaymentUpdated('12345');
+
+      // When payment is rejected, no updates should be made
+      expect(mockPaymentUpdate).not.toHaveBeenCalled();
+      expect(mockUpdate).not.toHaveBeenCalled();
     });
   });
 });
