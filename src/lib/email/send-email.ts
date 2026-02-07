@@ -14,7 +14,8 @@ export type EmailType =
   | 'payment_overdue'
   | 'subscription_activated'
   | 'subscription_cancelled'
-  | 'subscription_suspended';
+  | 'subscription_suspended'
+  | 'reservation_confirmed';
 
 /**
  * Email send options
