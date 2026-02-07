@@ -302,3 +302,63 @@ export async function updateSubscriptionAmount(
     throw error;
   }
 }
+
+/**
+ * Create a one-time payment preference for overdue payment with penalty
+ * Used when user needs to pay outstanding balance including late fees
+ *
+ * @param paymentId - Internal payment record ID
+ * @param userId - User ID
+ * @param totalAmount - Total amount including penalty (in CLP)
+ * @param planName - Plan name for display
+ * @returns Preference with init_point URL for checkout
+ */
+export async function createOverduePaymentPreference(
+  paymentId: string,
+  userId: string,
+  totalAmount: number,
+  planName: string
+) {
+  try {
+    console.log(`💳 Creating overdue payment preference`);
+    console.log(`   Payment ID: ${paymentId}`);
+    console.log(`   Amount: ${totalAmount} CLP`);
+
+    const preferenceAPI = getPreferenceAPI();
+
+    const preference = await preferenceAPI.create({
+      body: {
+        items: [
+          {
+            id: paymentId,
+            title: `Pago vencido - ${planName}`,
+            description: `Pago de suscripción con recargo por mora`,
+            quantity: 1,
+            unit_price: totalAmount,
+            currency_id: 'CLP',
+          },
+        ],
+        // external_reference links the preference to our internal payment record
+        // Format: "overdue-{paymentId}-{userId}" to distinguish from subscription payments
+        external_reference: `overdue-${paymentId}-${userId}`,
+        back_urls: {
+          success: `${mercadopagoConfig.appUrl}/subscription/callback/success`,
+          failure: `${mercadopagoConfig.appUrl}/subscription/callback/failure`,
+          pending: `${mercadopagoConfig.appUrl}/subscription/callback/pending`,
+        },
+        auto_return: 'approved',
+        notification_url: `${mercadopagoConfig.appUrl}/api/webhooks/mercadopago`,
+      },
+    });
+
+    console.log(`✅ Overdue payment preference created: ${preference.id}`);
+
+    return {
+      id: preference.id,
+      init_point: preference.init_point,
+    };
+  } catch (error) {
+    console.error('❌ Error creating overdue payment preference:', error);
+    throw error;
+  }
+}

@@ -78,6 +78,143 @@ export async function markEventAsProcessed(eventId: string): Promise<void> {
 }
 
 /**
+ * Handle overdue payment approval
+ * Called when user pays an overdue payment with penalty through MercadoPago
+ * @param mercadopagoPaymentId - MercadoPago payment ID
+ * @param mpPayment - Payment details from MercadoPago
+ */
+async function handleOverduePayment(
+  mercadopagoPaymentId: string,
+  mpPayment: { status?: string; external_reference?: string; date_approved?: string; transaction_amount?: number }
+): Promise<void> {
+  console.log(`💰 Processing overdue payment: ${mercadopagoPaymentId}`);
+
+  // Parse external_reference: "overdue-{paymentId}-{userId}"
+  const parts = mpPayment.external_reference?.split('-') || [];
+  if (parts.length < 3 || parts[0] !== 'overdue') {
+    console.error(`❌ Invalid overdue external_reference: ${mpPayment.external_reference}`);
+    return;
+  }
+
+  const internalPaymentId = parts[1];
+  const userId = parts[2];
+
+  console.log(`   Internal Payment ID: ${internalPaymentId}`);
+  console.log(`   User ID: ${userId}`);
+
+  // Find the internal payment record
+  const internalPayment = await db.payment.findUnique({
+    where: { id: internalPaymentId },
+    include: {
+      subscription: {
+        include: {
+          user: true,
+          plan: true,
+        },
+      },
+    },
+  });
+
+  if (!internalPayment) {
+    console.error(`❌ Internal payment not found: ${internalPaymentId}`);
+    return;
+  }
+
+  if (mpPayment.status === 'approved') {
+    console.log(`✅ Overdue payment approved - processing`);
+
+    const now = new Date();
+
+    // Calculate new billing dates
+    const currentPeriodStart = new Date(now);
+    const currentPeriodEnd = new Date(now);
+    currentPeriodEnd.setMonth(currentPeriodEnd.getMonth() + 1);
+    const nextBillingDate = new Date(currentPeriodEnd);
+
+    // Update payment record
+    await db.payment.update({
+      where: { id: internalPaymentId },
+      data: {
+        status: 'approved',
+        paidAt: new Date(mpPayment.date_approved || now),
+        metadata: {
+          ...(internalPayment.metadata as object || {}),
+          mercadopagoPaymentId: mercadopagoPaymentId,
+          paidViaOverdueFlow: true,
+        },
+      },
+    });
+
+    console.log(`   ✅ Payment record updated`);
+
+    // Reactivate subscription
+    await db.subscription.update({
+      where: { id: internalPayment.subscription.id },
+      data: {
+        status: 'active',
+        gracePeriodEnd: null,
+        currentPeriodStart,
+        currentPeriodEnd,
+        nextBillingDate,
+      },
+    });
+
+    console.log(`   ✅ Subscription reactivated for user ${internalPayment.subscription.user.email}`);
+    console.log(`   Period: ${currentPeriodStart.toISOString()} - ${currentPeriodEnd.toISOString()}`);
+
+    // Send payment success email
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    await sendEmailWithLogging({
+      userId: internalPayment.subscription.user.id,
+      type: 'payment_success',
+      to: internalPayment.subscription.user.email,
+      subject: 'Pago confirmado - Tu cuenta ha sido reactivada - Reservapp',
+      template: PaymentSuccess({
+        name: internalPayment.subscription.user.name,
+        amount: internalPayment.totalAmount,
+        planName: internalPayment.subscription.plan.name,
+        paymentDate: new Date(mpPayment.date_approved || now),
+        paymentId: mercadopagoPaymentId,
+        nextBillingDate,
+      }),
+      metadata: {
+        paymentId: internalPaymentId,
+        mercadopagoPaymentId,
+        wasOverdue: true,
+        penaltyFee: internalPayment.penaltyFee,
+      },
+    });
+
+    // Send subscription activated email
+    await sendEmailWithLogging({
+      userId: internalPayment.subscription.user.id,
+      type: 'subscription_activated',
+      to: internalPayment.subscription.user.email,
+      subject: 'Tu suscripcion ha sido reactivada - Reservapp',
+      template: SubscriptionActivated({
+        dashboardUrl: `${appUrl}/dashboard`,
+        name: internalPayment.subscription.user.name,
+        planName: internalPayment.subscription.plan.name,
+        planPrice: internalPayment.subscription.planPrice,
+        billingPeriod: internalPayment.subscription.plan.interval === 'monthly' ? 'mes' : 'ano',
+        activatedAt: now,
+      }),
+      metadata: {
+        subscriptionId: internalPayment.subscription.id,
+        reactivatedAfterOverdue: true,
+      },
+    });
+
+    console.log(`   📧 Confirmation emails sent to ${internalPayment.subscription.user.email}`);
+  } else if (mpPayment.status === 'rejected') {
+    console.log(`❌ Overdue payment rejected`);
+    // Payment remains pending, user can try again
+  } else {
+    console.log(`⏳ Overdue payment status: ${mpPayment.status} - no action taken`);
+  }
+}
+
+/**
  * Handle payment.created event
  * @param paymentId - MercadoPago payment ID
  */
@@ -107,8 +244,15 @@ export async function handlePaymentUpdated(paymentId: string): Promise<void> {
 
     // 2. Parse external_reference to get userId and planId
     // Format: "userId-planId" (set during preference creation)
+    // Or: "overdue-paymentId-userId" (for overdue/penalty payments)
     if (!payment.external_reference) {
       console.error(`❌ Payment ${paymentId} has no external_reference`);
+      return;
+    }
+
+    // Check if this is an overdue payment (has "overdue-" prefix)
+    if (payment.external_reference.startsWith('overdue-')) {
+      await handleOverduePayment(paymentId, payment);
       return;
     }
 
