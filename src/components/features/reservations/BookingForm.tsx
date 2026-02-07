@@ -67,7 +67,7 @@ export function BookingForm({ resources, onSuccess }: BookingFormProps) {
     formState: { errors },
     setValue,
     watch,
-  } = useForm<CreateReservationInput>({
+  } = useForm({
     resolver: zodResolver(createReservationSchema),
     defaultValues: {
       attendees: 1,

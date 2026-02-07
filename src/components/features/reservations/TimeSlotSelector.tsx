@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { format } from 'date-fns';
 
 interface TimeSlot {
@@ -28,11 +28,7 @@ export function TimeSlotSelector({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchAvailability();
-  }, [resourceId, date, duration]);
-
-  async function fetchAvailability() {
+  const fetchAvailability = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -53,7 +49,11 @@ export function TimeSlotSelector({
     } finally {
       setLoading(false);
     }
-  }
+  }, [resourceId, date, duration]);
+
+  useEffect(() => {
+    fetchAvailability();
+  }, [fetchAvailability]);
 
   if (loading) {
     return (

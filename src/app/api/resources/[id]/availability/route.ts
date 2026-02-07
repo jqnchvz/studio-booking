@@ -14,7 +14,7 @@ import { Prisma } from '@prisma/client';
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { searchParams } = new URL(request.url);
@@ -29,7 +29,7 @@ export async function GET(
       );
     }
 
-    const resourceId = params.id;
+    const { id: resourceId } = await params;
     const duration = durationParam ? parseInt(durationParam, 10) : 60; // Default 60 minutes
 
     // Parse date in Chile timezone
