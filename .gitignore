@@ -102,6 +102,8 @@ README.md.backup
 
 # Project-specific files
 complete-claude-prompts-batch.md
+RES-*-TODO.md
+REMAINING-JIRA-TASKS.md
 
 # Logs
 logs/
