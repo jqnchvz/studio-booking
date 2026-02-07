@@ -53,7 +53,7 @@ describe('Reservation Service', () => {
         metadata: null,
         createdAt: new Date(),
         updatedAt: new Date(),
-      });
+      } as any);
 
       const result = await checkResourceAvailability(resourceId, startTime, endTime);
 
@@ -85,7 +85,7 @@ describe('Reservation Service', () => {
         metadata: null,
         createdAt: new Date(),
         updatedAt: new Date(),
-      });
+      } as any);
 
       const result = await checkResourceAvailability(resourceId, startTime, endTime);
 
@@ -116,7 +116,7 @@ describe('Reservation Service', () => {
         metadata: null,
         createdAt: new Date(),
         updatedAt: new Date(),
-      });
+      } as any);
 
       const result = await checkResourceAvailability(resourceId, startTime, endTime);
 
@@ -147,7 +147,7 @@ describe('Reservation Service', () => {
         metadata: null,
         createdAt: new Date(),
         updatedAt: new Date(),
-      });
+      } as any);
 
       // Mock overlapping reservation found
       vi.mocked(db.$queryRaw).mockResolvedValueOnce([
@@ -188,7 +188,7 @@ describe('Reservation Service', () => {
         metadata: null,
         createdAt: new Date(),
         updatedAt: new Date(),
-      });
+      } as any);
 
       // No overlapping reservations
       vi.mocked(db.$queryRaw).mockResolvedValueOnce([]);
