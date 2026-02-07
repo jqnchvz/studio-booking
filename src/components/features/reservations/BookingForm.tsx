@@ -173,7 +173,7 @@ export function BookingForm({ resources, onSuccess }: BookingFormProps) {
             id="resource"
             value={selectedResource?.id || ''}
             onChange={(e) => handleResourceChange(e.target.value)}
-            className="block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+            className="block w-full px-4 py-2 text-gray-900 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
           >
             <option value="">Selecciona un recurso</option>
             {resources.map((resource) => (
@@ -268,7 +268,7 @@ export function BookingForm({ resources, onSuccess }: BookingFormProps) {
                 id="title"
                 type="text"
                 {...register('title')}
-                className="block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                className="block w-full px-4 py-2 text-gray-900 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 placeholder:text-gray-400"
                 placeholder="Ej: Reunión de equipo"
               />
               {errors.title && (
@@ -288,7 +288,7 @@ export function BookingForm({ resources, onSuccess }: BookingFormProps) {
                 id="description"
                 {...register('description')}
                 rows={3}
-                className="block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                className="block w-full px-4 py-2 text-gray-900 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 placeholder:text-gray-400"
                 placeholder="Agrega detalles sobre la reserva..."
               />
               {errors.description && (
@@ -312,7 +312,7 @@ export function BookingForm({ resources, onSuccess }: BookingFormProps) {
                 {...register('attendees', { valueAsNumber: true })}
                 min="1"
                 max={selectedResource.capacity || 100}
-                className="block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                className="block w-full px-4 py-2 text-gray-900 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
               />
               {errors.attendees && (
                 <p className="mt-1 text-sm text-red-600">
