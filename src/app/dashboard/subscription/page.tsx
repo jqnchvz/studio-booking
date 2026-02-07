@@ -6,6 +6,7 @@ import { SubscriptionDetails } from '@/components/features/subscription/Subscrip
 import { PaymentHistory } from '@/components/features/subscription/PaymentHistory';
 import { CancelSubscriptionModal } from '@/components/features/subscription/CancelSubscriptionModal';
 import { ChangePlanModal } from '@/components/features/subscription/ChangePlanModal';
+import { OverduePaymentCard } from '@/components/features/subscription/OverduePaymentCard';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, AlertCircle, CheckCircle2, ArrowRight, RefreshCw } from 'lucide-react';
@@ -308,6 +309,14 @@ export default function SubscriptionPage() {
   const canReactivate =
     subscription && (subscription.status === 'cancelled' || subscription.status === 'suspended');
 
+  // Find overdue payment (pending payment with penalty or past due date)
+  const overduePayment = subscription?.payments.find(
+    (p) => p.status === 'pending' && (p.penaltyFee > 0 || new Date(p.dueDate) < new Date())
+  );
+
+  // Show overdue payment card for past_due subscriptions with pending payments
+  const showOverduePayment = subscription?.status === 'past_due' && overduePayment;
+
   if (isLoading) {
     return (
       <div className="mx-auto max-w-4xl px-6 py-16">
@@ -392,6 +401,14 @@ export default function SubscriptionPage() {
               {changePlanSuccess}
             </AlertDescription>
           </Alert>
+        )}
+
+        {/* Overdue Payment Card - for past_due subscriptions */}
+        {showOverduePayment && overduePayment && (
+          <OverduePaymentCard
+            payment={overduePayment}
+            gracePeriodEnd={subscription.gracePeriodEnd}
+          />
         )}
 
         {/* Reactivate Subscription Section - for cancelled/suspended */}
