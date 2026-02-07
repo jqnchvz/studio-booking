@@ -32,43 +32,33 @@ export function AvailabilityCalendar({
   // Get available days of the week from resource availability
   const availableDaysOfWeek = resource.availability.map((avail) => avail.dayOfWeek);
 
-  // Debug logging
-  console.log('Resource:', resource.name);
-  console.log('Availability schedules:', resource.availability.length);
-  console.log('Available days of week:', availableDaysOfWeek);
-
   // Disable dates that are:
   // 1. In the past
   // 2. More than 14 days in the future
   // 3. Not in the resource's availability schedule
   function isDateDisabled(date: Date): boolean {
     const dayOfWeek = date.getDay();
-    const dateStr = date.toISOString().split('T')[0];
 
     // Check if date is in the past
     if (date < today) {
-      console.log(`${dateStr} - DISABLED (in past)`);
       return true;
     }
 
     // Check if date is more than 14 days in the future
     if (date > maxDate) {
-      console.log(`${dateStr} - DISABLED (beyond 14 days)`);
       return true;
     }
 
     // Check if day of week is available
     if (!availableDaysOfWeek.includes(dayOfWeek)) {
-      console.log(`${dateStr} - DISABLED (day ${dayOfWeek} not in schedule)`);
       return true;
     }
 
-    console.log(`${dateStr} - ENABLED (day ${dayOfWeek})`);
     return false;
   }
 
   return (
-    <div className="flex justify-center">
+    <div className="flex flex-col items-center">
       <DayPicker
         mode="single"
         selected={selectedDate || undefined}
@@ -78,10 +68,29 @@ export function AvailabilityCalendar({
         toDate={maxDate}
         modifiersClassNames={{
           selected: 'bg-blue-600 text-white hover:bg-blue-700',
-          today: 'font-bold text-blue-600',
+          today: 'font-bold border-2 border-blue-600',
         }}
-        className="border border-gray-200 rounded-lg p-4"
+        className="border border-gray-200 rounded-lg p-4 bg-white"
+        styles={{
+          day_button: {
+            cursor: 'pointer',
+          },
+        }}
       />
+      <div className="mt-4 text-sm text-gray-600 space-y-1">
+        <p className="flex items-center">
+          <span className="w-6 h-6 rounded bg-white border border-gray-300 mr-2"></span>
+          Disponible
+        </p>
+        <p className="flex items-center">
+          <span className="w-6 h-6 rounded bg-gray-100 text-gray-400 border border-gray-200 mr-2"></span>
+          No disponible
+        </p>
+        <p className="flex items-center">
+          <span className="w-6 h-6 rounded bg-blue-600 mr-2"></span>
+          Seleccionado
+        </p>
+      </div>
     </div>
   );
 }
