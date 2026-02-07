@@ -32,6 +32,11 @@ export function AvailabilityCalendar({
   // Get available days of the week from resource availability
   const availableDaysOfWeek = resource.availability.map((avail) => avail.dayOfWeek);
 
+  // Debug logging
+  console.log('Resource:', resource.name);
+  console.log('Availability schedules:', resource.availability.length);
+  console.log('Available days of week:', availableDaysOfWeek);
+
   // Disable dates that are:
   // 1. In the past
   // 2. More than 14 days in the future
