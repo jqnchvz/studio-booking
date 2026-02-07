@@ -42,22 +42,28 @@ export function AvailabilityCalendar({
   // 2. More than 14 days in the future
   // 3. Not in the resource's availability schedule
   function isDateDisabled(date: Date): boolean {
+    const dayOfWeek = date.getDay();
+    const dateStr = date.toISOString().split('T')[0];
+
     // Check if date is in the past
     if (date < today) {
+      console.log(`${dateStr} - DISABLED (in past)`);
       return true;
     }
 
     // Check if date is more than 14 days in the future
     if (date > maxDate) {
+      console.log(`${dateStr} - DISABLED (beyond 14 days)`);
       return true;
     }
 
     // Check if day of week is available
-    const dayOfWeek = date.getDay();
     if (!availableDaysOfWeek.includes(dayOfWeek)) {
+      console.log(`${dateStr} - DISABLED (day ${dayOfWeek} not in schedule)`);
       return true;
     }
 
+    console.log(`${dateStr} - ENABLED (day ${dayOfWeek})`);
     return false;
   }
 
