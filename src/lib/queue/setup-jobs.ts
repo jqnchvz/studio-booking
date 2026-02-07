@@ -31,6 +31,21 @@ export async function setupJobs(): Promise<void> {
   );
   console.log('   ✅ Scheduled: check-payment-reminders (9 AM Chile time)');
 
+  // Apply penalties - daily at 9:30 AM Chile time
+  // Runs after payment reminders, before grace period checks
+  await schedulerQueue.add(
+    'apply-penalties',
+    {},
+    {
+      repeat: {
+        pattern: '30 9 * * *', // 9:30 AM every day
+        tz: 'America/Santiago',
+      },
+      jobId: 'apply-penalties-daily',
+    }
+  );
+  console.log('   ✅ Scheduled: apply-penalties (9:30 AM Chile time)');
+
   // Grace period check - daily at 10 AM Chile time
   await schedulerQueue.add(
     'check-grace-periods',

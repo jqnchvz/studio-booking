@@ -21,6 +21,7 @@
     "email:preview": "email dev --dir emails --port 3001",
     "check-grace-periods": "tsx src/workers/check-grace-periods.ts",
     "check-payment-reminders": "tsx src/workers/payment-reminders.ts",
+    "apply-penalties": "tsx src/workers/apply-penalties.ts",
     "worker:email": "tsx src/workers/email-worker.ts",
     "worker:scheduler": "tsx src/workers/scheduler-worker.ts",
     "jobs:setup": "tsx src/lib/queue/setup-jobs.ts",
