@@ -272,7 +272,33 @@ env:
      resetToken: null,      // Don't forget these!
      resetTokenExpiry: null,
    };
+
+   // ✅ When including Prisma relations - use type assertion
+   vi.mocked(db.resource.findUnique).mockResolvedValueOnce({
+     id: 'resource-123',
+     name: 'Test Resource',
+     isActive: true,
+     capacity: 10,
+     // ... other base Resource fields ...
+     availability: [  // This relation isn't in base Resource type
+       {
+         id: 'avail-1',
+         dayOfWeek: 1,
+         startTime: '09:00',
+         endTime: '18:00',
+         isActive: true,
+         createdAt: new Date(),
+         updatedAt: new Date(),
+       }
+     ],
+   } as any);  // Type assertion needed for relations
    ```
+
+   **Why `as any` for relations**: Prisma's base types (e.g., `Resource`) don't include
+   relations (e.g., `availability`). When mocking queries with `include` or `select` that
+   add relations, TypeScript needs a type assertion. This is a test-only pattern - production
+   code uses Prisma's generated types correctly. Without `as any`, you'll get CI errors like:
+   `Object literal may only specify known properties, and 'availability' does not exist`.
 
 3. **Missing type definitions**
    ```bash
@@ -771,8 +797,30 @@ Current test coverage:
   - Request throttling
   - IP-based tracking
   - Configuration options
+- ✅ **Reservation Validation** (`src/lib/validations/reservation.ts`) - 19 tests
+  - Duration validations (30min-8hr)
+  - Future date validation
+  - Field constraints and refinements
+- ✅ **Reservation Service** (`src/lib/services/reservation.service.ts`) - 14 tests
+  - Resource availability checking
+  - Rate limiting (10/day per user)
+  - Transaction-based creation with double-booking prevention
+- ✅ **MercadoPago Service** (`src/lib/services/mercadopago.service.ts`) - 34 tests
+  - Payment preference creation
+  - Subscription management
+  - Webhook signature verification
+- ✅ **Webhook Handlers** (`src/lib/services/webhook-handlers.service.ts`) - 47 tests
+  - Payment status transitions
+  - Subscription lifecycle
+  - Penalty fee calculations
+- ✅ **Penalty Service** (`src/lib/services/penalty.service.ts`) - 18 tests
+  - Grace period calculations
+  - Progressive penalty rates
+  - Payment date handling
+- ✅ **Additional coverage** - Multiple workers, API routes, user profile, grace periods
 
-**Total: 47 tests passing**
+**Total: 214 tests passing** (15 test files)
+**Coverage**: 79% statements, 72% functions, 79% lines, 72% branches
 
 ### What to Test
 
@@ -939,6 +987,110 @@ describe('Session Utilities', () => {
     });
   });
 });
+```
+
+### Critical Feature Patterns
+
+#### Double-Booking Prevention (Reservation System)
+
+**Pattern**: Pessimistic locking with PostgreSQL `FOR UPDATE SKIP LOCKED`
+
+```typescript
+// In reservation.service.ts
+export async function createReservation(data: CreateReservationInput, userId: string) {
+  return await db.$transaction(async (tx) => {
+    // CRITICAL: Re-check availability INSIDE transaction with row locking
+    const overlapping = await tx.$queryRaw`
+      SELECT id FROM "Reservation"
+      WHERE "resourceId" = ${data.resourceId}
+        AND status IN ('pending', 'confirmed')
+        AND (
+          ("startTime" <= ${startTime} AND "endTime" > ${startTime})
+          OR ("startTime" < ${endTime} AND "endTime" >= ${endTime})
+          OR ("startTime" >= ${startTime} AND "endTime" <= ${endTime})
+        )
+      FOR UPDATE SKIP LOCKED  -- Prevents race conditions
+    `;
+
+    if (overlapping.length > 0) {
+      throw new Error('Resource already booked');
+    }
+
+    // Create reservation atomically
+    return await tx.reservation.create({ data });
+  });
+}
+```
+
+**Why `FOR UPDATE SKIP LOCKED`**:
+- Locks only conflicting rows, not entire table
+- `SKIP LOCKED` allows concurrent reservations for different time slots
+- Prevents race condition where two requests check availability simultaneously
+- Re-checking availability inside transaction is CRITICAL - prevents time-of-check to time-of-use bugs
+
+**Three overlap scenarios to detect**:
+```
+Scenario 1: New reservation starts during existing
+  Existing: [====]
+  New:         [====]
+  Check: startTime <= newStart AND endTime > newStart
+
+Scenario 2: New reservation ends during existing
+  Existing:    [====]
+  New:      [====]
+  Check: startTime < newEnd AND endTime >= newEnd
+
+Scenario 3: New reservation encompasses existing
+  Existing:   [==]
+  New:      [======]
+  Check: startTime >= newStart AND endTime <= newEnd
+```
+
+#### Chile Timezone Handling
+
+**Context**: All datetime operations must respect Chile timezone (`America/Santiago`) for:
+- Day-of-week calculations (ResourceAvailability matching)
+- Email formatting
+- User-facing date displays
+
+```typescript
+// Extract day-of-week in Chile timezone for availability matching
+const dayOfWeek = new Date(
+  startTime.toLocaleString('en-US', { timeZone: 'America/Santiago' })
+).getDay();  // 0-6 (Sunday-Saturday)
+
+// Format times for availability checking (HH:MM format)
+const timeStr = startTime.toLocaleTimeString('en-US', {
+  timeZone: 'America/Santiago',
+  hour12: false,
+  hour: '2-digit',
+  minute: '2-digit',
+});  // Returns "14:00"
+
+// Format dates for email templates
+const formattedDate = new Intl.DateTimeFormat('es-CL', {
+  timeZone: 'America/Santiago',
+  dateStyle: 'full',
+}).format(startTime);  // "lunes, 9 de febrero de 2026"
+```
+
+**Storage vs Display**:
+- **Store**: Always UTC in PostgreSQL (Prisma handles this automatically)
+- **Convert to Chile timezone only for**:
+  - Day-of-week matching with ResourceAvailability
+  - Email templates
+  - User-facing displays
+- **Never convert for**: Database queries, date comparisons, duration calculations (use UTC)
+
+**Common pitfall**: Don't extract day-of-week from UTC date - it may be a different day in Chile!
+```typescript
+// ❌ Wrong - may be wrong day in Chile timezone
+const dayOfWeek = startTime.getDay();
+
+// ✅ Correct - respects Chile timezone
+const dayOfWeek = new Date(
+  startTime.toLocaleString('en-US', { timeZone: 'America/Santiago' })
+).getDay();
 ```
 
 ## Common Patterns
@@ -1445,4 +1597,4 @@ npm run lint && npm run type-check && npm test
 
 ---
 
-**Last Updated:** 2026-01-16 - Added comprehensive CI/CD troubleshooting guide based on RES-77 implementation experience.
+**Last Updated:** 2026-02-07 - Updated test coverage status (214 tests), added reservation double-booking prevention patterns, enhanced Prisma mock type assertion documentation based on RES-70 implementation experience.
