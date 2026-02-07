@@ -11,7 +11,7 @@ import {
 } from './webhook-handlers.service';
 
 // Mock send-email service
-vi.mock('./send-email', () => ({
+vi.mock('@/lib/email/send-email', () => ({
   sendEmailWithLogging: vi.fn().mockResolvedValue(undefined),
 }));
 
