@@ -10,6 +10,7 @@ import { SubscriptionSuspended } from '../../emails/subscription-suspended';
 import { SubscriptionCancelled } from '../../emails/subscription-cancelled';
 import { VerifyEmail } from '../../emails/verify-email';
 import { PasswordReset } from '../../emails/password-reset';
+import { ReservationConfirmed } from '../../emails/reservation-confirmed';
 
 /**
  * Map of template names to template functions
@@ -80,6 +81,19 @@ const templates: Record<string, (data: Record<string, unknown>) => React.ReactEl
       resetUrl: data.resetUrl as string,
       email: data.email as string,
       name: data.name as string | undefined,
+    }),
+  'reservation-confirmed': (data) =>
+    ReservationConfirmed({
+      dashboardUrl: data.dashboardUrl as string,
+      name: data.name as string | undefined,
+      reservationId: data.reservationId as string,
+      resourceName: data.resourceName as string,
+      resourceType: data.resourceType as string,
+      title: data.title as string,
+      description: data.description as string | undefined,
+      startTime: data.startTime as string,
+      endTime: data.endTime as string,
+      attendees: data.attendees as number,
     }),
 };
 
