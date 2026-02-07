@@ -59,6 +59,32 @@ export function AvailabilityCalendar({
 
   return (
     <div className="flex flex-col items-center">
+      <style jsx global>{`
+        .rdp {
+          --rdp-accent-color: #2563eb;
+        }
+        .rdp-day:not(.rdp-day_disabled) {
+          color: #1f2937 !important;
+          font-weight: 500;
+        }
+        .rdp-day:not(.rdp-day_disabled):hover {
+          background-color: #dbeafe !important;
+          color: #1e40af !important;
+        }
+        .rdp-day_disabled {
+          color: #d1d5db !important;
+          opacity: 0.5;
+        }
+        .rdp-day_selected {
+          background-color: #2563eb !important;
+          color: white !important;
+          font-weight: 600;
+        }
+        .rdp-day_today:not(.rdp-day_disabled) {
+          font-weight: 700;
+          border: 2px solid #2563eb;
+        }
+      `}</style>
       <DayPicker
         mode="single"
         selected={selectedDate || undefined}
@@ -66,16 +92,7 @@ export function AvailabilityCalendar({
         disabled={isDateDisabled}
         fromDate={today}
         toDate={maxDate}
-        modifiersClassNames={{
-          selected: 'bg-blue-600 text-white hover:bg-blue-700',
-          today: 'font-bold border-2 border-blue-600',
-        }}
         className="border border-gray-200 rounded-lg p-4 bg-white"
-        styles={{
-          day_button: {
-            cursor: 'pointer',
-          },
-        }}
       />
       <div className="mt-4 text-sm text-gray-600 space-y-1">
         <p className="flex items-center">
