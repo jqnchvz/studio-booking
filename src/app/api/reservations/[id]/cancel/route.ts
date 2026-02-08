@@ -21,9 +21,12 @@ import { queueEmail } from '@/lib/queue/email-queue';
  */
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Await params (Next.js 15+ requirement)
+    const { id } = await params;
+
     // Step 1: Authentication
     const user = await getCurrentUser();
     if (!user) {
@@ -35,7 +38,7 @@ export async function PATCH(
 
     // Step 2: Get reservation with resource details
     const reservation = await db.reservation.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         resource: {
           select: {
@@ -104,7 +107,7 @@ export async function PATCH(
 
     // Step 7: Cancel the reservation
     const cancelledReservation = await db.reservation.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         status: 'cancelled',
         updatedAt: new Date(),
