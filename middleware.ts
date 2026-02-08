@@ -39,6 +39,30 @@ export async function middleware(request: NextRequest) {
     return response;
   }
 
+  // Check admin access for admin routes
+  if (pathname.startsWith('/admin')) {
+    try {
+      const user = await db.user.findUnique({
+        where: { id: payload.userId },
+        select: { isAdmin: true },
+      });
+
+      if (!user || !user.isAdmin) {
+        // Non-admin users are redirected to their dashboard
+        const dashboardUrl = new URL('/dashboard', request.url);
+        return NextResponse.redirect(dashboardUrl);
+      }
+
+      // Admin user - allow access
+      return NextResponse.next();
+    } catch (error) {
+      console.error('Error checking admin status in middleware:', error);
+      // On error, deny access to admin routes
+      const dashboardUrl = new URL('/dashboard', request.url);
+      return NextResponse.redirect(dashboardUrl);
+    }
+  }
+
   // Check subscription status for reservation routes
   if (pathname.startsWith('/reservations')) {
     try {
