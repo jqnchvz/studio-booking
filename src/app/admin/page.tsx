@@ -33,10 +33,16 @@ export default async function AdminDashboardPage() {
   try {
     // Fetch stats from API with fresh data (no caching)
     const cookieStore = await cookies();
+
+    // Format cookies correctly for Cookie header
+    const cookieHeader = cookieStore.getAll()
+      .map(cookie => `${cookie.name}=${cookie.value}`)
+      .join('; ');
+
     const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/admin/stats`, {
       cache: 'no-store',
       headers: {
-        Cookie: cookieStore.toString(),
+        Cookie: cookieHeader,
       },
     });
 
