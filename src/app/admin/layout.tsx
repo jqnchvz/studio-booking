@@ -45,14 +45,6 @@ export default async function AdminLayout({
           <div className="flex items-center gap-4">
             <h1 className="text-xl font-bold">Reservapp Admin</h1>
           </div>
-          <div className="flex items-center gap-4">
-            <Link
-              href="/dashboard"
-              className="text-sm text-muted-foreground hover:text-foreground transition"
-            >
-              Volver al Dashboard
-            </Link>
-          </div>
         </div>
       </header>
 
