@@ -1,5 +1,5 @@
 import { cookies } from 'next/headers';
-import { Users, DollarSign, TrendingUp, Calendar, AlertCircle } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { MetricCard } from '@/components/features/admin/MetricCard';
 import { RevenueChart } from '@/components/features/admin/RevenueChart';
@@ -92,35 +92,35 @@ export default async function AdminDashboardPage() {
         <MetricCard
           title="Suscripciones Activas"
           value={stats.metrics.activeSubscriptions}
-          icon={Users}
+          icon="users"
           description="Total de suscripciones activas"
         />
 
         <MetricCard
           title="MRR"
           value={formatCLP(stats.metrics.monthlyRecurringRevenue)}
-          icon={DollarSign}
+          icon="dollarSign"
           description="Ingresos mensuales recurrentes"
         />
 
         <MetricCard
           title="Tasa de Éxito"
           value={`${stats.metrics.paymentSuccessRate}%`}
-          icon={TrendingUp}
+          icon="trendingUp"
           description="Últimos 30 días"
         />
 
         <MetricCard
           title="Reservas Próximas"
           value={stats.metrics.upcomingReservations}
-          icon={Calendar}
+          icon="calendar"
           description="Próximos 7 días"
         />
 
         <MetricCard
           title="Pagos Fallidos"
           value={stats.metrics.failedPayments}
-          icon={AlertCircle}
+          icon="alertCircle"
           description="Últimos 30 días"
         />
       </div>

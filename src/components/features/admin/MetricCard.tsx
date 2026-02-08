@@ -1,7 +1,18 @@
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import type { LucideIcon } from 'lucide-react';
+import { Users, DollarSign, TrendingUp, Calendar, AlertCircle } from 'lucide-react';
+
+// Icon mapping to avoid passing functions from Server to Client Components
+const iconMap = {
+  users: Users,
+  dollarSign: DollarSign,
+  trendingUp: TrendingUp,
+  calendar: Calendar,
+  alertCircle: AlertCircle,
+} as const;
+
+type IconName = keyof typeof iconMap;
 
 interface MetricCardProps {
   /** Spanish title (e.g., "Suscripciones Activas") */
@@ -10,8 +21,8 @@ interface MetricCardProps {
   /** Formatted value to display (e.g., "42" or "$1.200.000") */
   value: string | number;
 
-  /** Lucide icon component */
-  icon: LucideIcon;
+  /** Icon name from available icons */
+  icon: IconName;
 
   /** Optional trend indicator */
   trend?: {
@@ -43,10 +54,12 @@ interface MetricCardProps {
 export function MetricCard({
   title,
   value,
-  icon: Icon,
+  icon,
   trend,
   description,
 }: MetricCardProps) {
+  const Icon = iconMap[icon];
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
