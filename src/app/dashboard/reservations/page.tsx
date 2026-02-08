@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ReservationCard } from '@/components/features/reservations/ReservationCard';
@@ -33,7 +33,7 @@ interface Pagination {
   pages: number;
 }
 
-export default function ReservationsPage() {
+function ReservationsContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [reservations, setReservations] = useState<Reservation[]>([]);
@@ -310,5 +310,19 @@ export default function ReservationsPage() {
         </>
       )}
     </div>
+  );
+}
+
+export default function ReservationsPage() {
+  return (
+    <Suspense fallback={
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex justify-center items-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        </div>
+      </div>
+    }>
+      <ReservationsContent />
+    </Suspense>
   );
 }
