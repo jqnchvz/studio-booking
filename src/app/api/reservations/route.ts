@@ -7,6 +7,115 @@ import {
 } from '@/lib/services/reservation.service';
 import { queueEmail } from '@/lib/queue/email-queue';
 import { db } from '@/lib/db';
+import { Prisma } from '@prisma/client';
+
+/**
+ * GET /api/reservations
+ * List user's reservations with filtering and pagination
+ *
+ * Query Parameters:
+ * - status: all | confirmed | cancelled | completed (default: all)
+ * - timeframe: all | upcoming | past (default: all)
+ * - page: number (default: 1)
+ * - limit: number (default: 20, max: 100)
+ *
+ * Returns:
+ * - reservations: Array of reservation objects with resource details
+ * - total: Total count of reservations matching filters
+ * - page: Current page number
+ * - pages: Total number of pages
+ */
+export async function GET(request: NextRequest) {
+  try {
+    // Step 1: Authentication
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Debes iniciar sesión para ver tus reservas' },
+        { status: 401 }
+      );
+    }
+
+    // Step 2: Parse query parameters
+    const { searchParams } = new URL(request.url);
+    const status = searchParams.get('status') || 'all';
+    const timeframe = searchParams.get('timeframe') || 'all';
+    const page = parseInt(searchParams.get('page') || '1', 10);
+    const limit = Math.min(parseInt(searchParams.get('limit') || '20', 10), 100);
+
+    // Step 3: Build filter conditions
+    const where: Prisma.ReservationWhereInput = {
+      userId: user.id,
+    };
+
+    // Filter by status
+    if (status !== 'all') {
+      where.status = status as 'confirmed' | 'cancelled' | 'completed';
+    }
+
+    // Filter by timeframe
+    const now = new Date();
+    if (timeframe === 'upcoming') {
+      where.startTime = { gte: now };
+    } else if (timeframe === 'past') {
+      where.startTime = { lt: now };
+    }
+
+    // Step 4: Get total count for pagination
+    const total = await db.reservation.count({ where });
+
+    // Step 5: Fetch reservations with pagination
+    const reservations = await db.reservation.findMany({
+      where,
+      include: {
+        resource: {
+          select: {
+            id: true,
+            name: true,
+            type: true,
+            capacity: true,
+          },
+        },
+      },
+      orderBy: [
+        { startTime: timeframe === 'past' ? 'desc' : 'asc' },
+      ],
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+
+    // Step 6: Calculate pagination metadata
+    const pages = Math.ceil(total / limit);
+
+    // Step 7: Return paginated response
+    return NextResponse.json({
+      reservations: reservations.map((r) => ({
+        id: r.id,
+        title: r.title,
+        description: r.description,
+        startTime: r.startTime.toISOString(),
+        endTime: r.endTime.toISOString(),
+        status: r.status,
+        attendees: r.attendees,
+        resource: r.resource,
+        createdAt: r.createdAt.toISOString(),
+        updatedAt: r.updatedAt.toISOString(),
+      })),
+      pagination: {
+        total,
+        page,
+        limit,
+        pages,
+      },
+    });
+  } catch (error) {
+    console.error('List reservations error:', error);
+    return NextResponse.json(
+      { error: 'Error al obtener las reservas. Por favor, intenta nuevamente.' },
+      { status: 500 }
+    );
+  }
+}
 
 /**
  * POST /api/reservations
