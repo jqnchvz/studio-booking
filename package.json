@@ -26,7 +26,7 @@
     "worker:scheduler": "tsx src/workers/scheduler-worker.ts",
     "jobs:setup": "tsx src/lib/queue/setup-jobs.ts",
     "jobs:list": "tsx src/lib/queue/setup-jobs.ts list",
-    "db:seed-test": "tsx seed-test-data.ts"
+    "db:seed-test": "tsx --env-file=.env seed-test-data.ts"
   },
   "repository": {
     "type": "git",

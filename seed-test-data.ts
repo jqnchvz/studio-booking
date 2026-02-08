@@ -117,7 +117,16 @@ async function main() {
   // Step 4: Create active subscriptions
   console.log('\n💳 Creating active subscriptions...');
 
-  // Delete existing subscriptions for test users to avoid conflicts
+  // Delete existing test data to avoid conflicts
+  // Must delete payments first due to foreign key constraint
+  await db.payment.deleteMany({
+    where: {
+      userId: {
+        in: users.map(u => u.id),
+      },
+    },
+  });
+
   await db.subscription.deleteMany({
     where: {
       userId: {
