@@ -75,7 +75,7 @@ export async function GET(request: NextRequest) {
           DATE_TRUNC('month', "paidAt") as month,
           SUM("totalAmount")::integer as revenue,
           COUNT(*)::integer as payments
-        FROM "Payment"
+        FROM "payments"
         WHERE "status" = 'approved'
           AND "paidAt" >= ${twelveMonthsAgo}
           AND "paidAt" IS NOT NULL
