@@ -113,8 +113,8 @@ export async function POST(request: NextRequest) {
     // Step 5: Create reservation (with transaction-based double-booking prevention)
     const reservation = await createReservation(validatedData, user.id);
 
-    // Step 6: Queue confirmation email (async)
-    await queueEmail({
+    // Step 6: Queue confirmation email (fire-and-forget, don't block response)
+    queueEmail({
       userId: user.id,
       type: 'reservation_confirmed',
       to: user.email,
@@ -132,6 +132,9 @@ export async function POST(request: NextRequest) {
         attendees: reservation.attendees,
         dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/reservations/${reservation.id}`,
       },
+    }).catch((error) => {
+      // Log email queue errors but don't fail the reservation
+      console.error('Failed to queue confirmation email:', error);
     });
 
     // Step 7: Return success response

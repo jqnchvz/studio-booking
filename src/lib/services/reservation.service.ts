@@ -127,7 +127,7 @@ export async function checkResourceAvailability(
     Array<{ id: string; startTime: Date; endTime: Date }>
   >`
     SELECT id, "startTime", "endTime"
-    FROM "Reservation"
+    FROM reservations
     WHERE "resourceId" = ${resourceId}
       AND status IN ('pending', 'confirmed')
       AND (

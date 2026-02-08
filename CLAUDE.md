@@ -784,267 +784,35 @@ src/
 
 ### Test Coverage Status
 
-Current test coverage:
-- ✅ **Session Management** (`src/lib/auth/session.ts`) - 13 tests
-  - JWT token generation and verification
-  - Cookie configuration
-  - Environment variable validation
-- ✅ **Auth Service** (`src/lib/services/auth.service.ts`) - 20 tests
-  - Password hashing and verification
-  - Credential validation
-  - Email verification token management
-- ✅ **Rate Limiting** (`src/lib/middleware/rate-limit.ts`) - 14 tests
-  - Request throttling
-  - IP-based tracking
-  - Configuration options
-- ✅ **Reservation Validation** (`src/lib/validations/reservation.ts`) - 19 tests
-  - Duration validations (30min-8hr)
-  - Future date validation
-  - Field constraints and refinements
-- ✅ **Reservation Service** (`src/lib/services/reservation.service.ts`) - 14 tests
-  - Resource availability checking
-  - Rate limiting (10/day per user)
-  - Transaction-based creation with double-booking prevention
-- ✅ **MercadoPago Service** (`src/lib/services/mercadopago.service.ts`) - 34 tests
-  - Payment preference creation
-  - Subscription management
-  - Webhook signature verification
-- ✅ **Webhook Handlers** (`src/lib/services/webhook-handlers.service.ts`) - 47 tests
-  - Payment status transitions
-  - Subscription lifecycle
-  - Penalty fee calculations
-- ✅ **Penalty Service** (`src/lib/services/penalty.service.ts`) - 18 tests
-  - Grace period calculations
-  - Progressive penalty rates
-  - Payment date handling
-- ✅ **Additional coverage** - Multiple workers, API routes, user profile, grace periods
-
-**Total: 214 tests passing** (15 test files)
-**Coverage**: 79% statements, 72% functions, 79% lines, 72% branches
+**Current**: 214 tests passing across 15 test files
+- **Coverage**: 79% statements, 72% functions, 79% lines, 72% branches
+- **Key areas covered**: Auth services, payment processing, reservation system, webhooks
+- **Run**: `npm run test:coverage` to view detailed report
 
 ### What to Test
 
-#### High Priority (Critical Auth Paths)
-✅ **Completed:**
-- Session utilities (JWT generation/verification)
-- Auth service (validateCredentials, password hashing)
-- Rate limiting middleware
-
-🔜 **Todo:**
-- API Routes:
-  - POST /api/auth/register
-  - POST /api/auth/verify-email
-  - POST /api/auth/login
-- Authentication middleware (when implemented)
-- Email sending service
-
-#### Medium Priority
-- Validation schemas (Zod)
-- Utility functions
-- Cookie management
-
-#### Lower Priority
-- UI components
-- E2E flows
+**Priority**: Auth services > Payment processing > Validation > API routes > UI components
+**Focus**: Critical paths (authentication, payments, reservations) before nice-to-haves (UI, E2E)
 
 ### Writing Tests
 
-#### Unit Tests Pattern
+**Pattern**: `describe` → `beforeEach` (reset mocks) → `it` (single assertion)
 
-```typescript
-// src/lib/utils/example.test.ts
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { yourFunction } from './example';
+**Mock database**: `vi.mock('@/lib/db', () => ({ db: { user: { findUnique: vi.fn() } } }))`
 
-describe('YourFunction', () => {
-  beforeEach(() => {
-    // Reset state before each test
-    vi.clearAllMocks();
-  });
-
-  it('should do what it is supposed to do', () => {
-    const result = yourFunction('input');
-    expect(result).toBe('expected output');
-  });
-
-  it('should handle edge cases', () => {
-    expect(() => yourFunction('')).toThrow('Invalid input');
-  });
-});
-```
-
-#### Mocking Database Calls
-
-```typescript
-import { describe, it, expect, vi } from 'vitest';
-import { db } from '@/lib/db';
-
-// Mock the database module
-vi.mock('@/lib/db', () => ({
-  db: {
-    user: {
-      findUnique: vi.fn(),
-      create: vi.fn(),
-      update: vi.fn(),
-    },
-  },
-}));
-
-describe('Function with DB calls', () => {
-  it('should query database correctly', async () => {
-    // Setup mock
-    vi.mocked(db.user.findUnique).mockResolvedValueOnce({
-      id: 'user-123',
-      email: 'test@example.com',
-      // ... other fields
-    });
-
-    // Test your function
-    const result = await yourFunction();
-
-    // Verify
-    expect(db.user.findUnique).toHaveBeenCalledWith({
-      where: { email: 'test@example.com' },
-    });
-    expect(result).toBeDefined();
-  });
-});
-```
-
-#### Testing Environment Variables
-
-```typescript
-describe('Function requiring env vars', () => {
-  it('should throw if env var is missing', () => {
-    const originalValue = process.env.JWT_SECRET;
-    delete process.env.JWT_SECRET;
-
-    expect(() => yourFunction()).toThrow('JWT_SECRET environment variable is not set');
-
-    // Restore
-    process.env.JWT_SECRET = originalValue;
-  });
-});
-```
-
-### CI/CD Integration
-
-Tests run automatically on every push and pull request via GitHub Actions:
-
-```yaml
-# .github/workflows/ci.yml
-- Run on Node.js 18.x and 20.x
-- Execute linting, type checking, tests, and build
-- Set test environment variables
-- Fail PR if any check fails
-```
-
-### Test Best Practices
-
-1. **Test behavior, not implementation** - Focus on what the function does, not how
-2. **One assertion per test** - Keep tests focused and easy to debug
-3. **Use descriptive test names** - Clearly state what is being tested
-4. **Mock external dependencies** - Database, APIs, file system, etc.
-5. **Test edge cases** - Empty strings, null, undefined, boundary values
-6. **Clean up after tests** - Reset mocks and restore environment variables
-7. **Keep tests fast** - Avoid unnecessary delays or heavy operations
-
-### Example: Complete Test File
-
-```typescript
-// src/lib/auth/session.test.ts
-import { describe, it, expect } from 'vitest';
-import { generateToken, verifyToken } from './session';
-
-describe('Session Utilities', () => {
-  const mockPayload = {
-    userId: 'user-123',
-    email: 'test@example.com',
-  };
-
-  describe('generateToken', () => {
-    it('should generate a valid JWT token', () => {
-      const token = generateToken(mockPayload);
-
-      expect(token).toBeDefined();
-      expect(typeof token).toBe('string');
-      expect(token.split('.')).toHaveLength(3);
-    });
-
-    it('should encode payload data in token', () => {
-      const token = generateToken(mockPayload);
-      const decoded = verifyToken(token);
-
-      expect(decoded?.userId).toBe(mockPayload.userId);
-      expect(decoded?.email).toBe(mockPayload.email);
-    });
-  });
-
-  describe('verifyToken', () => {
-    it('should return null for invalid token', () => {
-      const decoded = verifyToken('invalid.token.here');
-      expect(decoded).toBeNull();
-    });
-  });
-});
-```
+**Best practices**: Test behavior not implementation, mock external deps, test edge cases, keep fast
 
 ### Critical Feature Patterns
 
-#### Double-Booking Prevention (Reservation System)
+#### Double-Booking Prevention
 
-**Pattern**: Pessimistic locking with PostgreSQL `FOR UPDATE SKIP LOCKED`
+**Pattern**: Use `db.$transaction` + `FOR UPDATE SKIP LOCKED` to prevent race conditions
 
-```typescript
-// In reservation.service.ts
-export async function createReservation(data: CreateReservationInput, userId: string) {
-  return await db.$transaction(async (tx) => {
-    // CRITICAL: Re-check availability INSIDE transaction with row locking
-    const overlapping = await tx.$queryRaw`
-      SELECT id FROM "Reservation"
-      WHERE "resourceId" = ${data.resourceId}
-        AND status IN ('pending', 'confirmed')
-        AND (
-          ("startTime" <= ${startTime} AND "endTime" > ${startTime})
-          OR ("startTime" < ${endTime} AND "endTime" >= ${endTime})
-          OR ("startTime" >= ${startTime} AND "endTime" <= ${endTime})
-        )
-      FOR UPDATE SKIP LOCKED  -- Prevents race conditions
-    `;
-
-    if (overlapping.length > 0) {
-      throw new Error('Resource already booked');
-    }
-
-    // Create reservation atomically
-    return await tx.reservation.create({ data });
-  });
-}
-```
-
-**Why `FOR UPDATE SKIP LOCKED`**:
-- Locks only conflicting rows, not entire table
-- `SKIP LOCKED` allows concurrent reservations for different time slots
-- Prevents race condition where two requests check availability simultaneously
-- Re-checking availability inside transaction is CRITICAL - prevents time-of-check to time-of-use bugs
-
-**Three overlap scenarios to detect**:
-```
-Scenario 1: New reservation starts during existing
-  Existing: [====]
-  New:         [====]
-  Check: startTime <= newStart AND endTime > newStart
-
-Scenario 2: New reservation ends during existing
-  Existing:    [====]
-  New:      [====]
-  Check: startTime < newEnd AND endTime >= newEnd
-
-Scenario 3: New reservation encompasses existing
-  Existing:   [==]
-  New:      [======]
-  Check: startTime >= newStart AND endTime <= newEnd
-```
+**Key points**:
+- Re-check availability INSIDE transaction (prevents time-of-check to time-of-use bugs)
+- `FOR UPDATE SKIP LOCKED` locks only conflicting rows, allows concurrent bookings
+- Detect 3 overlap scenarios: new starts during existing, new ends during existing, new encompasses existing
+- See `reservation.service.ts` for implementation
 
 #### Chile Timezone Handling
 
@@ -1053,36 +821,17 @@ Scenario 3: New reservation encompasses existing
 - Email formatting
 - User-facing date displays
 
+**⚠️ CRITICAL: Date Parsing UTC Trap**
 ```typescript
-// Extract day-of-week in Chile timezone for availability matching
-const dayOfWeek = new Date(
-  startTime.toLocaleString('en-US', { timeZone: 'America/Santiago' })
-).getDay();  // 0-6 (Sunday-Saturday)
+// ❌ Wrong: Parses as midnight UTC, becomes previous day in Chile (UTC-3)
+const date = new Date("2026-02-09");
 
-// Format times for availability checking (HH:MM format)
-const timeStr = startTime.toLocaleTimeString('en-US', {
-  timeZone: 'America/Santiago',
-  hour12: false,
-  hour: '2-digit',
-  minute: '2-digit',
-});  // Returns "14:00"
-
-// Format dates for email templates
-const formattedDate = new Intl.DateTimeFormat('es-CL', {
-  timeZone: 'America/Santiago',
-  dateStyle: 'full',
-}).format(startTime);  // "lunes, 9 de febrero de 2026"
+// ✅ Correct: Parse components and create in local timezone
+const [year, month, day] = "2026-02-09".split('-').map(Number);
+const date = new Date(year, month - 1, day, 12, 0, 0);
 ```
 
-**Storage vs Display**:
-- **Store**: Always UTC in PostgreSQL (Prisma handles this automatically)
-- **Convert to Chile timezone only for**:
-  - Day-of-week matching with ResourceAvailability
-  - Email templates
-  - User-facing displays
-- **Never convert for**: Database queries, date comparisons, duration calculations (use UTC)
-
-**Common pitfall**: Don't extract day-of-week from UTC date - it may be a different day in Chile!
+**Day-of-Week Extraction:**
 ```typescript
 // ❌ Wrong - may be wrong day in Chile timezone
 const dayOfWeek = startTime.getDay();
@@ -1093,95 +842,87 @@ const dayOfWeek = new Date(
 ).getDay();
 ```
 
-## Common Patterns
+**Storage vs Display**:
+- **Store**: Always UTC in PostgreSQL (Prisma handles automatically)
+- **Convert to Chile timezone only for**: Day-of-week matching, email templates, user displays
+- **Never convert for**: Database queries, date comparisons, duration calculations
 
-### Form Handling
+#### Prisma Raw SQL - Table Name Convention
 
-```typescript
-'use client';
-
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { LoginSchema } from '@/lib/validations/auth';
-
-export function LoginForm() {
-  const form = useForm({
-    resolver: zodResolver(LoginSchema),
-    defaultValues: {
-      email: '',
-      password: '',
-    },
-  });
-
-  async function onSubmit(data: z.infer<typeof LoginSchema>) {
-    const response = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
-
-    if (!response.ok) {
-      // Handle error
-      return;
-    }
-
-    // Handle success
-  }
-
-  return (
-    <form onSubmit={form.handleSubmit(onSubmit)}>
-      {/* Form fields */}
-    </form>
-  );
-}
-```
-
-### Server Actions
+**⚠️ CRITICAL**: When using `$queryRaw`, use actual PostgreSQL table names, NOT Prisma model names.
 
 ```typescript
-'use server';
+// ❌ Wrong: Uses PascalCase model name
+const results = await db.$queryRaw`
+  SELECT * FROM "Reservation" WHERE id = ${id}
+`;
 
-import { revalidatePath } from 'next/cache';
-import { db } from '@/lib/db';
-import { BookingSchema } from '@/lib/validations/booking';
-
-export async function createBooking(formData: FormData) {
-  // 1. Get current user (from session)
-  const user = await getCurrentUser();
-
-  if (!user) {
-    return { error: 'Unauthorized' };
-  }
-
-  // 2. Validate input
-  const result = BookingSchema.safeParse({
-    studioId: formData.get('studioId'),
-    startTime: formData.get('startTime'),
-    endTime: formData.get('endTime'),
-  });
-
-  if (!result.success) {
-    return { error: 'Invalid input' };
-  }
-
-  // 3. Create booking
-  try {
-    const booking = await db.booking.create({
-      data: {
-        ...result.data,
-        userId: user.id,
-      },
-    });
-
-    // 4. Revalidate and return
-    revalidatePath('/dashboard/bookings');
-    return { success: true, booking };
-
-  } catch (error) {
-    return { error: 'Failed to create booking' };
-  }
-}
+// ✅ Correct: Uses snake_case table name from @@map
+const results = await db.$queryRaw`
+  SELECT * FROM reservations WHERE id = ${id}
+`;
 ```
+
+**Column names**: Stay camelCase in quotes: `"userId"`, `"startTime"`, `"resourceId"`
+
+**Check Prisma schema** for `@@map("table_name")` directive. See RES-82 for refactoring to Prisma query builder.
+
+#### Email Queue - Fire-and-Forget Pattern
+
+**⚠️ CRITICAL**: Don't `await` non-critical operations like email queueing.
+
+```typescript
+// ❌ Wrong: Blocks API response if Redis is down/slow
+await queueEmail({...});
+return NextResponse.json({reservation});
+
+// ✅ Correct: Fire-and-forget with error logging
+queueEmail({...}).catch(err => console.error('Email queue error:', err));
+return NextResponse.json({reservation});
+```
+
+**When to await vs fire-and-forget:**
+- **Await**: Critical operations (database writes, payments)
+- **Fire-and-forget**: Notifications, analytics, emails, logging
+
+#### Testing with Authentication
+
+**Test User**: `test@email.com` (has active "Plan Pro" subscription)
+
+**Check database for test users:**
+```bash
+psql -h localhost -U joaquinchavez -d reservapp_dev -c \
+  "SELECT u.email, s.status, sp.name FROM users u
+   JOIN subscriptions s ON s.\"userId\" = u.id
+   JOIN subscription_plans sp ON s.\"planId\" = sp.id;"
+```
+
+#### Database Setup After Schema Changes
+
+**Complete setup sequence:**
+```bash
+npm run db:push                    # Push schema
+npm run db:generate                # Generate types
+npx tsx prisma/seed-resources.ts  # Seed resources (if needed)
+```
+
+**Verify data:**
+```bash
+psql -h localhost -U joaquinchavez -d reservapp_dev -c \
+  "SELECT r.name, COUNT(ra.id) FROM resources r
+   LEFT JOIN resource_availability ra ON r.id = ra.\"resourceId\"
+   GROUP BY r.id, r.name;"
+```
+
+## Known Issues
+
+### Middleware Not Redirecting Unauthenticated Users (RES-81)
+
+**Issue**: Unauthenticated users can access `/dashboard/reservations/new` without redirect
+
+**Expected**: Middleware should redirect to `/login?from=/dashboard/reservations/new`
+
+**Workaround**: API-level authentication still protects operations (defense-in-depth)
 
 ## Environment Setup
 
@@ -1491,110 +1232,4 @@ Remember:
 
 ---
 
-## 🚀 Quick Reference Card
-
-### Essential Commands (Run Before Every Commit)
-
-```bash
-npm install              # Install/update dependencies
-npm run db:generate      # Generate Prisma types
-npm run lint            # Check code style
-npm run type-check      # Check TypeScript types
-npm test                # Run all tests
-npm run build           # Verify build works
-```
-
-### Common CI Fixes
-
-| Error Message | Cause | Fix |
-|--------------|-------|-----|
-| `npm ci requires package-lock.json` | Lock file not committed | Remove from `.gitignore` and commit |
-| `Module has no exported member 'PrismaClient'` | Types not generated | Add `npm run db:generate` to CI before type-check |
-| `Unsupported engine: node 18.x` | Node version too old | Update CI to Node 20.x+ |
-| `Converting circular structure to JSON` | ESLint 9 incompatibility | Downgrade to ESLint 8.x + eslint-config-next 14.x |
-| `Cannot assign to 'NODE_ENV'` | Read-only property in tests | Use `(process.env as any).NODE_ENV = 'test'` |
-| `Could not find declaration file` | Missing @types package | Install `@types/package-name` |
-
-### Testing Checklist
-
-```bash
-# Before writing tests:
-✅ Install vitest and testing libraries
-✅ Create vitest.config.ts
-✅ Create vitest.setup.ts
-✅ Add test scripts to package.json
-✅ Verify `npm test` runs (even with 0 tests)
-
-# When writing tests:
-✅ Mock database with vi.mock()
-✅ Include ALL Prisma model fields in mocks
-✅ Use (process.env as any) for env vars
-✅ Install @types/package-name for type definitions
-✅ Test runs locally before committing
-```
-
-### CI/CD Pipeline Order
-
-```yaml
-1. Checkout code
-2. Setup Node.js 20.x/22.x
-3. Install dependencies (npm ci)
-4. Generate Prisma types ← CRITICAL, often forgotten
-5. Lint
-6. Type check
-7. Test
-8. Build
-```
-
-### Dependency Management
-
-```bash
-# Check Node requirements before installing
-npm info package-name engines
-
-# Install stable versions (not latest)
-npm install package@8  # Not package@latest
-
-# After adding dependencies:
-git add package.json package-lock.json
-npm run build  # Verify everything still works
-```
-
-### Git Workflow
-
-```bash
-# Start new task
-git checkout master
-git pull origin master
-git checkout -b feature/RES-X-task-title
-
-# Work in small commits
-git add <files>
-git commit -m "type(scope): description (RES-X)"
-git push origin feature/RES-X-task-title
-
-# After each commit, run locally:
-npm run lint && npm run type-check && npm test
-```
-
-### When Things Break
-
-1. **Read the FULL error message** - don't guess
-2. **Check this document** - common issues are documented above
-3. **Run commands locally** - reproduce the CI failure
-4. **Fix root cause** - not symptoms
-5. **Test the fix** - run all checks before pushing
-
-### Remember
-
-- ✅ Commit `package-lock.json` (NEVER ignore it)
-- ✅ Run `db:generate` after schema changes
-- ✅ Test locally before pushing to CI
-- ✅ Use stable dependency versions (N-1)
-- ✅ Check Node.js requirements when upgrading
-- ✅ Small commits > one giant commit
-- ✅ Read error messages completely
-
----
-
-**Last Updated:** 2026-02-07 - Updated test coverage status (214 tests), added reservation double-booking prevention patterns, enhanced Prisma mock type assertion documentation based on RES-70 implementation experience.
+**Last Updated:** 2026-02-07 - Added critical timezone handling patterns (date parsing UTC trap), Prisma raw SQL table name conventions, fire-and-forget email queue pattern, database setup sequences, and test user authentication setup based on RES-71 implementation experience. Total: 214 tests, 79% coverage.
