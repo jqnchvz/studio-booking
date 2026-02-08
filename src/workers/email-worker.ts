@@ -11,6 +11,7 @@ import { SubscriptionCancelled } from '../../emails/subscription-cancelled';
 import { VerifyEmail } from '../../emails/verify-email';
 import { PasswordReset } from '../../emails/password-reset';
 import { ReservationConfirmed } from '../../emails/reservation-confirmed';
+import { ReservationCancelled } from '../../emails/reservation-cancelled';
 
 /**
  * Map of template names to template functions
@@ -94,6 +95,19 @@ const templates: Record<string, (data: Record<string, unknown>) => React.ReactEl
       startTime: data.startTime as string,
       endTime: data.endTime as string,
       attendees: data.attendees as number,
+    }),
+  'reservation-cancelled': (data) =>
+    ReservationCancelled({
+      dashboardUrl: data.dashboardUrl as string,
+      name: data.name as string | undefined,
+      reservationId: data.reservationId as string,
+      resourceName: data.resourceName as string,
+      resourceType: data.resourceType as string,
+      title: data.title as string,
+      description: data.description as string | undefined,
+      startTime: data.startTime as string,
+      endTime: data.endTime as string,
+      cancelledAt: data.cancelledAt as string,
     }),
 };
 

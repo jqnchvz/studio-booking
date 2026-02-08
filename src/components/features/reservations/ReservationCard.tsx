@@ -1,8 +1,10 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { CancelReservationModal } from './CancelReservationModal';
 
 interface Resource {
   id: string;
@@ -26,10 +28,11 @@ interface Reservation {
 
 interface ReservationCardProps {
   reservation: Reservation;
-  onCancel?: (reservationId: string) => void;
+  onCancelSuccess?: () => void;
 }
 
-export function ReservationCard({ reservation, onCancel }: ReservationCardProps) {
+export function ReservationCard({ reservation, onCancelSuccess }: ReservationCardProps) {
+  const [showCancelModal, setShowCancelModal] = useState(false);
   const startTime = new Date(reservation.startTime);
   const endTime = new Date(reservation.endTime);
   const now = new Date();
@@ -188,15 +191,33 @@ export function ReservationCard({ reservation, onCancel }: ReservationCardProps)
           Ver Detalles
         </Link>
 
-        {canCancel && onCancel && (
+        {canCancel && (
           <button
-            onClick={() => onCancel(reservation.id)}
+            onClick={() => setShowCancelModal(true)}
             className="flex-1 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-md border border-red-200 transition"
           >
             Cancelar
           </button>
         )}
       </div>
+
+      {/* Cancel Modal */}
+      <CancelReservationModal
+        reservation={{
+          id: reservation.id,
+          title: reservation.title,
+          startTime: reservation.startTime,
+          resource: {
+            name: reservation.resource.name,
+          },
+        }}
+        isOpen={showCancelModal}
+        onClose={() => setShowCancelModal(false)}
+        onSuccess={() => {
+          setShowCancelModal(false);
+          onCancelSuccess?.();
+        }}
+      />
     </div>
   );
 }

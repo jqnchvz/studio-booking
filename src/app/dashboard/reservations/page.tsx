@@ -107,9 +107,47 @@ function ReservationsContent() {
     fetchCounts();
   }, []);
 
-  function handleCancel(reservationId: string) {
-    // TODO: Implement cancellation modal in RES-73
-    alert('Funcionalidad de cancelación próximamente (RES-73)');
+  async function handleCancelSuccess() {
+    // Refetch reservations after successful cancellation
+    try {
+      setLoading(true);
+      setError(null);
+
+      const params = new URLSearchParams();
+      if (timeframe !== 'all') params.set('timeframe', timeframe);
+      if (status !== 'all') params.set('status', status);
+      params.set('page', page);
+
+      const response = await fetch(`/api/reservations?${params.toString()}`);
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Error al cargar las reservas');
+      }
+
+      const data = await response.json();
+      setReservations(data.reservations);
+      setPagination(data.pagination);
+
+      // Also refetch counts
+      const [allRes, upcomingRes, pastRes, cancelledRes] = await Promise.all([
+        fetch('/api/reservations?limit=1').then((r) => r.json()),
+        fetch('/api/reservations?timeframe=upcoming&limit=1').then((r) => r.json()),
+        fetch('/api/reservations?timeframe=past&limit=1').then((r) => r.json()),
+        fetch('/api/reservations?status=cancelled&limit=1').then((r) => r.json()),
+      ]);
+
+      setCounts({
+        all: allRes.pagination?.total || 0,
+        upcoming: upcomingRes.pagination?.total || 0,
+        past: pastRes.pagination?.total || 0,
+        cancelled: cancelledRes.pagination?.total || 0,
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error desconocido');
+    } finally {
+      setLoading(false);
+    }
   }
 
   function handlePageChange(newPage: number) {
@@ -203,7 +241,7 @@ function ReservationsContent() {
               <ReservationCard
                 key={reservation.id}
                 reservation={reservation}
-                onCancel={handleCancel}
+                onCancelSuccess={handleCancelSuccess}
               />
             ))}
           </div>
