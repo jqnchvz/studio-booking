@@ -79,3 +79,76 @@ export interface ActivityEvent {
     resourceName?: string;
   };
 }
+
+/**
+ * User list item for admin table display
+ */
+export interface UserListItem {
+  id: string;
+  name: string;
+  email: string;
+  isAdmin: boolean;
+  emailVerified: boolean;
+  createdAt: string; // ISO 8601
+  subscription: {
+    status: string;
+    planName: string;
+    planId: string;
+  } | null;
+}
+
+/**
+ * Pagination metadata
+ */
+export interface PaginationMeta {
+  total: number;
+  page: number;
+  limit: number;
+  pages: number;
+}
+
+/**
+ * User list API response
+ */
+export interface UserListResponse {
+  users: UserListItem[];
+  pagination: PaginationMeta;
+}
+
+/**
+ * User detail with full relations
+ */
+export interface UserDetail {
+  id: string;
+  name: string;
+  email: string;
+  isAdmin: boolean;
+  emailVerified: boolean;
+  createdAt: string;
+  subscription: {
+    id: string;
+    status: string;
+    planName: string;
+    planPrice: number;
+    currentPeriodStart: string;
+    currentPeriodEnd: string;
+    nextBillingDate: string;
+  } | null;
+  payments: Array<{
+    id: string;
+    totalAmount: number;
+    status: string;
+    paidAt: string | null;
+    createdAt: string;
+    planName: string;
+  }>;
+  reservations: Array<{
+    id: string;
+    title: string;
+    resourceName: string;
+    startTime: string;
+    endTime: string;
+    status: string;
+    createdAt: string;
+  }>;
+}
