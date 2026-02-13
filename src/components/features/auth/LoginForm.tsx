@@ -93,8 +93,13 @@ export function LoginForm() {
         return;
       }
 
-      // Success - redirect to the intended page or dashboard
-      router.push(redirectTo);
+      // Success - redirect based on user role
+      // Admin users go to /admin, regular users to dashboard
+      const destination = result.user?.isAdmin
+        ? '/admin'
+        : redirectTo;
+
+      router.push(destination);
       router.refresh();
     } catch (err) {
       console.error('Login error:', err);
