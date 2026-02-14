@@ -10,7 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { formatChileanDate } from '@/lib/utils/format';
+import { formatChileanDate, formatChileanTime } from '@/lib/utils/format';
 import type { UserDetail } from '@/types/admin';
 
 interface UserReservationHistoryProps {
@@ -51,11 +51,7 @@ export function UserReservationHistory({ reservations }: UserReservationHistoryP
                     <TableCell className="text-sm">
                       {formatChileanDate(new Date(reservation.startTime))}
                       {' '}
-                      {new Date(reservation.startTime).toLocaleTimeString('es-CL', {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        timeZone: 'America/Santiago',
-                      })}
+                      {formatChileanTime(new Date(reservation.startTime))}
                     </TableCell>
                     <TableCell className="text-sm">
                       {reservation.resourceName}
