@@ -11,7 +11,7 @@ export type PromoteUserInput = z.infer<typeof promoteUserSchema>;
  */
 export const activateSubscriptionSchema = z.object({
   action: z.literal('activate'),
-  planId: z.string().cuid(),
+  planId: z.string().min(1), // Plan existence validated in API via database lookup
   startDate: z.string().datetime(), // ISO 8601
 });
 
