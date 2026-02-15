@@ -152,3 +152,70 @@ export interface UserDetail {
     createdAt: string;
   }>;
 }
+
+/**
+ * Payment list item for admin table display
+ */
+export interface PaymentListItem {
+  id: string;
+  mercadopagoId: string;
+  amount: number;
+  penaltyFee: number;
+  totalAmount: number;
+  status: string;
+  dueDate: string; // ISO 8601
+  paidAt: string | null; // ISO 8601
+  createdAt: string; // ISO 8601
+  user: {
+    id: string;
+    name: string;
+    email: string;
+  };
+  plan: {
+    name: string;
+  };
+}
+
+/**
+ * Payment list API response
+ */
+export interface PaymentListResponse {
+  payments: PaymentListItem[];
+  pagination: PaginationMeta;
+}
+
+/**
+ * Payment detail with full relations
+ */
+export interface PaymentDetail {
+  id: string;
+  mercadopagoId: string;
+  amount: number;
+  penaltyFee: number;
+  totalAmount: number;
+  status: string;
+  dueDate: string; // ISO 8601
+  paidAt: string | null; // ISO 8601
+  metadata: any;
+  createdAt: string; // ISO 8601
+  updatedAt: string; // ISO 8601
+  user: {
+    id: string;
+    name: string;
+    email: string;
+  };
+  subscription: {
+    id: string;
+    status: string;
+    plan: {
+      name: string;
+      price: number;
+    };
+  };
+  webhookEvents?: Array<{
+    id: string;
+    eventType: string;
+    createdAt: string; // ISO 8601
+    processed: boolean;
+  }>;
+}
