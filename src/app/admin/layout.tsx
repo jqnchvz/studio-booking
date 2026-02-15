@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { LayoutDashboard, Users, Calendar, CreditCard, Settings } from 'lucide-react';
+import { LayoutDashboard, Users, Calendar, CreditCard, DollarSign, Settings } from 'lucide-react';
 import { getCurrentUser } from '@/lib/auth/get-current-user';
 
 /**
@@ -20,7 +20,8 @@ import { getCurrentUser } from '@/lib/auth/get-current-user';
  *
  * Navigation Links:
  * - Dashboard: Overview metrics and charts
- * - Usuarios: User management (future)
+ * - Usuarios: User management
+ * - Pagos: Payment monitoring and history
  * - Reservas: Reservation management (future)
  * - Suscripciones: Subscription management (future)
  * - Configuración: System settings (future)
@@ -57,6 +58,9 @@ export default async function AdminLayout({
             </NavLink>
             <NavLink href="/admin/users" icon={Users}>
               Usuarios
+            </NavLink>
+            <NavLink href="/admin/payments" icon={DollarSign}>
+              Pagos
             </NavLink>
             <NavLink href="/admin/reservations" icon={Calendar}>
               Reservas
