@@ -43,3 +43,17 @@ export function formatChileanDateTime(date: Date): string {
     minute: '2-digit',
   }).format(date);
 }
+
+/**
+ * Format time to Chilean timezone string (HH:MM AM/PM format)
+ * Ensures consistent formatting across server and client to prevent hydration errors
+ * @param date - Date to format
+ * @returns Formatted time string
+ */
+export function formatChileanTime(date: Date): string {
+  return new Intl.DateTimeFormat('es-CL', {
+    timeZone: 'America/Santiago',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date);
+}
