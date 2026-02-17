@@ -219,3 +219,60 @@ export interface PaymentDetail {
     processed: boolean;
   }>;
 }
+
+/**
+ * Reservation list item for admin table display
+ */
+export interface ReservationListItem {
+  id: string;
+  title: string;
+  startTime: string; // ISO 8601
+  endTime: string; // ISO 8601
+  status: string;
+  attendees: number;
+  createdAt: string; // ISO 8601
+  user: {
+    id: string;
+    name: string;
+    email: string;
+  };
+  resource: {
+    id: string;
+    name: string;
+  };
+}
+
+/**
+ * Reservation list API response
+ */
+export interface ReservationListResponse {
+  reservations: ReservationListItem[];
+  pagination: PaginationMeta;
+}
+
+/**
+ * Reservation detail with full relations
+ */
+export interface ReservationDetail {
+  id: string;
+  title: string;
+  description: string | null;
+  startTime: string; // ISO 8601
+  endTime: string; // ISO 8601
+  status: string;
+  attendees: number;
+  metadata: any;
+  createdAt: string; // ISO 8601
+  updatedAt: string; // ISO 8601
+  user: {
+    id: string;
+    name: string;
+    email: string;
+  };
+  resource: {
+    id: string;
+    name: string;
+    description: string | null;
+    capacity: number;
+  };
+}
