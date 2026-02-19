@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useTransition, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ChevronLeft, ChevronRight, List, CalendarDays } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -142,6 +142,7 @@ export function ReservationCalendar({
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  const [isPending, startTransition] = useTransition();
   const [month, setMonth] = useState(initialMonth);
   const [resourceId, setResourceId] = useState(initialResourceId);
 
@@ -181,25 +182,33 @@ export function ReservationCalendar({
 
   const handlePrevMonth = () => {
     const next = shiftMonth(month, -1);
-    setMonth(next);
-    updateUrl({ month: next });
+    startTransition(() => {
+      setMonth(next);
+      updateUrl({ month: next });
+    });
   };
 
   const handleNextMonth = () => {
     const next = shiftMonth(month, 1);
-    setMonth(next);
-    updateUrl({ month: next });
+    startTransition(() => {
+      setMonth(next);
+      updateUrl({ month: next });
+    });
   };
 
   const handleToday = () => {
     const current = currentChileMonth();
-    setMonth(current);
-    updateUrl({ month: current });
+    startTransition(() => {
+      setMonth(current);
+      updateUrl({ month: current });
+    });
   };
 
   const handleResourceChange = (id: string) => {
-    setResourceId(id);
-    updateUrl({ resourceId: id });
+    startTransition(() => {
+      setResourceId(id);
+      updateUrl({ resourceId: id });
+    });
   };
 
   /**
@@ -264,7 +273,12 @@ export function ReservationCalendar({
       </div>
 
       {/* Calendar grid */}
-      <div className="border rounded-lg overflow-hidden">
+      <div
+        className={[
+          'border rounded-lg overflow-hidden transition-opacity duration-150',
+          isPending && 'opacity-60 pointer-events-none',
+        ].filter(Boolean).join(' ')}
+      >
         {/* Days of week header */}
         <div className="grid grid-cols-7 bg-muted">
           {DAYS_OF_WEEK.map((day) => (
