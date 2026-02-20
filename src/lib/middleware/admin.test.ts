@@ -62,7 +62,7 @@ describe('requireAdmin', () => {
   });
 
   it('should return 404 when user does not exist in database', async () => {
-    vi.mocked(verifyToken).mockReturnValue({ userId: 'deleted-user', email: 'gone@example.com' });
+    vi.mocked(verifyToken).mockReturnValue({ userId: 'deleted-user', email: 'gone@example.com', isAdmin: false });
     vi.mocked(db.user.findUnique).mockResolvedValue(null);
     const request = createMockRequest('valid-token');
 
@@ -77,7 +77,7 @@ describe('requireAdmin', () => {
   });
 
   it('should return 403 when user is not an admin', async () => {
-    vi.mocked(verifyToken).mockReturnValue({ userId: 'user-1', email: 'user@example.com' });
+    vi.mocked(verifyToken).mockReturnValue({ userId: 'user-1', email: 'user@example.com', isAdmin: false });
     vi.mocked(db.user.findUnique).mockResolvedValue({
       id: 'user-1',
       email: 'user@example.com',
@@ -103,7 +103,7 @@ describe('requireAdmin', () => {
       name: 'Admin User',
       isAdmin: true,
     };
-    vi.mocked(verifyToken).mockReturnValue({ userId: 'admin-1', email: 'admin@example.com' });
+    vi.mocked(verifyToken).mockReturnValue({ userId: 'admin-1', email: 'admin@example.com', isAdmin: true });
     vi.mocked(db.user.findUnique).mockResolvedValue(adminUser as never);
     const request = createMockRequest('valid-token');
 
@@ -116,7 +116,7 @@ describe('requireAdmin', () => {
   });
 
   it('should query the database with the userId from the JWT', async () => {
-    vi.mocked(verifyToken).mockReturnValue({ userId: 'user-xyz', email: 'test@example.com' });
+    vi.mocked(verifyToken).mockReturnValue({ userId: 'user-xyz', email: 'test@example.com', isAdmin: false });
     vi.mocked(db.user.findUnique).mockResolvedValue(null);
     const request = createMockRequest('valid-token');
 

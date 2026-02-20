@@ -1,6 +1,13 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { verifyToken } from './src/lib/auth/session';
-import { db } from './src/lib/db';
+
+/**
+ * Must be Node.js runtime to support jsonwebtoken (uses Node crypto APIs).
+ * This top-level export is what Next.js actually reads — placing `runtime`
+ * inside `export const config` is silently ignored and was the root cause
+ * of this middleware never running (RES-81).
+ */
+export const runtime = 'nodejs';
 
 export async function middleware(request: NextRequest) {
   const sessionCookie = request.cookies.get('session');
@@ -22,7 +29,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Check authentication for protected routes
+  // Redirect unauthenticated users to login
   if (!sessionCookie) {
     const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('from', pathname);
@@ -39,69 +46,9 @@ export async function middleware(request: NextRequest) {
     return response;
   }
 
-  // Check admin access for admin routes
-  if (pathname.startsWith('/admin')) {
-    try {
-      const user = await db.user.findUnique({
-        where: { id: payload.userId },
-        select: { isAdmin: true },
-      });
-
-      if (!user || !user.isAdmin) {
-        // Non-admin users are redirected to their dashboard
-        const dashboardUrl = new URL('/dashboard', request.url);
-        return NextResponse.redirect(dashboardUrl);
-      }
-
-      // Admin user - allow access
-      return NextResponse.next();
-    } catch (error) {
-      console.error('Error checking admin status in middleware:', error);
-      // On error, deny access to admin routes
-      const dashboardUrl = new URL('/dashboard', request.url);
-      return NextResponse.redirect(dashboardUrl);
-    }
-  }
-
-  // Check subscription status for reservation routes
-  if (pathname.startsWith('/reservations')) {
-    try {
-      const subscription = await db.subscription.findUnique({
-        where: { userId: payload.userId },
-        select: { status: true, gracePeriodEnd: true },
-      });
-
-      // Block if user has no subscription at all
-      if (!subscription) {
-        const subscribeUrl = new URL('/dashboard/subscribe', request.url);
-        return NextResponse.redirect(subscribeUrl);
-      }
-
-      // Block access if subscription is suspended
-      if (subscription.status === 'suspended') {
-        const paymentRequiredUrl = new URL('/dashboard/subscription', request.url);
-        paymentRequiredUrl.searchParams.set('reason', 'suspended');
-        return NextResponse.redirect(paymentRequiredUrl);
-      }
-
-      // Check grace period for past_due subscriptions
-      if (subscription.status === 'past_due') {
-        const now = new Date();
-        const graceExpired =
-          !subscription.gracePeriodEnd || subscription.gracePeriodEnd <= now;
-
-        if (graceExpired) {
-          const paymentRequiredUrl = new URL('/dashboard/subscription', request.url);
-          paymentRequiredUrl.searchParams.set('reason', 'grace_expired');
-          return NextResponse.redirect(paymentRequiredUrl);
-        }
-        // Grace period still active — allow access
-      }
-    } catch (error) {
-      console.error('Error checking subscription status in middleware:', error);
-      // On error, allow through (fail open rather than fail closed)
-      return NextResponse.next();
-    }
+  // Check admin access for admin routes using JWT claim (no DB query needed)
+  if (pathname.startsWith('/admin') && !payload.isAdmin) {
+    return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
   // Allow authenticated request
@@ -116,7 +63,4 @@ export const config = {
     '/admin/:path*',
     '/profile/:path*',
   ],
-  // Force Node.js runtime to allow Prisma database access
-  // Edge Runtime doesn't support Node.js APIs required by pg Pool
-  runtime: 'nodejs',
 };

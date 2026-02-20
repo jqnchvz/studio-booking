@@ -6,6 +6,7 @@ import jwt from 'jsonwebtoken';
 export interface SessionPayload {
   userId: string;
   email: string;
+  isAdmin: boolean;
 }
 
 /**
