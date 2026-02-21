@@ -2,11 +2,32 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import {
+  LayoutDashboard,
+  Users,
+  DollarSign,
+  Calendar,
+  CreditCard,
+  Settings,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
+
+// Icon map keeps functions server-side-safe: server passes a string key,
+// this client component resolves the actual function.
+const iconMap = {
+  dashboard: LayoutDashboard,
+  users: Users,
+  payments: DollarSign,
+  reservations: Calendar,
+  subscriptions: CreditCard,
+  settings: Settings,
+} as const;
+
+type IconKey = keyof typeof iconMap;
 
 interface AdminNavLinkProps {
   href: string;
-  icon: React.ComponentType<{ className?: string }>;
+  icon: IconKey;
   children: React.ReactNode;
 }
 
@@ -16,14 +37,19 @@ interface AdminNavLinkProps {
  * Client component that renders a sidebar navigation link with active-state
  * highlighting. Uses usePathname to detect the current route.
  *
+ * Accepts an icon key string (not a component) to avoid the RSC constraint
+ * of passing functions from Server → Client components.
+ *
  * Active detection:
  * - Exact match for /admin (dashboard root)
  * - Prefix match for all other sections (/admin/users, /admin/payments, etc.)
  */
-export function AdminNavLink({ href, icon: Icon, children }: AdminNavLinkProps) {
+export function AdminNavLink({ href, icon, children }: AdminNavLinkProps) {
   const pathname = usePathname();
   const isActive =
     href === '/admin' ? pathname === '/admin' : pathname.startsWith(href);
+
+  const Icon = iconMap[icon];
 
   return (
     <Link

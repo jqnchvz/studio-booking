@@ -1,14 +1,6 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import {
-  LayoutDashboard,
-  Users,
-  Calendar,
-  CreditCard,
-  DollarSign,
-  Settings,
-  ArrowLeft,
-} from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { getCurrentUser } from '@/lib/auth/get-current-user';
 import { AdminNavLink } from '@/components/features/admin/AdminNavLink';
 
@@ -52,22 +44,22 @@ export default async function AdminLayout({
 
         {/* Navigation */}
         <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
-          <AdminNavLink href="/admin" icon={LayoutDashboard}>
+          <AdminNavLink href="/admin" icon="dashboard">
             Dashboard
           </AdminNavLink>
-          <AdminNavLink href="/admin/users" icon={Users}>
+          <AdminNavLink href="/admin/users" icon="users">
             Usuarios
           </AdminNavLink>
-          <AdminNavLink href="/admin/payments" icon={DollarSign}>
+          <AdminNavLink href="/admin/payments" icon="payments">
             Pagos
           </AdminNavLink>
-          <AdminNavLink href="/admin/reservations" icon={Calendar}>
+          <AdminNavLink href="/admin/reservations" icon="reservations">
             Reservas
           </AdminNavLink>
-          <AdminNavLink href="/admin/subscriptions" icon={CreditCard}>
+          <AdminNavLink href="/admin/subscriptions" icon="subscriptions">
             Suscripciones
           </AdminNavLink>
-          <AdminNavLink href="/admin/settings" icon={Settings}>
+          <AdminNavLink href="/admin/settings" icon="settings">
             Configuración
           </AdminNavLink>
         </nav>
