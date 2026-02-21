@@ -31,16 +31,21 @@ model User {
 }
 
 model SubscriptionPlan {
-  id            String         @id @default(cuid())
-  name          String
-  description   String
-  price         Int            // Price in CLP (e.g., 9990 = $9.990 CLP)
-  interval      String         // "monthly" or "yearly"
-  features      Json           // Array of feature strings
-  isActive      Boolean        @default(true)
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  subscriptions Subscription[]
+  id               String         @id @default(cuid())
+  name             String
+  description      String
+  price            Int            // Price in CLP (e.g., 9990 = $9.990 CLP)
+  interval         String         // "monthly" or "yearly"
+  features         Json           // Array of feature strings
+  isActive         Boolean        @default(true)
+  // Per-plan penalty configuration (defaults match global constants in penalty.service.ts)
+  gracePeriodDays  Int            @default(2)
+  penaltyBaseRate  Float          @default(0.05)  // 5% base penalty
+  penaltyDailyRate Float          @default(0.005) // +0.5% per day late
+  penaltyMaxRate   Float          @default(0.5)   // 50% cap
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  subscriptions    Subscription[]
 
   @@map("subscription_plans")
 }
