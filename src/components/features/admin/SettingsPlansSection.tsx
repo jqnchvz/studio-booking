@@ -363,9 +363,9 @@ export function SettingsPlansSection({ initialPlans }: SettingsPlansSectionProps
 
       {/* Create / Edit Modal */}
       <Dialog open={modalOpen} onOpenChange={closeModal}>
-        <DialogContent className="max-w-lg flex flex-col max-h-[90vh]">
-          <form onSubmit={handleSave} className="flex flex-col min-h-0">
-            <DialogHeader className="shrink-0">
+        <DialogContent className="max-w-lg p-0 gap-0 flex flex-col max-h-[85vh] overflow-hidden">
+          <form onSubmit={handleSave} className="flex flex-col h-full min-h-0">
+            <DialogHeader className="px-6 pt-6 pb-4 shrink-0">
               <DialogTitle>
                 {editingPlan ? 'Editar Plan' : 'Nuevo Plan'}
               </DialogTitle>
@@ -376,7 +376,7 @@ export function SettingsPlansSection({ initialPlans }: SettingsPlansSectionProps
               </DialogDescription>
             </DialogHeader>
 
-            <div className="flex-1 overflow-y-auto space-y-4 py-4 pr-1">
+            <div className="flex-1 overflow-y-auto min-h-0 space-y-4 px-6 py-2 pr-5">
               {/* Plan info */}
               <div className="space-y-2">
                 <Label htmlFor="plan-name">Nombre</Label>
@@ -521,7 +521,7 @@ export function SettingsPlansSection({ initialPlans }: SettingsPlansSectionProps
               </div>
             </div>
 
-            <DialogFooter className="shrink-0 pt-2">
+            <DialogFooter className="px-6 py-4 shrink-0 border-t">
               <Button
                 type="button"
                 variant="outline"
