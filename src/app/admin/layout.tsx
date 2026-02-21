@@ -1,37 +1,32 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { LayoutDashboard, Users, Calendar, CreditCard, DollarSign, Settings } from 'lucide-react';
+import {
+  LayoutDashboard,
+  Users,
+  Calendar,
+  CreditCard,
+  DollarSign,
+  Settings,
+  ArrowLeft,
+} from 'lucide-react';
 import { getCurrentUser } from '@/lib/auth/get-current-user';
+import { AdminNavLink } from '@/components/features/admin/AdminNavLink';
 
 /**
  * Admin Layout
  *
- * Provides consistent navigation and access control for all admin pages.
+ * Full-height sidebar layout with dark navigation panel and warm-themed
+ * content area. Three-layer access control: middleware → layout → API guard.
  *
- * Structure:
- * - Top bar with app branding and back link
- * - Sidebar with navigation links
- * - Main content area
- *
- * Access Control:
- * - Requires authenticated user with isAdmin flag
- * - Redirects non-admin users to /dashboard
- * - This is the third layer of protection (middleware + API + layout)
- *
- * Navigation Links:
- * - Dashboard: Overview metrics and charts
- * - Usuarios: User management
- * - Pagos: Payment monitoring and history
- * - Reservas: Reservation management (future)
- * - Suscripciones: Subscription management (future)
- * - Configuración: System settings (future)
+ * Layout structure:
+ * - Dark sidebar (always dark, mode-independent) with brand mark + nav
+ * - Scrollable main content area with sticky top bar
  */
 export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  // Access control: Verify user is admin
   const user = await getCurrentUser();
 
   if (!user || !user.isAdmin) {
@@ -39,74 +34,68 @@ export default async function AdminLayout({
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      {/* Top Bar */}
-      <header className="sticky top-0 z-50 bg-white border-b">
-        <div className="flex items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-4">
-            <h1 className="text-xl font-bold">Reservapp Admin</h1>
+    <div className="flex h-screen overflow-hidden bg-background">
+      {/* ── Sidebar ─────────────────────────────────────────── */}
+      <aside className="w-64 bg-sidebar flex-shrink-0 flex flex-col border-r border-sidebar-border">
+        {/* Brand mark */}
+        <div className="flex items-center gap-3 px-5 py-5 border-b border-sidebar-border">
+          <div className="w-8 h-8 rounded-md bg-primary flex items-center justify-center flex-shrink-0">
+            <span className="text-primary-foreground font-bold text-sm">R</span>
+          </div>
+          <div className="min-w-0">
+            <p className="text-sidebar-foreground font-semibold text-sm leading-none">
+              Reservapp
+            </p>
+            <p className="text-sidebar-muted text-xs mt-0.5">Admin Panel</p>
           </div>
         </div>
-      </header>
 
-      <div className="flex">
-        {/* Sidebar Navigation */}
-        <aside className="w-64 bg-white border-r min-h-[calc(100vh-73px)] p-4">
-          <nav className="space-y-1">
-            <NavLink href="/admin" icon={LayoutDashboard}>
-              Dashboard
-            </NavLink>
-            <NavLink href="/admin/users" icon={Users}>
-              Usuarios
-            </NavLink>
-            <NavLink href="/admin/payments" icon={DollarSign}>
-              Pagos
-            </NavLink>
-            <NavLink href="/admin/reservations" icon={Calendar}>
-              Reservas
-            </NavLink>
-            <NavLink href="/admin/subscriptions" icon={CreditCard}>
-              Suscripciones
-            </NavLink>
-            <NavLink href="/admin/settings" icon={Settings}>
-              Configuración
-            </NavLink>
-          </nav>
-        </aside>
+        {/* Navigation */}
+        <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
+          <AdminNavLink href="/admin" icon={LayoutDashboard}>
+            Dashboard
+          </AdminNavLink>
+          <AdminNavLink href="/admin/users" icon={Users}>
+            Usuarios
+          </AdminNavLink>
+          <AdminNavLink href="/admin/payments" icon={DollarSign}>
+            Pagos
+          </AdminNavLink>
+          <AdminNavLink href="/admin/reservations" icon={Calendar}>
+            Reservas
+          </AdminNavLink>
+          <AdminNavLink href="/admin/subscriptions" icon={CreditCard}>
+            Suscripciones
+          </AdminNavLink>
+          <AdminNavLink href="/admin/settings" icon={Settings}>
+            Configuración
+          </AdminNavLink>
+        </nav>
 
-        {/* Main Content */}
-        <main className="flex-1 p-6">{children}</main>
+        {/* Footer link */}
+        <div className="px-5 py-4 border-t border-sidebar-border">
+          <Link
+            href="/dashboard"
+            className="flex items-center gap-2 text-xs text-sidebar-muted hover:text-sidebar-foreground transition-colors"
+          >
+            <ArrowLeft className="h-3 w-3" />
+            Volver al sitio
+          </Link>
+        </div>
+      </aside>
+
+      {/* ── Main content area ────────────────────────────────── */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        {/* Sticky top bar */}
+        <header className="h-14 flex items-center px-6 border-b bg-card flex-shrink-0">
+          <p className="text-sm text-muted-foreground font-medium">
+            Panel de Administración
+          </p>
+        </header>
+
+        {/* Scrollable page content */}
+        <main className="flex-1 overflow-y-auto p-6">{children}</main>
       </div>
     </div>
-  );
-}
-
-/**
- * Navigation Link Component
- *
- * Renders a navigation link with icon and active state highlighting.
- * Uses Next.js usePathname to determine active state.
- */
-function NavLink({
-  href,
-  icon: Icon,
-  children,
-}: {
-  href: string;
-  icon: React.ComponentType<{ className?: string }>;
-  children: React.ReactNode;
-}) {
-  // Note: We can't use usePathname in a server component
-  // For now, all links use the same style. In a future enhancement,
-  // we could make this a client component or use URL matching.
-
-  return (
-    <Link
-      href={href}
-      className="flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:bg-slate-100 hover:text-foreground transition"
-    >
-      <Icon className="h-4 w-4" />
-      {children}
-    </Link>
   );
 }

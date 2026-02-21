@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Authentication - Reservapp',
-  description: 'Sign in or create an account',
+  title: 'Autenticación - Reservapp',
+  description: 'Inicia sesión o crea una cuenta',
 };
 
 export default function AuthLayout({
@@ -11,10 +11,14 @@ export default function AuthLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 p-4">
-      <div className="w-full max-w-md">
-        {children}
-      </div>
+    <div
+      className="min-h-screen flex items-center justify-center p-4"
+      style={{
+        background:
+          'radial-gradient(ellipse 90% 70% at 50% -10%, oklch(68% 0.16 68 / 0.18), transparent), oklch(98.5% 0.007 80)',
+      }}
+    >
+      <div className="w-full max-w-md">{children}</div>
     </div>
   );
 }
