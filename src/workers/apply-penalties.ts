@@ -61,6 +61,10 @@ export async function applyPenalties(): Promise<{
           plan: {
             select: {
               name: true,
+              gracePeriodDays: true,
+              penaltyBaseRate: true,
+              penaltyDailyRate: true,
+              penaltyMaxRate: true,
             },
           },
         },
@@ -80,12 +84,20 @@ export async function applyPenalties(): Promise<{
       console.log(`   Due date: ${payment.dueDate.toISOString()}`);
       console.log(`   Amount: ${payment.amount}`);
 
-      // Calculate penalty
-      const penaltyResult = calculatePenalty({
-        baseAmount: payment.amount,
-        dueDate: payment.dueDate,
-        paymentDate: now,
-      });
+      // Calculate penalty using per-plan configuration
+      const penaltyResult = calculatePenalty(
+        {
+          baseAmount: payment.amount,
+          dueDate: payment.dueDate,
+          paymentDate: now,
+        },
+        {
+          gracePeriodDays: payment.subscription.plan.gracePeriodDays,
+          basePenaltyRate: payment.subscription.plan.penaltyBaseRate,
+          dailyPenaltyRate: payment.subscription.plan.penaltyDailyRate,
+          maxPenaltyRate: payment.subscription.plan.penaltyMaxRate,
+        }
+      );
 
       console.log(`   Days late: ${penaltyResult.daysLate}`);
       console.log(`   Penalty rate: ${(penaltyResult.penaltyRate * 100).toFixed(1)}%`);
