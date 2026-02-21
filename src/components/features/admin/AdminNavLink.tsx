@@ -31,7 +31,7 @@ export function AdminNavLink({ href, icon: Icon, children }: AdminNavLinkProps) 
       className={cn(
         'flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors duration-150',
         isActive
-          ? 'bg-primary/15 text-primary'
+          ? 'bg-sidebar-active/10 text-sidebar-active'
           : 'text-sidebar-muted hover:bg-white/5 hover:text-sidebar-foreground'
       )}
     >
