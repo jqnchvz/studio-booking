@@ -1,8 +1,8 @@
 'use client';
 
 import {
-  Line,
-  LineChart,
+  Bar,
+  BarChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -21,16 +21,16 @@ interface RevenueChartProps {
 /**
  * RevenueChart Component
  *
- * Displays monthly revenue as a line chart using recharts.
+ * Displays monthly revenue as a bar chart using recharts.
  * Shows last 12 months of approved payment revenue.
  *
  * Features:
- * - Smooth monotone curve for visual appeal
+ * - Bar chart for clear month-by-month comparison
  * - Responsive container (adjusts to screen width)
  * - Custom tooltip with Spanish labels and CLP formatting
  * - Y-axis shows abbreviated currency ($12k style)
  * - X-axis shows Spanish month names (Ene, Feb, etc.)
- * - Theme-aware colors using CSS variables
+ * - Theme-aware colors using CSS variables (Tailwind v4 pattern)
  *
  * Note: MUST be client component (recharts requires browser DOM)
  */
@@ -53,46 +53,54 @@ export function RevenueChart({ data }: RevenueChartProps) {
           </div>
         ) : (
           <ResponsiveContainer width="100%" height={350}>
-            <LineChart data={sortedData}>
-              {/* Background grid */}
-              <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+            <BarChart data={sortedData} barCategoryGap="30%">
+              {/* Background grid — horizontal lines only for cleaner look */}
+              <CartesianGrid
+                strokeDasharray="3 3"
+                vertical={false}
+                stroke="var(--color-border)"
+              />
 
               {/* X-axis: Month labels */}
               <XAxis
                 dataKey="month"
-                className="text-xs"
-                tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                axisLine={false}
+                tickLine={false}
+                tick={{ fill: 'var(--color-muted-foreground)', fontSize: 12 }}
               />
 
               {/* Y-axis: Revenue with abbreviated format */}
               <YAxis
-                className="text-xs"
-                tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                axisLine={false}
+                tickLine={false}
+                tick={{ fill: 'var(--color-muted-foreground)', fontSize: 12 }}
                 tickFormatter={(value: number) =>
-                  `$${(value / 1000).toFixed(0)}k`
+                  value === 0 ? '$0' : `$${(value / 1000).toFixed(0)}k`
                 }
+                width={48}
               />
 
               {/* Custom tooltip with Spanish labels */}
               <Tooltip
+                cursor={{ fill: 'var(--color-muted)', opacity: 0.5 }}
                 content={({ active, payload }) => {
                   if (!active || !payload?.length) return null;
 
-                  const data = payload[0].payload as RevenueData;
+                  const entry = payload[0].payload as RevenueData;
 
                   return (
-                    <div className="bg-background border rounded-lg shadow-lg p-3">
-                      <p className="font-semibold">{data.month}</p>
-                      <p className="text-sm text-muted-foreground">
+                    <div className="bg-card border rounded-lg shadow-lg p-3 text-sm">
+                      <p className="font-semibold mb-1">{entry.month}</p>
+                      <p className="text-muted-foreground">
                         Ingresos:{' '}
                         <span className="font-medium text-foreground">
-                          {formatCLP(data.revenue)}
+                          {formatCLP(entry.revenue)}
                         </span>
                       </p>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-muted-foreground">
                         Pagos:{' '}
                         <span className="font-medium text-foreground">
-                          {data.payments}
+                          {entry.payments}
                         </span>
                       </p>
                     </div>
@@ -100,15 +108,13 @@ export function RevenueChart({ data }: RevenueChartProps) {
                 }}
               />
 
-              {/* Line graph */}
-              <Line
-                type="monotone"
+              {/* Bars with brand amber */}
+              <Bar
                 dataKey="revenue"
-                stroke="hsl(var(--primary))"
-                strokeWidth={2}
-                dot={{ fill: 'hsl(var(--primary))', strokeWidth: 2 }}
+                fill="var(--color-primary)"
+                radius={[4, 4, 0, 0]}
               />
-            </LineChart>
+            </BarChart>
           </ResponsiveContainer>
         )}
       </CardContent>
