@@ -251,6 +251,62 @@ export interface ReservationListResponse {
 }
 
 /**
+ * Subscription list item for admin table display
+ */
+export interface SubscriptionListItem {
+  id: string;
+  status: string;
+  planName: string;
+  planPrice: number;
+  currentPeriodStart: string; // ISO 8601
+  currentPeriodEnd: string; // ISO 8601
+  createdAt: string; // ISO 8601
+  user: {
+    id: string;
+    name: string;
+    email: string;
+  };
+}
+
+/**
+ * Subscription list API response
+ */
+export interface SubscriptionListResponse {
+  subscriptions: SubscriptionListItem[];
+  pagination: PaginationMeta;
+}
+
+/**
+ * Subscription detail with payment history
+ */
+export interface SubscriptionDetail {
+  id: string;
+  status: string;
+  planName: string;
+  planPrice: number;
+  nextBillingDate: string; // ISO 8601
+  currentPeriodStart: string; // ISO 8601
+  currentPeriodEnd: string; // ISO 8601
+  cancelledAt: string | null; // ISO 8601
+  createdAt: string; // ISO 8601
+  updatedAt: string; // ISO 8601
+  user: {
+    id: string;
+    name: string;
+    email: string;
+  };
+  payments: Array<{
+    id: string;
+    totalAmount: number;
+    penaltyFee: number;
+    status: string;
+    paidAt: string | null;
+    createdAt: string; // ISO 8601
+    planName: string;
+  }>;
+}
+
+/**
  * Reservation detail with full relations
  */
 export interface ReservationDetail {
