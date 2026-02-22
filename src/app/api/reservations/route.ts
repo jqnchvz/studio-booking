@@ -143,6 +143,7 @@ export async function POST(request: NextRequest) {
     const subscription = await db.subscription.findUnique({
       where: { userId: user.id },
       select: {
+        planId: true,
         status: true,
         gracePeriodEnd: true,
         plan: {
@@ -203,6 +204,57 @@ export async function POST(request: NextRequest) {
     }
 
     const validatedData = parsed.data;
+
+    // Step 3.5: Plan-resource access + monthly quota check
+    const accessRecords = await db.planResourceAccess.findMany({
+      where: { planId: subscription.planId },
+    });
+
+    // No records → plan is unrestricted (backward compatible with existing plans)
+    if (accessRecords.length > 0) {
+      const record = accessRecords.find(r => r.resourceId === validatedData.resourceId);
+
+      if (!record) {
+        return NextResponse.json(
+          { error: 'Tu plan no incluye acceso a este recurso' },
+          { status: 403 }
+        );
+      }
+
+      if (record.maxHoursPerMonth !== null) {
+        const startOfMonth = new Date();
+        startOfMonth.setDate(1);
+        startOfMonth.setHours(0, 0, 0, 0);
+
+        const monthlyReservations = await db.reservation.findMany({
+          where: {
+            userId: user.id,
+            resourceId: validatedData.resourceId,
+            status: { in: ['confirmed', 'pending'] },
+            startTime: { gte: startOfMonth },
+          },
+          select: { startTime: true, endTime: true },
+        });
+
+        const hoursUsed = monthlyReservations.reduce((acc, r) => {
+          return acc + (r.endTime.getTime() - r.startTime.getTime()) / (1000 * 60 * 60);
+        }, 0);
+
+        const newHours =
+          (new Date(validatedData.endTime).getTime() -
+            new Date(validatedData.startTime).getTime()) /
+          (1000 * 60 * 60);
+
+        if (hoursUsed + newHours > record.maxHoursPerMonth) {
+          return NextResponse.json(
+            {
+              error: `Has alcanzado el límite mensual de ${record.maxHoursPerMonth} hora(s) para este recurso con tu plan actual`,
+            },
+            { status: 403 }
+          );
+        }
+      }
+    }
 
     // Step 4: Check user daily reservation limit (database-based)
     const limitCheck = await checkUserReservationLimit(user.id);
