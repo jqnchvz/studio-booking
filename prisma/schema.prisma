@@ -31,21 +31,22 @@ model User {
 }
 
 model SubscriptionPlan {
-  id               String         @id @default(cuid())
+  id               String               @id @default(cuid())
   name             String
   description      String
-  price            Int            // Price in CLP (e.g., 9990 = $9.990 CLP)
-  interval         String         // "monthly" or "yearly"
-  features         Json           // Array of feature strings
-  isActive         Boolean        @default(true)
+  price            Int                  // Price in CLP (e.g., 9990 = $9.990 CLP)
+  interval         String               // "monthly" or "yearly"
+  features         Json                 // Array of feature strings
+  isActive         Boolean              @default(true)
   // Per-plan penalty configuration (defaults match global constants in penalty.service.ts)
-  gracePeriodDays  Int            @default(2)
-  penaltyBaseRate  Float          @default(0.05)  // 5% base penalty
-  penaltyDailyRate Float          @default(0.005) // +0.5% per day late
-  penaltyMaxRate   Float          @default(0.5)   // 50% cap
-  createdAt        DateTime       @default(now())
-  updatedAt        DateTime       @updatedAt
+  gracePeriodDays  Int                  @default(2)
+  penaltyBaseRate  Float                @default(0.05)  // 5% base penalty
+  penaltyDailyRate Float                @default(0.005) // +0.5% per day late
+  penaltyMaxRate   Float                @default(0.5)   // 50% cap
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
   subscriptions    Subscription[]
+  resourceAccess   PlanResourceAccess[]
 
   @@map("subscription_plans")
 }
@@ -119,6 +120,7 @@ model Resource {
   updatedAt    DateTime               @updatedAt
   reservations Reservation[]
   availability ResourceAvailability[]
+  planAccess   PlanResourceAccess[]
 
   @@map("resources")
 }
@@ -156,6 +158,21 @@ model ResourceAvailability {
 
   @@index([resourceId])
   @@map("resource_availability")
+}
+
+model PlanResourceAccess {
+  id               String           @id @default(cuid())
+  planId           String
+  plan             SubscriptionPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  resourceId       String
+  resource         Resource         @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  maxHoursPerMonth Int?             // null = unlimited within this plan
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  @@unique([planId, resourceId])
+  @@index([planId])
+  @@map("plan_resource_access")
 }
 
 model EmailLog {

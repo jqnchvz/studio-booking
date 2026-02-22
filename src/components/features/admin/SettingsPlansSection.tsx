@@ -51,6 +51,14 @@ interface PlanFormState {
   penaltyMaxRate: string;
 }
 
+interface ResourceAccessDraft {
+  resourceId: string;
+  name: string;
+  type: string;
+  enabled: boolean;
+  maxHoursPerMonth: string; // '' = unlimited
+}
+
 interface SettingsPlansSectionProps {
   initialPlans: Plan[];
 }
@@ -65,6 +73,12 @@ const DEFAULT_FORM: PlanFormState = {
   penaltyBaseRate: '5',
   penaltyDailyRate: '0.5',
   penaltyMaxRate: '50',
+};
+
+const TYPE_LABELS: Record<string, string> = {
+  room: 'Sala',
+  equipment: 'Equipo',
+  service: 'Servicio',
 };
 
 function planToForm(plan: Plan): PlanFormState {
@@ -88,6 +102,7 @@ function planToForm(plan: Plan): PlanFormState {
  *
  * Displays all subscription plans with their status and subscriber count.
  * Allows admins to create, edit, delete, and toggle active/inactive state.
+ * Edit modal includes a resource access section for per-plan quota configuration.
  */
 export function SettingsPlansSection({ initialPlans }: SettingsPlansSectionProps) {
   const [plans, setPlans] = useState<Plan[]>(initialPlans);
@@ -100,26 +115,70 @@ export function SettingsPlansSection({ initialPlans }: SettingsPlansSectionProps
   const [form, setForm] = useState<PlanFormState>(DEFAULT_FORM);
   const [saveLoading, setSaveLoading] = useState(false);
 
+  // Resource access state (edit modal only)
+  const [resourceAccess, setResourceAccess] = useState<ResourceAccessDraft[]>([]);
+  const [accessLoading, setAccessLoading] = useState(false);
+
   const openCreate = () => {
     setEditingPlan(null);
     setForm(DEFAULT_FORM);
+    setResourceAccess([]);
     setModalOpen(true);
   };
 
-  const openEdit = (plan: Plan) => {
+  const openEdit = async (plan: Plan) => {
     setEditingPlan(plan);
     setForm(planToForm(plan));
+    setResourceAccess([]);
     setModalOpen(true);
+
+    // Fetch resource access config in the background
+    setAccessLoading(true);
+    try {
+      const res = await fetch(`/api/admin/settings/plans/${plan.id}/resources`);
+      if (!res.ok) throw new Error('Error al cargar acceso a recursos');
+      const data = await res.json();
+      setResourceAccess(
+        data.resources.map(
+          (r: { id: string; name: string; type: string; access: { maxHoursPerMonth: number | null } | null }) => ({
+            resourceId: r.id,
+            name: r.name,
+            type: r.type,
+            enabled: r.access !== null,
+            maxHoursPerMonth:
+              r.access?.maxHoursPerMonth != null ? String(r.access.maxHoursPerMonth) : '',
+          })
+        )
+      );
+    } catch {
+      // Non-fatal: access section will be empty but plan can still be edited
+      console.error('Failed to load resource access');
+    } finally {
+      setAccessLoading(false);
+    }
   };
 
   const closeModal = () => {
     setModalOpen(false);
     setEditingPlan(null);
     setForm(DEFAULT_FORM);
+    setResourceAccess([]);
   };
 
   const handleFieldChange = (field: keyof PlanFormState, value: string) => {
     setForm(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleAccessToggle = (resourceId: string, enabled: boolean) => {
+    setResourceAccess(prev =>
+      prev.map(r => (r.resourceId === resourceId ? { ...r, enabled } : r))
+    );
+  };
+
+  const handleAccessHours = (resourceId: string, value: string) => {
+    setResourceAccess(prev =>
+      prev.map(r => (r.resourceId === resourceId ? { ...r, maxHoursPerMonth: value } : r))
+    );
   };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -177,6 +236,29 @@ export function SettingsPlansSection({ initialPlans }: SettingsPlansSectionProps
 
       const data = await response.json();
       const savedPlan: Plan = data.plan;
+
+      // Save resource access config (edit only — create doesn't have resources loaded)
+      if (editingPlan) {
+        const accessPayload = resourceAccess
+          .filter(r => r.enabled)
+          .map(r => ({
+            resourceId: r.resourceId,
+            maxHoursPerMonth: r.maxHoursPerMonth ? parseInt(r.maxHoursPerMonth) : null,
+          }));
+
+        const accessRes = await fetch(
+          `/api/admin/settings/plans/${editingPlan.id}/resources`,
+          {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ resources: accessPayload }),
+          }
+        );
+        if (!accessRes.ok) {
+          const err = await accessRes.json();
+          throw new Error(err.error || 'Error al guardar acceso a recursos');
+        }
+      }
 
       if (editingPlan) {
         setPlans(prev => prev.map(p => (p.id === savedPlan.id ? savedPlan : p)));
@@ -519,6 +601,72 @@ export function SettingsPlansSection({ initialPlans }: SettingsPlansSectionProps
                   Penalización = Base % + (días de retraso × Diaria %), con un máximo de Máxima %
                 </p>
               </div>
+
+              {/* Resource access — edit modal only */}
+              {editingPlan && (
+                <div className="border-t pt-4 space-y-3">
+                  <div>
+                    <p className="text-sm font-medium">Acceso a recursos</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Sin selección = acceso irrestricto a todos los recursos
+                    </p>
+                  </div>
+
+                  {accessLoading ? (
+                    <div className="flex items-center gap-2 py-2 text-sm text-muted-foreground">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Cargando recursos...
+                    </div>
+                  ) : resourceAccess.length === 0 ? (
+                    <p className="text-sm text-muted-foreground py-2">
+                      No hay recursos activos configurados
+                    </p>
+                  ) : (
+                    <div className="space-y-2">
+                      {resourceAccess.map(r => (
+                        <div key={r.resourceId} className="flex items-center gap-3">
+                          <input
+                            type="checkbox"
+                            id={`access-${r.resourceId}`}
+                            checked={r.enabled}
+                            onChange={e => handleAccessToggle(r.resourceId, e.target.checked)}
+                            disabled={saveLoading}
+                            className="h-4 w-4 rounded border-gray-300"
+                          />
+                          <label
+                            htmlFor={`access-${r.resourceId}`}
+                            className="flex-1 text-sm cursor-pointer"
+                          >
+                            {r.name}
+                            <span className="ml-1.5 text-xs text-muted-foreground">
+                              ({TYPE_LABELS[r.type] ?? r.type})
+                            </span>
+                          </label>
+                          {r.enabled && (
+                            <div className="flex items-center gap-1.5">
+                              <Input
+                                type="number"
+                                min="1"
+                                step="1"
+                                value={r.maxHoursPerMonth}
+                                onChange={e =>
+                                  handleAccessHours(r.resourceId, e.target.value)
+                                }
+                                placeholder="∞"
+                                disabled={saveLoading}
+                                className="w-20 h-7 text-xs"
+                              />
+                              <span className="text-xs text-muted-foreground whitespace-nowrap">
+                                h/mes
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             <DialogFooter className="px-6 py-4 shrink-0 border-t">
