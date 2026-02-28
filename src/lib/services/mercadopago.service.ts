@@ -3,6 +3,12 @@ import {
   mercadopagoConfig,
   validateMercadoPagoConfig,
 } from '../config/mercadopago.config';
+import {
+  PreApprovalCreateSchema,
+  PreApprovalCancelSchema,
+  PreApprovalAmountUpdateSchema,
+  PreferenceCreateSchema,
+} from '../types/mercadopago';
 
 /**
  * MercadoPago Client Instance
@@ -101,7 +107,7 @@ export async function createSubscriptionPreference(
     // In development, use ngrok or a placeholder like https://google.com
     const backUrl = mercadopagoConfig.backUrl || mercadopagoConfig.appUrl;
 
-    const requestBody = {
+    const requestBody = PreApprovalCreateSchema.parse({
       reason: planName,
       auto_recurring: {
         frequency: 1,
@@ -112,7 +118,7 @@ export async function createSubscriptionPreference(
       back_url: backUrl,
       external_reference: `${userId}-${planId}`,
       payer_email: mercadopagoConfig.testPayerEmail || payerEmail,
-    };
+    });
 
     const preApproval = await preApprovalAPI.create({ body: requestBody });
 
@@ -248,11 +254,10 @@ export async function cancelSubscription(subscriptionId: string) {
     const preApprovalAPI = getPreApprovalAPI();
 
     // Cancel the preapproval (subscription) in MercadoPago
+    const cancelBody = PreApprovalCancelSchema.parse({ status: 'cancelled' });
     const result = await preApprovalAPI.update({
       id: subscriptionId,
-      body: {
-        status: 'cancelled',
-      },
+      body: cancelBody,
     });
 
     console.log(`✅ Subscription cancelled in MercadoPago: ${subscriptionId}`);
@@ -283,14 +288,15 @@ export async function updateSubscriptionAmount(
     const preApprovalAPI = getPreApprovalAPI();
 
     // Update the preapproval amount in MercadoPago
+    const updateBody = PreApprovalAmountUpdateSchema.parse({
+      auto_recurring: {
+        transaction_amount: newAmount,
+        currency_id: 'CLP',
+      },
+    });
     const result = await preApprovalAPI.update({
       id: subscriptionId,
-      body: {
-        auto_recurring: {
-          transaction_amount: newAmount,
-          currency_id: 'CLP',
-        },
-      },
+      body: updateBody,
     });
 
     console.log(`✅ Subscription amount updated in MercadoPago: ${subscriptionId}`);
@@ -326,30 +332,30 @@ export async function createOverduePaymentPreference(
 
     const preferenceAPI = getPreferenceAPI();
 
-    const preference = await preferenceAPI.create({
-      body: {
-        items: [
-          {
-            id: paymentId,
-            title: `Pago vencido - ${planName}`,
-            description: `Pago de suscripción con recargo por mora`,
-            quantity: 1,
-            unit_price: totalAmount,
-            currency_id: 'CLP',
-          },
-        ],
-        // external_reference links the preference to our internal payment record
-        // Format: "overdue-{paymentId}-{userId}" to distinguish from subscription payments
-        external_reference: `overdue-${paymentId}-${userId}`,
-        back_urls: {
-          success: `${mercadopagoConfig.appUrl}/subscription/callback/success`,
-          failure: `${mercadopagoConfig.appUrl}/subscription/callback/failure`,
-          pending: `${mercadopagoConfig.appUrl}/subscription/callback/pending`,
+    const preferenceBody = PreferenceCreateSchema.parse({
+      items: [
+        {
+          id: paymentId,
+          title: `Pago vencido - ${planName}`,
+          description: `Pago de suscripción con recargo por mora`,
+          quantity: 1,
+          unit_price: totalAmount,
+          currency_id: 'CLP',
         },
-        auto_return: 'approved',
-        notification_url: `${mercadopagoConfig.appUrl}/api/webhooks/mercadopago`,
+      ],
+      // external_reference links the preference to our internal payment record
+      // Format: "overdue-{paymentId}-{userId}" to distinguish from subscription payments
+      external_reference: `overdue-${paymentId}-${userId}`,
+      back_urls: {
+        success: `${mercadopagoConfig.appUrl}/subscription/callback/success`,
+        failure: `${mercadopagoConfig.appUrl}/subscription/callback/failure`,
+        pending: `${mercadopagoConfig.appUrl}/subscription/callback/pending`,
       },
+      auto_return: 'approved',
+      notification_url: `${mercadopagoConfig.appUrl}/api/webhooks/mercadopago`,
     });
+
+    const preference = await preferenceAPI.create({ body: preferenceBody });
 
     console.log(`✅ Overdue payment preference created: ${preference.id}`);
 
