@@ -58,18 +58,18 @@ export function TimeSlotSelector({
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-        <p className="text-red-800 text-sm">{error}</p>
+      <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
+        <p className="text-destructive text-sm">{error}</p>
         <button
           onClick={fetchAvailability}
-          className="mt-2 text-sm text-red-600 hover:text-red-700 underline"
+          className="mt-2 text-sm text-destructive hover:text-destructive/80 underline"
         >
           Reintentar
         </button>
@@ -79,8 +79,8 @@ export function TimeSlotSelector({
 
   if (slots.length === 0) {
     return (
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-        <p className="text-yellow-800 text-sm">
+      <div className="bg-warning/10 border border-warning/20 rounded-lg p-4">
+        <p className="text-warning text-sm">
           No hay horarios disponibles para esta fecha con la duración seleccionada.
         </p>
       </div>
@@ -91,8 +91,8 @@ export function TimeSlotSelector({
 
   if (availableSlots.length === 0) {
     return (
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-        <p className="text-yellow-800 text-sm">
+      <div className="bg-warning/10 border border-warning/20 rounded-lg p-4">
+        <p className="text-warning text-sm">
           Todos los horarios están reservados para esta fecha. Intenta con otra fecha o
           duración.
         </p>
@@ -116,10 +116,10 @@ export function TimeSlotSelector({
               disabled={!slot.available}
               className={`px-4 py-3 rounded-md border text-sm font-medium transition ${
                 isSelected
-                  ? 'bg-blue-600 text-white border-blue-600'
+                  ? 'bg-primary text-primary-foreground border-primary'
                   : slot.available
-                  ? 'bg-white text-gray-700 border-gray-300 hover:border-blue-500 hover:bg-blue-50'
-                  : 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                  ? 'bg-card text-foreground border-border hover:border-primary hover:bg-primary/10'
+                  : 'bg-muted text-muted-foreground border-border cursor-not-allowed'
               }`}
             >
               {timeStr}
@@ -128,18 +128,18 @@ export function TimeSlotSelector({
         })}
       </div>
 
-      <div className="mt-4 flex items-center justify-between text-sm text-gray-600">
+      <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
         <div className="flex items-center space-x-4">
           <div className="flex items-center">
-            <div className="w-4 h-4 rounded bg-white border border-gray-300 mr-2"></div>
+            <div className="w-4 h-4 rounded bg-card border border-border mr-2"></div>
             <span>Disponible</span>
           </div>
           <div className="flex items-center">
-            <div className="w-4 h-4 rounded bg-gray-100 border border-gray-200 mr-2"></div>
+            <div className="w-4 h-4 rounded bg-muted border border-border mr-2"></div>
             <span>No disponible</span>
           </div>
           <div className="flex items-center">
-            <div className="w-4 h-4 rounded bg-blue-600 mr-2"></div>
+            <div className="w-4 h-4 rounded bg-primary mr-2"></div>
             <span>Seleccionado</span>
           </div>
         </div>

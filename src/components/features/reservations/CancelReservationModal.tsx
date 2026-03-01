@@ -94,20 +94,20 @@ export function CancelReservationModal({
 
       {/* Modal */}
       <div className="flex min-h-full items-center justify-center p-4">
-        <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+        <div className="relative bg-card rounded-lg shadow-xl max-w-md w-full p-6">
           {/* Header */}
           <div className="flex items-start justify-between mb-4">
             <div>
-              <h3 className="text-lg font-semibold text-gray-900">
+              <h3 className="text-lg font-semibold text-foreground">
                 Cancelar Reserva
               </h3>
-              <p className="text-sm text-gray-600 mt-1">
+              <p className="text-sm text-muted-foreground mt-1">
                 {reservation.title} - {reservation.resource.name}
               </p>
             </div>
             <button
               onClick={handleClose}
-              className="text-gray-400 hover:text-gray-500"
+              className="text-muted-foreground hover:text-foreground"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
@@ -124,13 +124,13 @@ export function CancelReservationModal({
           <div className="mb-6">
             <div
               className={`rounded-lg p-4 ${
-                canCancel ? 'bg-blue-50 border border-blue-200' : 'bg-red-50 border border-red-200'
+                canCancel ? 'bg-primary/10 border border-primary/20' : 'bg-destructive/10 border border-destructive/20'
               }`}
             >
               <div className="flex items-start">
                 <svg
                   className={`w-5 h-5 mt-0.5 mr-3 ${
-                    canCancel ? 'text-blue-600' : 'text-red-600'
+                    canCancel ? 'text-primary' : 'text-destructive'
                   }`}
                   fill="none"
                   stroke="currentColor"
@@ -150,14 +150,14 @@ export function CancelReservationModal({
                 <div className="flex-1">
                   <h4
                     className={`font-medium ${
-                      canCancel ? 'text-blue-900' : 'text-red-900'
+                      canCancel ? 'text-primary' : 'text-destructive'
                     }`}
                   >
                     {canCancel ? 'Política de Cancelación' : 'No se puede cancelar'}
                   </h4>
                   <p
                     className={`text-sm mt-1 ${
-                      canCancel ? 'text-blue-700' : 'text-red-700'
+                      canCancel ? 'text-primary/80' : 'text-destructive/80'
                     }`}
                   >
                     {canCancel ? (
@@ -196,9 +196,9 @@ export function CancelReservationModal({
                     type="checkbox"
                     checked={confirmed}
                     onChange={(e) => setConfirmed(e.target.checked)}
-                    className="mt-1 h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded"
+                    className="mt-1 h-4 w-4 text-destructive focus:ring-destructive border-border rounded"
                   />
-                  <span className="ml-2 text-sm text-gray-700">
+                  <span className="ml-2 text-sm text-foreground">
                     Entiendo que al cancelar esta reserva, el espacio quedará disponible
                     para otros usuarios y no podré recuperar esta reserva.
                   </span>
@@ -207,8 +207,8 @@ export function CancelReservationModal({
 
               {/* Error Message */}
               {error && (
-                <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-3">
-                  <p className="text-red-800 text-sm">{error}</p>
+                <div className="mb-4 bg-destructive/10 border border-destructive/20 rounded-lg p-3">
+                  <p className="text-destructive text-sm">{error}</p>
                 </div>
               )}
 
@@ -216,14 +216,14 @@ export function CancelReservationModal({
               <div className="flex items-center gap-3">
                 <button
                   onClick={handleClose}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition"
+                  className="flex-1 px-4 py-2 border border-border rounded-md text-foreground hover:bg-muted/50 transition"
                 >
                   Mantener Reserva
                 </button>
                 <button
                   onClick={handleCancel}
                   disabled={!confirmed || cancelling}
-                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed"
+                  className="flex-1 px-4 py-2 bg-destructive text-destructive-foreground rounded-md hover:bg-destructive/90 transition disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed"
                 >
                   {cancelling ? 'Cancelando...' : 'Cancelar Reserva'}
                 </button>
@@ -235,7 +235,7 @@ export function CancelReservationModal({
             <div className="flex justify-end">
               <button
                 onClick={handleClose}
-                className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition"
+                className="px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/80 transition"
               >
                 Cerrar
               </button>

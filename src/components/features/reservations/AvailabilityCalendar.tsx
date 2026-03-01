@@ -96,19 +96,19 @@ export function AvailabilityCalendar({
         disabled={isDateDisabled}
         fromDate={today}
         toDate={maxDate}
-        className="border border-gray-200 rounded-lg p-4 bg-white"
+        className="border border-border rounded-lg p-4 bg-card"
       />
-      <div className="mt-4 text-sm text-gray-600 space-y-1">
+      <div className="mt-4 text-sm text-muted-foreground space-y-1">
         <p className="flex items-center">
-          <span className="w-6 h-6 rounded bg-white border border-gray-300 mr-2"></span>
+          <span className="w-6 h-6 rounded bg-card border border-border mr-2"></span>
           Disponible
         </p>
         <p className="flex items-center">
-          <span className="w-6 h-6 rounded bg-gray-100 text-gray-400 border border-gray-200 mr-2"></span>
+          <span className="w-6 h-6 rounded bg-muted border border-border mr-2"></span>
           No disponible
         </p>
         <p className="flex items-center">
-          <span className="w-6 h-6 rounded bg-blue-600 mr-2"></span>
+          <span className="w-6 h-6 rounded bg-primary mr-2"></span>
           Seleccionado
         </p>
       </div>

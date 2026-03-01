@@ -157,15 +157,15 @@ export function BookingForm({ resources, onSuccess }: BookingFormProps) {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
       {/* Step 1: Resource Selection */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">
+      <div className="bg-card rounded-lg shadow-sm border border-border p-6">
+        <h2 className="text-xl font-semibold text-foreground mb-4">
           1. Selecciona un Recurso
         </h2>
 
         <div>
           <label
             htmlFor="resource"
-            className="block text-sm font-medium text-gray-700 mb-2"
+            className="block text-sm font-medium text-foreground mb-2"
           >
             Recurso *
           </label>
@@ -173,7 +173,7 @@ export function BookingForm({ resources, onSuccess }: BookingFormProps) {
             id="resource"
             value={selectedResource?.id || ''}
             onChange={(e) => handleResourceChange(e.target.value)}
-            className="block w-full px-4 py-2 text-gray-900 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+            className="block w-full px-4 py-2 text-foreground border border-border rounded-md shadow-sm focus:ring-ring focus:border-ring"
           >
             <option value="">Selecciona un recurso</option>
             {resources.map((resource) => (
@@ -188,8 +188,8 @@ export function BookingForm({ resources, onSuccess }: BookingFormProps) {
 
       {/* Step 2: Date and Time Selection */}
       {selectedResource && (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">
+        <div className="bg-card rounded-lg shadow-sm border border-border p-6">
+          <h2 className="text-xl font-semibold text-foreground mb-4">
             2. Selecciona Fecha y Hora
           </h2>
 
@@ -207,8 +207,8 @@ export function BookingForm({ resources, onSuccess }: BookingFormProps) {
                     onClick={() => handleDurationChange(option.value)}
                     className={`px-4 py-2 rounded-md border transition ${
                       duration === option.value
-                        ? 'bg-blue-600 text-white border-blue-600'
-                        : 'bg-white text-gray-700 border-gray-300 hover:border-blue-500'
+                        ? 'bg-primary text-primary-foreground border-primary'
+                        : 'bg-card text-foreground border-border hover:border-primary'
                     }`}
                   >
                     {option.label}
@@ -250,8 +250,8 @@ export function BookingForm({ resources, onSuccess }: BookingFormProps) {
 
       {/* Step 3: Reservation Details */}
       {selectedResource && selectedDate && selectedTime && (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">
+        <div className="bg-card rounded-lg shadow-sm border border-border p-6">
+          <h2 className="text-xl font-semibold text-foreground mb-4">
             3. Detalles de la Reserva
           </h2>
 
@@ -260,7 +260,7 @@ export function BookingForm({ resources, onSuccess }: BookingFormProps) {
             <div>
               <label
                 htmlFor="title"
-                className="block text-sm font-medium text-gray-700 mb-2"
+                className="block text-sm font-medium text-foreground mb-2"
               >
                 Título *
               </label>
@@ -268,11 +268,11 @@ export function BookingForm({ resources, onSuccess }: BookingFormProps) {
                 id="title"
                 type="text"
                 {...register('title')}
-                className="block w-full px-4 py-2 text-gray-900 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 placeholder:text-gray-400"
+                className="block w-full px-4 py-2 text-foreground border border-border rounded-md shadow-sm focus:ring-ring focus:border-ring placeholder:text-muted-foreground"
                 placeholder="Ej: Reunión de equipo"
               />
               {errors.title && (
-                <p className="mt-1 text-sm text-red-600">{errors.title.message}</p>
+                <p className="mt-1 text-sm text-destructive">{errors.title.message}</p>
               )}
             </div>
 
@@ -280,7 +280,7 @@ export function BookingForm({ resources, onSuccess }: BookingFormProps) {
             <div>
               <label
                 htmlFor="description"
-                className="block text-sm font-medium text-gray-700 mb-2"
+                className="block text-sm font-medium text-foreground mb-2"
               >
                 Descripción (opcional)
               </label>
@@ -288,11 +288,11 @@ export function BookingForm({ resources, onSuccess }: BookingFormProps) {
                 id="description"
                 {...register('description')}
                 rows={3}
-                className="block w-full px-4 py-2 text-gray-900 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 placeholder:text-gray-400"
+                className="block w-full px-4 py-2 text-foreground border border-border rounded-md shadow-sm focus:ring-ring focus:border-ring placeholder:text-muted-foreground"
                 placeholder="Agrega detalles sobre la reserva..."
               />
               {errors.description && (
-                <p className="mt-1 text-sm text-red-600">
+                <p className="mt-1 text-sm text-destructive">
                   {errors.description.message}
                 </p>
               )}
@@ -302,7 +302,7 @@ export function BookingForm({ resources, onSuccess }: BookingFormProps) {
             <div>
               <label
                 htmlFor="attendees"
-                className="block text-sm font-medium text-gray-700 mb-2"
+                className="block text-sm font-medium text-foreground mb-2"
               >
                 Número de asistentes *
               </label>
@@ -312,15 +312,15 @@ export function BookingForm({ resources, onSuccess }: BookingFormProps) {
                 {...register('attendees', { valueAsNumber: true })}
                 min="1"
                 max={selectedResource.capacity || 100}
-                className="block w-full px-4 py-2 text-gray-900 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                className="block w-full px-4 py-2 text-foreground border border-border rounded-md shadow-sm focus:ring-ring focus:border-ring"
               />
               {errors.attendees && (
-                <p className="mt-1 text-sm text-red-600">
+                <p className="mt-1 text-sm text-destructive">
                   {errors.attendees.message}
                 </p>
               )}
               {selectedResource.capacity && (
-                <p className="mt-1 text-sm text-gray-500">
+                <p className="mt-1 text-sm text-muted-foreground">
                   Capacidad máxima: {selectedResource.capacity}
                 </p>
               )}
@@ -331,9 +331,9 @@ export function BookingForm({ resources, onSuccess }: BookingFormProps) {
 
       {/* Error Message */}
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p className="text-red-800 font-medium">Error</p>
-          <p className="text-red-600 mt-1">{error}</p>
+        <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
+          <p className="text-destructive font-medium">Error</p>
+          <p className="text-destructive/80 mt-1">{error}</p>
         </div>
       )}
 
@@ -342,14 +342,14 @@ export function BookingForm({ resources, onSuccess }: BookingFormProps) {
         <button
           type="button"
           onClick={() => window.history.back()}
-          className="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition"
+          className="px-6 py-2 border border-border rounded-md text-foreground hover:bg-muted/50 transition"
         >
           Cancelar
         </button>
         <button
           type="submit"
           disabled={!canSubmit}
-          className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed"
+          className="px-6 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed"
         >
           {submitting ? 'Creando reserva...' : 'Crear Reserva'}
         </button>

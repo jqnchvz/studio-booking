@@ -58,24 +58,24 @@ export default function ProfilePage() {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-300 border-t-blue-600" />
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-border border-t-primary" />
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12">
+      <div className="flex min-h-screen items-center justify-center bg-background px-4 py-12">
         <div className="w-full max-w-md">
-          <div className="rounded-lg bg-red-50 p-6">
-            <p className="text-sm text-red-800">{error}</p>
+          <div className="rounded-lg bg-destructive/10 p-6">
+            <p className="text-sm text-destructive">{error}</p>
             <Button
               onClick={fetchProfile}
               className="mt-4 w-full"
               variant="outline"
             >
-              Try Again
+              Reintentar
             </Button>
           </div>
         </div>
@@ -88,29 +88,29 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 px-4 py-12">
+    <div className="min-h-screen bg-background px-4 py-12">
       <div className="mx-auto max-w-2xl">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900">
-            Profile
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">
+            Mi Perfil
           </h1>
-          <p className="mt-2 text-sm text-gray-600">
-            Manage your account information
+          <p className="mt-2 text-sm text-muted-foreground">
+            Administra la información de tu cuenta
           </p>
         </div>
 
         {isEditing ? (
-          <div className="rounded-lg bg-white p-6 shadow">
+          <div className="rounded-lg bg-card border border-border p-6 shadow-sm">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-medium text-gray-900">
-                Edit Profile
+              <h2 className="text-lg font-medium text-foreground">
+                Editar Perfil
               </h2>
               <Button
                 onClick={() => setIsEditing(false)}
                 variant="outline"
                 size="sm"
               >
-                Cancel
+                Cancelar
               </Button>
             </div>
             <ProfileEditForm
@@ -119,44 +119,44 @@ export default function ProfilePage() {
             />
           </div>
         ) : (
-          <div className="rounded-lg bg-white p-6 shadow">
+          <div className="rounded-lg bg-card border border-border p-6 shadow-sm">
             <div className="mb-6 flex items-start justify-between">
               <div>
-                <h2 className="text-lg font-medium text-gray-900">
-                  Account Information
+                <h2 className="text-lg font-medium text-foreground">
+                  Información de la Cuenta
                 </h2>
-                <p className="mt-1 text-sm text-gray-500">
-                  Your personal details and settings
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Tus datos personales y configuración
                 </p>
               </div>
-              <Button onClick={() => setIsEditing(true)}>Edit Profile</Button>
+              <Button onClick={() => setIsEditing(true)}>Editar Perfil</Button>
             </div>
 
             <dl className="space-y-6">
               {/* Name */}
               <div>
-                <dt className="text-sm font-medium text-gray-500">Name</dt>
-                <dd className="mt-1 text-sm text-gray-900">{user.name}</dd>
+                <dt className="text-sm font-medium text-muted-foreground">Nombre</dt>
+                <dd className="mt-1 text-sm text-foreground">{user.name}</dd>
               </div>
 
               {/* Email */}
               <div>
-                <dt className="text-sm font-medium text-gray-500">Email</dt>
+                <dt className="text-sm font-medium text-muted-foreground">Email</dt>
                 <dd className="mt-1 flex items-center gap-2">
-                  <span className="text-sm text-gray-900">{user.email}</span>
+                  <span className="text-sm text-foreground">{user.email}</span>
                   {user.emailVerified ? (
-                    <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
-                      Verified
+                    <span className="inline-flex items-center rounded-full bg-success/15 px-2.5 py-0.5 text-xs font-medium text-success">
+                      Verificado
                     </span>
                   ) : (
-                    <span className="inline-flex items-center rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-medium text-yellow-800">
-                      Not Verified
+                    <span className="inline-flex items-center rounded-full bg-warning/15 px-2.5 py-0.5 text-xs font-medium text-warning">
+                      Sin verificar
                     </span>
                   )}
                 </dd>
                 {!user.emailVerified && (
-                  <p className="mt-1 text-sm text-yellow-600">
-                    Please check your email to verify your account
+                  <p className="mt-1 text-sm text-warning">
+                    Revisa tu email para verificar tu cuenta
                   </p>
                 )}
               </div>
@@ -164,12 +164,12 @@ export default function ProfilePage() {
               {/* Account Type */}
               {user.isAdmin && (
                 <div>
-                  <dt className="text-sm font-medium text-gray-500">
-                    Account Type
+                  <dt className="text-sm font-medium text-muted-foreground">
+                    Tipo de cuenta
                   </dt>
                   <dd className="mt-1">
-                    <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800">
-                      Administrator
+                    <span className="inline-flex items-center rounded-full bg-primary/15 px-2.5 py-0.5 text-xs font-medium text-primary">
+                      Administrador
                     </span>
                   </dd>
                 </div>
@@ -177,11 +177,11 @@ export default function ProfilePage() {
 
               {/* Member Since */}
               <div>
-                <dt className="text-sm font-medium text-gray-500">
-                  Member Since
+                <dt className="text-sm font-medium text-muted-foreground">
+                  Miembro desde
                 </dt>
-                <dd className="mt-1 text-sm text-gray-900">
-                  {new Date(user.createdAt).toLocaleDateString('en-US', {
+                <dd className="mt-1 text-sm text-foreground">
+                  {new Date(user.createdAt).toLocaleDateString('es-CL', {
                     year: 'numeric',
                     month: 'long',
                     day: 'numeric',

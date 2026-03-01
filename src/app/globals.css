@@ -32,6 +32,10 @@
   --color-destructive: oklch(54% 0.19 22);
   --color-destructive-foreground: oklch(98% 0.005 75);
 
+  /* Semantic status tokens — used for reservation/subscription badges and alerts */
+  --color-success: oklch(42% 0.15 145);   /* dark sage — readable as text, soft at /15 opacity */
+  --color-warning: oklch(52% 0.17 68);    /* warm amber — readable as text, soft at /15 opacity */
+
   --color-border: oklch(89% 0.010 80);
   --color-input: oklch(89% 0.010 80);
   --color-ring: oklch(68% 0.16 68);
@@ -78,8 +82,11 @@
     --color-accent: oklch(23% 0.018 270);
     --color-accent-foreground: oklch(94% 0.007 80);
 
-    --color-destructive: oklch(54% 0.19 22);
+    --color-destructive: oklch(62% 0.19 22);
     --color-destructive-foreground: oklch(98% 0.005 75);
+
+    --color-success: oklch(68% 0.14 145);  /* lighter sage for dark mode */
+    --color-warning: oklch(72% 0.16 70);   /* lighter amber for dark mode */
 
     --color-border: oklch(23% 0.018 270);
     --color-input: oklch(23% 0.018 270);
