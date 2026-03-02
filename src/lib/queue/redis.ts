@@ -27,11 +27,19 @@ export function createRedisConnection(): Redis {
   });
 }
 
-// Handle connection errors
+// Log the first error, then suppress repeats until reconnection.
+// ioredis retries indefinitely (maxRetriesPerRequest: null is required by BullMQ),
+// so without this guard the console floods when Redis is unavailable.
+let redisErrorLogged = false;
+
 redis.on('error', (error) => {
-  console.error('❌ Redis connection error:', error.message);
+  if (!redisErrorLogged) {
+    console.error('❌ Redis connection error:', error.message || error);
+    redisErrorLogged = true;
+  }
 });
 
 redis.on('connect', () => {
+  redisErrorLogged = false;
   console.log('✅ Redis connected');
 });

@@ -40,12 +40,12 @@ export function ReservationSuccessModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6 relative">
+      <div className="bg-card rounded-lg shadow-xl max-w-md w-full p-6 relative">
         {/* Success Icon */}
         <div className="flex justify-center mb-4">
-          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+          <div className="w-16 h-16 bg-success/15 rounded-full flex items-center justify-center">
             <svg
-              className="w-10 h-10 text-green-600"
+              className="w-10 h-10 text-success"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -61,53 +61,53 @@ export function ReservationSuccessModal({
         </div>
 
         {/* Title */}
-        <h2 className="text-2xl font-bold text-center text-gray-900 mb-2">
+        <h2 className="text-2xl font-bold text-center text-foreground mb-2">
           ¡Reserva Confirmada!
         </h2>
-        <p className="text-center text-gray-600 mb-6">
+        <p className="text-center text-muted-foreground mb-6">
           Tu reserva ha sido creada exitosamente
         </p>
 
         {/* Reservation Details */}
         <div className="space-y-4 mb-6">
           {/* Reservation ID */}
-          <div className="bg-gray-50 rounded-lg p-4">
-            <p className="text-sm text-gray-600">ID de Reserva</p>
-            <p className="font-mono text-sm font-medium text-gray-900">
+          <div className="bg-muted/50 rounded-lg p-4">
+            <p className="text-sm text-muted-foreground">ID de Reserva</p>
+            <p className="font-mono text-sm font-medium text-foreground">
               {reservation.id}
             </p>
           </div>
 
           {/* Resource */}
           <div>
-            <p className="text-sm text-gray-600">Recurso</p>
-            <p className="font-medium text-gray-900">{reservation.resource.name}</p>
-            <p className="text-sm text-gray-500 capitalize">
+            <p className="text-sm text-muted-foreground">Recurso</p>
+            <p className="font-medium text-foreground">{reservation.resource.name}</p>
+            <p className="text-sm text-muted-foreground capitalize">
               {reservation.resource.type}
             </p>
           </div>
 
           {/* Title */}
           <div>
-            <p className="text-sm text-gray-600">Título</p>
-            <p className="font-medium text-gray-900">{reservation.title}</p>
+            <p className="text-sm text-muted-foreground">Título</p>
+            <p className="font-medium text-foreground">{reservation.title}</p>
           </div>
 
           {/* Date and Time */}
           <div>
-            <p className="text-sm text-gray-600">Fecha y Hora</p>
-            <p className="font-medium text-gray-900">
+            <p className="text-sm text-muted-foreground">Fecha y Hora</p>
+            <p className="font-medium text-foreground">
               {format(startTime, "EEEE, d 'de' MMMM 'de' yyyy", { locale: es })}
             </p>
-            <p className="text-sm text-gray-700">
+            <p className="text-sm text-foreground">
               {format(startTime, 'HH:mm')} - {format(endTime, 'HH:mm')}
             </p>
           </div>
 
           {/* Duration */}
           <div>
-            <p className="text-sm text-gray-600">Duración</p>
-            <p className="font-medium text-gray-900">
+            <p className="text-sm text-muted-foreground">Duración</p>
+            <p className="font-medium text-foreground">
               {Math.round((endTime.getTime() - startTime.getTime()) / (1000 * 60))}{' '}
               minutos
             </p>
@@ -115,14 +115,14 @@ export function ReservationSuccessModal({
 
           {/* Attendees */}
           <div>
-            <p className="text-sm text-gray-600">Asistentes</p>
-            <p className="font-medium text-gray-900">{reservation.attendees}</p>
+            <p className="text-sm text-muted-foreground">Asistentes</p>
+            <p className="font-medium text-foreground">{reservation.attendees}</p>
           </div>
         </div>
 
         {/* Info Box */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-          <p className="text-sm text-blue-800">
+        <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 mb-6">
+          <p className="text-sm text-primary">
             ✉️ Te hemos enviado un correo de confirmación con todos los detalles de
             tu reserva.
           </p>
@@ -132,13 +132,13 @@ export function ReservationSuccessModal({
         <div className="flex flex-col space-y-2">
           <button
             onClick={handleViewReservations}
-            className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition font-medium"
+            className="w-full px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition font-medium"
           >
             Ver Mis Reservas
           </button>
           <button
             onClick={onClose}
-            className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition"
+            className="w-full px-4 py-2 border border-border text-foreground rounded-md hover:bg-muted/50 transition"
           >
             Cerrar
           </button>

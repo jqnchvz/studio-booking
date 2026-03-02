@@ -65,23 +65,23 @@ export function ReservationCard({ reservation, onCancelSuccess }: ReservationCar
   // Status badge styling
   const statusConfig = {
     confirmed: {
-      bg: 'bg-green-100',
-      text: 'text-green-800',
+      bg: 'bg-success/15',
+      text: 'text-success',
       label: 'Confirmada',
     },
     cancelled: {
-      bg: 'bg-red-100',
-      text: 'text-red-800',
+      bg: 'bg-destructive/15',
+      text: 'text-destructive',
       label: 'Cancelada',
     },
     completed: {
-      bg: 'bg-gray-100',
-      text: 'text-gray-800',
+      bg: 'bg-muted',
+      text: 'text-muted-foreground',
       label: 'Completada',
     },
     pending: {
-      bg: 'bg-yellow-100',
-      text: 'text-yellow-800',
+      bg: 'bg-warning/15',
+      text: 'text-warning',
       label: 'Pendiente',
     },
   };
@@ -89,14 +89,14 @@ export function ReservationCard({ reservation, onCancelSuccess }: ReservationCar
   const status = statusConfig[reservation.status] || statusConfig.pending;
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition p-6">
+    <div className="bg-card rounded-lg border border-border shadow-sm hover:shadow-md transition p-6">
       {/* Header: Resource and Status */}
       <div className="flex items-start justify-between mb-4">
         <div className="flex-1">
-          <h3 className="text-lg font-semibold text-gray-900">
+          <h3 className="text-lg font-semibold text-foreground">
             {reservation.title}
           </h3>
-          <p className="text-sm text-gray-600 mt-1">
+          <p className="text-sm text-muted-foreground mt-1">
             {reservation.resource.name} • {reservation.resource.type}
           </p>
         </div>
@@ -109,16 +109,16 @@ export function ReservationCard({ reservation, onCancelSuccess }: ReservationCar
 
       {/* Description (if exists) */}
       {reservation.description && (
-        <p className="text-sm text-gray-700 mb-4 line-clamp-2">
+        <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
           {reservation.description}
         </p>
       )}
 
       {/* Date and Time */}
       <div className="space-y-2 mb-4">
-        <div className="flex items-center text-sm text-gray-700">
+        <div className="flex items-center text-sm text-foreground">
           <svg
-            className="w-4 h-4 mr-2 text-gray-400"
+            className="w-4 h-4 mr-2 text-muted-foreground"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -133,9 +133,9 @@ export function ReservationCard({ reservation, onCancelSuccess }: ReservationCar
           <span className="capitalize">{dateText}</span>
         </div>
 
-        <div className="flex items-center text-sm text-gray-700">
+        <div className="flex items-center text-sm text-foreground">
           <svg
-            className="w-4 h-4 mr-2 text-gray-400"
+            className="w-4 h-4 mr-2 text-muted-foreground"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -148,12 +148,12 @@ export function ReservationCard({ reservation, onCancelSuccess }: ReservationCar
             />
           </svg>
           <span>{timeText}</span>
-          <span className="ml-2 text-gray-500">({durationText})</span>
+          <span className="ml-2 text-muted-foreground">({durationText})</span>
         </div>
 
-        <div className="flex items-center text-sm text-gray-700">
+        <div className="flex items-center text-sm text-foreground">
           <svg
-            className="w-4 h-4 mr-2 text-gray-400"
+            className="w-4 h-4 mr-2 text-muted-foreground"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -171,22 +171,22 @@ export function ReservationCard({ reservation, onCancelSuccess }: ReservationCar
 
       {/* Timestamp */}
       {isUpcoming && (
-        <p className="text-xs text-gray-500 mb-4">
+        <p className="text-xs text-muted-foreground mb-4">
           Comienza {formatDistanceToNow(startTime, { addSuffix: true, locale: es })}
         </p>
       )}
 
       {isPast && (
-        <p className="text-xs text-gray-500 mb-4">
+        <p className="text-xs text-muted-foreground mb-4">
           Terminó {formatDistanceToNow(endTime, { addSuffix: true, locale: es })}
         </p>
       )}
 
       {/* Actions */}
-      <div className="flex items-center gap-2 pt-4 border-t border-gray-200">
+      <div className="flex items-center gap-2 pt-4 border-t border-border">
         <Link
           href={`/dashboard/reservations/${reservation.id}`}
-          className="flex-1 px-4 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50 rounded-md border border-blue-200 transition text-center"
+          className="flex-1 px-4 py-2 text-sm font-medium text-primary hover:bg-primary/10 rounded-md border border-primary/30 transition text-center"
         >
           Ver Detalles
         </Link>
@@ -194,7 +194,7 @@ export function ReservationCard({ reservation, onCancelSuccess }: ReservationCar
         {canCancel && (
           <button
             onClick={() => setShowCancelModal(true)}
-            className="flex-1 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-md border border-red-200 transition"
+            className="flex-1 px-4 py-2 text-sm font-medium text-destructive hover:bg-destructive/10 rounded-md border border-destructive/30 transition"
           >
             Cancelar
           </button>

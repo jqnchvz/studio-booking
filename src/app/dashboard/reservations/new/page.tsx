@@ -77,8 +77,8 @@ export default function NewReservationPage() {
       <div className="container mx-auto px-4 py-8">
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Cargando recursos...</p>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+            <p className="mt-4 text-muted-foreground">Cargando recursos...</p>
           </div>
         </div>
       </div>
@@ -88,12 +88,12 @@ export default function NewReservationPage() {
   if (error) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-          <p className="text-red-800 font-medium">Error al cargar recursos</p>
-          <p className="text-red-600 mt-2">{error}</p>
+        <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-6 text-center">
+          <p className="text-destructive font-medium">Error al cargar recursos</p>
+          <p className="text-destructive/80 mt-2">{error}</p>
           <button
             onClick={fetchResources}
-            className="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition"
+            className="mt-4 px-4 py-2 bg-destructive text-destructive-foreground rounded hover:bg-destructive/90 transition"
           >
             Reintentar
           </button>
@@ -105,9 +105,9 @@ export default function NewReservationPage() {
   if (resources.length === 0) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
-          <p className="text-yellow-800 font-medium">No hay recursos disponibles</p>
-          <p className="text-yellow-600 mt-2">
+        <div className="bg-warning/10 border border-warning/20 rounded-lg p-6 text-center">
+          <p className="text-warning font-medium">No hay recursos disponibles</p>
+          <p className="text-warning/80 mt-2">
             Por favor, contacta al administrador para configurar recursos.
           </p>
         </div>
@@ -119,8 +119,8 @@ export default function NewReservationPage() {
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-4xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Nueva Reserva</h1>
-          <p className="mt-2 text-gray-600">
+          <h1 className="text-3xl font-bold text-foreground">Nueva Reserva</h1>
+          <p className="mt-2 text-muted-foreground">
             Selecciona un recurso, fecha y horario para crear tu reserva.
           </p>
         </div>
