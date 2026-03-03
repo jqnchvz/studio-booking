@@ -914,16 +914,6 @@ psql -h localhost -U joaquinchavez -d reservapp_dev -c \
    GROUP BY r.id, r.name;"
 ```
 
-## Known Issues
-
-### Middleware Not Redirecting Unauthenticated Users (RES-81)
-
-**Issue**: Unauthenticated users can access `/dashboard/reservations/new` without redirect
-
-**Expected**: Middleware should redirect to `/login?from=/dashboard/reservations/new`
-
-**Workaround**: API-level authentication still protects operations (defense-in-depth)
-
 ## Environment Setup
 
 ### Required Environment Variables
@@ -1232,4 +1222,36 @@ Remember:
 
 ---
 
-**Last Updated:** 2026-02-07 - Added critical timezone handling patterns (date parsing UTC trap), Prisma raw SQL table name conventions, fire-and-forget email queue pattern, database setup sequences, and test user authentication setup based on RES-71 implementation experience. Total: 214 tests, 79% coverage.
+## UI Design System
+
+### Semantic Color Token Mapping
+
+When replacing hardcoded Tailwind colors with design system tokens:
+
+| Hardcoded | Semantic token |
+|-----------|---------------|
+| `text-gray-900` | `text-foreground` |
+| `text-gray-500/600/700` | `text-muted-foreground` |
+| `bg-white` | `bg-card` or `bg-background` |
+| `bg-gray-50/100` | `bg-muted/50` or `bg-muted` |
+| `border-gray-200/300` | `border-border` |
+| `bg-blue-600 text-white hover:bg-blue-700` | `bg-primary text-primary-foreground hover:bg-primary/90` |
+| `text-blue-600 hover:bg-blue-50 border-blue-200` | `text-primary hover:bg-primary/10 border-primary/30` |
+| `bg-red-50 border-red-200` | `bg-destructive/10 border-destructive/20` |
+| `text-red-800/600` | `text-destructive` or `text-destructive/80` |
+| `bg-green-100 text-green-800` | `bg-success/15 text-success` |
+| `bg-yellow-100 text-yellow-800` | `bg-warning/15 text-warning` |
+| `bg-gray-100 text-gray-800` | `bg-muted text-muted-foreground` |
+| `border-b-2 border-blue-600` (spinner) | `border-b-2 border-primary` |
+| `disabled:bg-gray-400` | `disabled:bg-muted disabled:text-muted-foreground` |
+
+**Note:** Tailwind v4 `@theme` CSS variables auto-generate opacity modifiers — `bg-success/15`, `bg-destructive/10`, etc. all work without extra config.
+
+### Route Group Exception
+
+The profile page lives in a route group: `src/app/(dashboard)/profile/page.tsx`
+URL is `/profile`, NOT `/dashboard/profile`. The `(dashboard)` folder is a layout group without URL contribution.
+
+---
+
+**Last Updated:** 2026-02-28 - Added UI design system section: semantic color token mapping table and route group exception for profile page, based on dashboard color palette migration work.
