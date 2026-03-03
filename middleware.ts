@@ -9,40 +9,41 @@ import { verifyToken } from './src/lib/auth/session';
  */
 export const runtime = 'nodejs';
 
+// Auth-only paths: authenticated users should be redirected away to /dashboard
+const AUTH_PATHS = [
+  '/login',
+  '/register',
+  '/verify-email',
+  '/forgot-password',
+  '/reset-password',
+];
+
 export async function middleware(request: NextRequest) {
   const sessionCookie = request.cookies.get('session');
   const { pathname } = request.nextUrl;
 
-  // Allow public routes
-  const publicPaths = [
-    '/login',
-    '/register',
-    '/verify-email',
-    '/forgot-password',
-    '/reset-password',
-  ];
-  const isPublicPath = publicPaths.some((path) => pathname.startsWith(path));
-  const isApiAuth = pathname.startsWith('/api/auth/');
+  const isAuthPath = AUTH_PATHS.some((path) => pathname.startsWith(path));
 
-  // Allow access to public paths and auth API routes
-  if (isPublicPath || isApiAuth) {
+  // Verify token once — used for both auth-page and protected-route checks
+  const payload = sessionCookie ? verifyToken(sessionCookie.value) : null;
+
+  // Redirect authenticated users away from auth pages (e.g. /login → /dashboard)
+  if (isAuthPath) {
+    if (payload) {
+      return NextResponse.redirect(new URL('/dashboard', request.url));
+    }
     return NextResponse.next();
   }
 
   // Redirect unauthenticated users to login
-  if (!sessionCookie) {
-    const loginUrl = new URL('/login', request.url);
-    loginUrl.searchParams.set('from', pathname);
-    return NextResponse.redirect(loginUrl);
-  }
-
-  // Verify token
-  const payload = verifyToken(sessionCookie.value);
   if (!payload) {
     const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('from', pathname);
     const response = NextResponse.redirect(loginUrl);
-    response.cookies.delete('session');
+    // Clear stale cookie if it exists but is invalid
+    if (sessionCookie) {
+      response.cookies.delete('session');
+    }
     return response;
   }
 
@@ -57,10 +58,17 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
+    // Protected routes
     '/dashboard/:path*',
     '/reservations/:path*',
     '/subscription/:path*',
     '/admin/:path*',
     '/profile/:path*',
+    // Auth routes (so authenticated users get redirected away)
+    '/login',
+    '/register',
+    '/verify-email/:path*',
+    '/forgot-password',
+    '/reset-password/:path*',
   ],
 };
