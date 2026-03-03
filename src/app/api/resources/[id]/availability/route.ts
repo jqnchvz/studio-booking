@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { Prisma } from '@prisma/client';
 
 /**
  * GET /api/resources/[id]/availability
@@ -118,22 +117,27 @@ export async function GET(
           break; // This slot doesn't fit in the availability window
         }
 
-        // Check for conflicts with existing reservations
-        const conflicts = await db.$queryRaw<Array<{ id: string }>>`
-          SELECT id FROM reservations
-          WHERE "resourceId" = ${resourceId}
-            AND status IN ('pending', 'confirmed')
-            AND (
-              ("startTime" <= ${slotStart} AND "endTime" > ${slotStart})
-              OR ("startTime" < ${slotEnd} AND "endTime" >= ${slotEnd})
-              OR ("startTime" >= ${slotStart} AND "endTime" <= ${slotEnd})
-            )
-        `;
+        // Check for conflicts with existing reservations using the three overlap cases:
+        // 1. Existing starts before/at slotStart and ends after slotStart (left overlap)
+        // 2. Existing starts before slotEnd and ends at/after slotEnd (right overlap)
+        // 3. Existing is entirely within the slot (contained)
+        const conflict = await db.reservation.findFirst({
+          where: {
+            resourceId,
+            status: { in: ['pending', 'confirmed'] },
+            OR: [
+              { startTime: { lte: slotStart }, endTime: { gt: slotStart } },
+              { startTime: { lt: slotEnd }, endTime: { gte: slotEnd } },
+              { startTime: { gte: slotStart }, endTime: { lte: slotEnd } },
+            ],
+          },
+          select: { id: true },
+        });
 
         availabilitySlots.push({
           startTime: slotStart.toISOString(),
           endTime: slotEnd.toISOString(),
-          available: conflicts.length === 0,
+          available: conflict === null,
         });
 
         // Move to next 30-minute slot
