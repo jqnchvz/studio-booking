@@ -112,6 +112,40 @@ export const resetPasswordFormSchema = z
   });
 
 /**
+ * Change password validation schema (API — no confirmPassword)
+ */
+export const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1, 'La contraseña actual es requerida'),
+  newPassword: z
+    .string()
+    .min(8, 'La contraseña debe tener al menos 8 caracteres')
+    .regex(
+      passwordRegex,
+      'La contraseña debe contener mayúscula, minúscula, número y un carácter especial: @ $ ! % * ? &'
+    ),
+});
+
+/**
+ * Change password form validation schema (client — includes confirmPassword)
+ */
+export const changePasswordFormSchema = z
+  .object({
+    currentPassword: z.string().min(1, 'La contraseña actual es requerida'),
+    newPassword: z
+      .string()
+      .min(8, 'La contraseña debe tener al menos 8 caracteres')
+      .regex(
+        passwordRegex,
+        'La contraseña debe contener mayúscula, minúscula, número y un carácter especial: @ $ ! % * ? &'
+      ),
+    confirmPassword: z.string().min(1, 'Confirma tu nueva contraseña'),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: 'Las contraseñas no coinciden',
+    path: ['confirmPassword'],
+  });
+
+/**
  * Profile update validation schema
  */
 export const updateProfileSchema = z.object({
@@ -139,3 +173,5 @@ export type LoginInput = z.infer<typeof loginSchema>;
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
 export type ResetPasswordFormInput = z.infer<typeof resetPasswordFormSchema>;
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
+export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
+export type ChangePasswordFormInput = z.infer<typeof changePasswordFormSchema>;
