@@ -30,9 +30,7 @@ export function LoginForm() {
   const [rememberMe, setRememberMe] = useState(false);
 
   // Get redirect URL from query params (e.g., /login?from=/dashboard/bookings)
-  // TODO: Change to '/dashboard' once user dashboard landing page is created
-  // Currently redirects to /dashboard/subscription to avoid 404
-  const redirectTo = searchParams.get('from') || '/dashboard/subscription';
+  const redirectTo = searchParams.get('from') || '/dashboard';
 
   const form = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),

@@ -1,8 +1,7 @@
-import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { ArrowLeft } from 'lucide-react';
 import { getCurrentUser } from '@/lib/auth/get-current-user';
 import { AdminNavLink } from '@/components/features/admin/AdminNavLink';
+import { AdminLogoutButton } from '@/components/features/admin/AdminLogoutButton';
 
 /**
  * Admin Layout
@@ -64,15 +63,9 @@ export default async function AdminLayout({
           </AdminNavLink>
         </nav>
 
-        {/* Footer link */}
+        {/* Footer */}
         <div className="px-5 py-4 border-t border-sidebar-border">
-          <Link
-            href="/dashboard"
-            className="flex items-center gap-2 text-xs text-sidebar-muted hover:text-sidebar-foreground transition-colors"
-          >
-            <ArrowLeft className="h-3 w-3" />
-            Volver al sitio
-          </Link>
+          <AdminLogoutButton />
         </div>
       </aside>
 
