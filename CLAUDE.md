@@ -433,7 +433,11 @@ Every task should follow this workflow:
 > - Every task MUST go through a Pull Request before merging to master.
 > - Always keep Jira task status updated to reflect current work state.
 
-### 1.1 Jira Status Workflow
+### 1.1 Jira Transition IDs
+
+Always call `getTransitionsForJiraIssue` before transitioning — IDs are not fixed and vary by issue state. Common transition names: "Star work" (→ In Progress), "Merged" (→ Done). Never reuse IDs from a previous task.
+
+### 1.2 Jira Status Workflow
 
 ```
 To Do → In Progress → In Review → Done
@@ -784,7 +788,7 @@ src/
 
 ### Test Coverage Status
 
-**Current**: 214 tests passing across 15 test files
+**Current**: 242 tests passing across 16 test files
 - **Coverage**: 79% statements, 72% functions, 79% lines, 72% branches
 - **Key areas covered**: Auth services, payment processing, reservation system, webhooks
 - **Run**: `npm run test:coverage` to view detailed report
@@ -865,7 +869,10 @@ const results = await db.$queryRaw`
 
 **Column names**: Stay camelCase in quotes: `"userId"`, `"startTime"`, `"resourceId"`
 
-**Check Prisma schema** for `@@map("table_name")` directive. See RES-82 for refactoring to Prisma query builder.
+**Check Prisma schema** for `@@map("table_name")` directive.
+
+**RES-82 outcome**: `availability/route.ts` conflict check converted to `db.reservation.findFirst`.
+Two sites kept as raw SQL: `reservation.service.ts` (`FOR UPDATE SKIP LOCKED`) and `admin/stats/route.ts` (`DATE_TRUNC` aggregation).
 
 #### Email Queue - Fire-and-Forget Pattern
 
@@ -1062,6 +1069,18 @@ test(payment): add MercadoPago integration tests (RES-31)
 docs(readme): update setup instructions (RES-3)
 ```
 
+### Staging Files with Dynamic Route Segments
+
+Paths containing `[brackets]` (Next.js dynamic segments) must be quoted in zsh — unquoted, the shell treats them as globs and fails with "no matches found":
+
+```bash
+# ❌ Fails in zsh
+git add src/app/api/resources/[id]/availability/route.ts
+
+# ✅ Correct
+git add 'src/app/api/resources/[id]/availability/route.ts'
+```
+
 ### Before Committing
 - [ ] Code follows style guidelines (Prettier)
 - [ ] No linting errors (ESLint)
@@ -1247,11 +1266,18 @@ When replacing hardcoded Tailwind colors with design system tokens:
 
 **Note:** Tailwind v4 `@theme` CSS variables auto-generate opacity modifiers — `bg-success/15`, `bg-destructive/10`, etc. all work without extra config.
 
-### Route Group Exception
+### Route Group Note
 
-The profile page lives in a route group: `src/app/(dashboard)/profile/page.tsx`
-URL is `/profile`, NOT `/dashboard/profile`. The `(dashboard)` folder is a layout group without URL contribution.
+Profile page is at `src/app/dashboard/profile/page.tsx` — URL is `/dashboard/profile`.
+The `(auth)` route group (`src/app/(auth)/`) still exists for login/register — URL has no `/auth/` prefix.
+
+### Admin Panel Architecture
+
+- Sidebar CSS tokens: `bg-sidebar`, `text-sidebar-foreground`, `text-sidebar-muted`, `border-sidebar-border`
+- `src/app/admin/layout.tsx` is a Server Component — interactive sidebar elements (e.g., logout button) must be extracted into a separate `'use client'` component (see `AdminLogoutButton.tsx`)
+- `/admin` is the admin dashboard; `if (user.isAdmin) redirect('/admin')` in `/dashboard/page.tsx` handles routing
+- Unsubscribed users are redirected from `/dashboard` to `/dashboard/subscribe` (plan selection page)
 
 ---
 
-**Last Updated:** 2026-02-28 - Added UI design system section: semantic color token mapping table and route group exception for profile page, based on dashboard color palette migration work.
+**Last Updated:** 2026-03-02 - Fixed route group note (profile is at `/dashboard/profile`), added admin panel architecture, git staging gotcha, Jira transition note, updated test count and raw SQL audit outcome (RES-82).
