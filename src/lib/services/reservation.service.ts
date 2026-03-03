@@ -122,7 +122,11 @@ export async function checkResourceAvailability(
   }
 
   // Step 4: Check for overlapping reservations (CRITICAL: prevents double-booking)
-  // Use FOR UPDATE SKIP LOCKED for pessimistic locking (Postgres feature)
+  // Raw SQL is intentional here — Prisma does not support FOR UPDATE SKIP LOCKED.
+  // FOR UPDATE locks matching rows so concurrent transactions serialize access;
+  // SKIP LOCKED prevents deadlocks by skipping rows already locked by another
+  // transaction (i.e., a concurrent booking attempt in flight).
+  // This must run inside a $transaction so the lock is held until commit/rollback.
   const overlappingReservations = await client.$queryRaw<
     Array<{ id: string; startTime: Date; endTime: Date }>
   >`

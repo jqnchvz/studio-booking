@@ -69,7 +69,10 @@ export async function GET(request: NextRequest) {
         },
       }),
 
-      // Query 5: Revenue by month (last 12 months) using raw SQL for grouping
+      // Query 5: Revenue by month (last 12 months)
+      // Raw SQL is intentional here — Prisma does not support DATE_TRUNC or
+      // GROUP BY with arbitrary date expressions. The ::integer casts and
+      // DATE_TRUNC('month', ...) aggregation have no direct Prisma equivalent.
       db.$queryRaw<Array<{ month: Date; revenue: number; payments: number }>>`
         SELECT
           DATE_TRUNC('month', "paidAt") as month,
