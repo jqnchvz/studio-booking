@@ -309,3 +309,6 @@ export async function PATCH(request: NextRequest) {
     );
   }
 }
+
+// PUT is an alias for PATCH — both update the user profile
+export const PUT = PATCH;
