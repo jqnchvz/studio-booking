@@ -175,6 +175,8 @@ describe('Auth Service', () => {
       passwordHash: '', // Will be set in tests
       emailVerified: true,
       isAdmin: false,
+      isOwner: false,
+      organizationId: null,
       createdAt: new Date('2024-01-01'),
       updatedAt: new Date('2024-01-01'),
       verificationToken: null,
@@ -299,6 +301,8 @@ describe('Auth Service', () => {
       passwordHash: 'hashed',
       emailVerified: false,
       isAdmin: false,
+      isOwner: false,
+      organizationId: null,
       createdAt: new Date('2024-01-01'),
       updatedAt: new Date('2024-01-01'),
       verificationToken: null,
