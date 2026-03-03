@@ -10,23 +10,28 @@ datasource db {
 }
 
 model User {
-  id                      String         @id @default(cuid())
-  email                   String         @unique
+  id                      String              @id @default(cuid())
+  email                   String              @unique
   name                    String
   passwordHash            String
-  emailVerified           Boolean        @default(false)
-  verificationToken       String?        @unique
+  emailVerified           Boolean             @default(false)
+  verificationToken       String?             @unique
   verificationTokenExpiry DateTime?
-  resetToken              String?        @unique
+  resetToken              String?             @unique
   resetTokenExpiry        DateTime?
-  isAdmin                 Boolean        @default(false)
-  createdAt               DateTime       @default(now())
-  updatedAt               DateTime       @updatedAt
+  isAdmin                 Boolean             @default(false)
+  isOwner                 Boolean             @default(false) // business owner on the platform
+  organizationId          String?             // end-user membership in an org
+  organization            Organization?       @relation("OrganizationUsers", fields: [organizationId], references: [id])
+  ownedOrganizations      Organization[]      @relation("OwnedOrganizations")
+  createdAt               DateTime            @default(now())
+  updatedAt               DateTime            @updatedAt
   subscription            Subscription?
   payments                Payment[]
   reservations            Reservation[]
   emailLogs               EmailLog[]
 
+  @@index([organizationId])
   @@map("users")
 }
 
@@ -38,6 +43,8 @@ model SubscriptionPlan {
   interval         String               // "monthly" or "yearly"
   features         Json                 // Array of feature strings
   isActive         Boolean              @default(true)
+  organizationId   String?              // null = platform-level plan (visible to all orgs)
+  organization     Organization?        @relation(fields: [organizationId], references: [id])
   // Per-plan penalty configuration (defaults match global constants in penalty.service.ts)
   gracePeriodDays  Int                  @default(2)
   penaltyBaseRate  Float                @default(0.05)  // 5% base penalty
@@ -48,6 +55,7 @@ model SubscriptionPlan {
   subscriptions    Subscription[]
   resourceAccess   PlanResourceAccess[]
 
+  @@index([organizationId])
   @@map("subscription_plans")
 }
 
@@ -109,19 +117,22 @@ model Payment {
 }
 
 model Resource {
-  id           String                 @id @default(cuid())
-  name         String
-  description  String?
-  type         String                 // room, equipment, service
-  capacity     Int?
-  isActive     Boolean                @default(true)
-  metadata     Json?
-  createdAt    DateTime               @default(now())
-  updatedAt    DateTime               @updatedAt
-  reservations Reservation[]
-  availability ResourceAvailability[]
-  planAccess   PlanResourceAccess[]
+  id             String                 @id @default(cuid())
+  name           String
+  description    String?
+  type           String                 // room, equipment, service
+  capacity       Int?
+  isActive       Boolean                @default(true)
+  organizationId String?
+  organization   Organization?          @relation(fields: [organizationId], references: [id])
+  metadata       Json?
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+  reservations   Reservation[]
+  availability   ResourceAvailability[]
+  planAccess     PlanResourceAccess[]
 
+  @@index([organizationId])
   @@map("resources")
 }
 
@@ -173,6 +184,44 @@ model PlanResourceAccess {
   @@unique([planId, resourceId])
   @@index([planId])
   @@map("plan_resource_access")
+}
+
+model Organization {
+  id        String                @id @default(cuid())
+  name      String
+  slug      String                @unique // URL-safe identifier, e.g. "pilates-studio-xyz"
+  status    String                @default("active") // active | suspended | pending
+  ownerId   String
+  owner     User                  @relation("OwnedOrganizations", fields: [ownerId], references: [id])
+  settings  OrganizationSettings?
+  resources Resource[]
+  plans     SubscriptionPlan[]
+  users     User[]                @relation("OrganizationUsers")
+  createdAt DateTime              @default(now())
+  updatedAt DateTime              @updatedAt
+
+  @@index([ownerId])
+  @@map("organizations")
+}
+
+model OrganizationSettings {
+  id             String       @id @default(cuid())
+  organizationId String       @unique
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  // MercadoPago credentials (stored encrypted)
+  mpAccessToken  String?
+  mpPublicKey    String?
+  mpWebhookSecret String?
+  // Business info
+  businessType   String?      // studio | gym | clinic | other
+  phone          String?
+  address        String?
+  logoUrl        String?
+  timezone       String       @default("America/Santiago")
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@map("organization_settings")
 }
 
 model EmailLog {
