@@ -21,8 +21,8 @@ export async function POST(request: NextRequest) {
     if (!rateLimit.allowed) {
       return NextResponse.json(
         {
-          error: 'Too many registration attempts',
-          message: 'Please try again later',
+          error: 'Demasiados intentos de registro',
+          message: 'Por favor intenta nuevamente más tarde',
           resetTime: rateLimit.resetTime.toISOString(),
         },
         {
@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
         userId: user.id,
         type: 'verification',
         to: user.email,
-        subject: 'Verifica tu correo electronico - Reservapp',
+        subject: 'Verifica tu correo electrónico - Reservapp',
         template: VerifyEmail({
           verificationUrl,
           email: user.email,
@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: true,
-        message: 'Registration successful. Please check your email to verify your account.',
+        message: 'Registro exitoso. Por favor verifica tu correo electrónico.',
         user: {
           id: user.id,
           email: user.email,
@@ -89,8 +89,8 @@ export async function POST(request: NextRequest) {
     if (error instanceof ZodError) {
       return NextResponse.json(
         {
-          error: 'Validation failed',
-          message: 'Invalid input data',
+          error: 'Validación fallida',
+          message: 'Datos de entrada inválidos',
           details: error.issues.map((err) => ({
             field: err.path.join('.'),
             message: err.message,
@@ -104,8 +104,8 @@ export async function POST(request: NextRequest) {
     if (error instanceof Error && error.message.includes('already exists')) {
       return NextResponse.json(
         {
-          error: 'Registration failed',
-          message: 'An account with this email already exists',
+          error: 'Error al registrar',
+          message: 'Ya existe una cuenta con este correo electrónico',
         },
         { status: 409 }
       );
@@ -115,8 +115,8 @@ export async function POST(request: NextRequest) {
     console.error('Registration error:', error);
     return NextResponse.json(
       {
-        error: 'Registration failed',
-        message: 'An unexpected error occurred. Please try again later.',
+        error: 'Error al registrar',
+        message: 'Ocurrió un error inesperado. Por favor intenta nuevamente.',
       },
       { status: 500 }
     );

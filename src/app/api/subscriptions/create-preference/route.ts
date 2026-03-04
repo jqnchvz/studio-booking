@@ -18,8 +18,8 @@ export async function POST(request: NextRequest) {
     if (!user) {
       return NextResponse.json(
         {
-          error: 'Authentication required',
-          message: 'Please log in to create a subscription',
+          error: 'Autenticación requerida',
+          message: 'Inicia sesión para crear una suscripción',
         },
         { status: 401 }
       );
@@ -29,8 +29,8 @@ export async function POST(request: NextRequest) {
     if (!user.emailVerified) {
       return NextResponse.json(
         {
-          error: 'Email not verified',
-          message: 'Please verify your email before subscribing',
+          error: 'Correo no verificado',
+          message: 'Verifica tu correo electrónico antes de suscribirte',
         },
         { status: 403 }
       );
@@ -48,8 +48,8 @@ export async function POST(request: NextRequest) {
     if (existingSubscription && existingSubscription.status === 'active') {
       return NextResponse.json(
         {
-          error: 'Subscription already exists',
-          message: 'You already have an active subscription',
+          error: 'Suscripción existente',
+          message: 'Ya tienes una suscripción activa',
         },
         { status: 409 }
       );
@@ -63,8 +63,8 @@ export async function POST(request: NextRequest) {
     if (!plan) {
       return NextResponse.json(
         {
-          error: 'Plan not found',
-          message: 'The selected subscription plan does not exist',
+          error: 'Plan no encontrado',
+          message: 'El plan de suscripción seleccionado no existe',
         },
         { status: 404 }
       );
@@ -73,8 +73,8 @@ export async function POST(request: NextRequest) {
     if (!plan.isActive) {
       return NextResponse.json(
         {
-          error: 'Plan not available',
-          message: 'The selected subscription plan is no longer available',
+          error: 'Plan no disponible',
+          message: 'El plan de suscripción seleccionado ya no está disponible',
         },
         { status: 400 }
       );
@@ -146,7 +146,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: true,
-        message: 'Subscription preference created successfully',
+        message: 'Preferencia de suscripción creada exitosamente',
         data: {
           subscriptionId: subscription.id,
           initPoint: preference.init_point,
@@ -160,8 +160,8 @@ export async function POST(request: NextRequest) {
     if (error instanceof ZodError) {
       return NextResponse.json(
         {
-          error: 'Validation failed',
-          message: 'Invalid input data',
+          error: 'Validación fallida',
+          message: 'Datos de entrada inválidos',
           details: error.issues.map((err) => ({
             field: err.path.join('.'),
             message: err.message,
@@ -176,9 +176,8 @@ export async function POST(request: NextRequest) {
       console.error('MercadoPago error:', error);
       return NextResponse.json(
         {
-          error: 'Payment service error',
-          message:
-            'Unable to create payment preference. Please try again later.',
+          error: 'Error en el servicio de pago',
+          message: 'No se pudo crear la preferencia de pago. Por favor intenta nuevamente.',
         },
         { status: 503 }
       );
@@ -188,8 +187,8 @@ export async function POST(request: NextRequest) {
     console.error('Create subscription preference error:', error);
     return NextResponse.json(
       {
-        error: 'Subscription creation failed',
-        message: 'An unexpected error occurred. Please try again later.',
+        error: 'Error al crear suscripción',
+        message: 'Ocurrió un error inesperado. Por favor intenta nuevamente.',
       },
       { status: 500 }
     );

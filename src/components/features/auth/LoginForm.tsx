@@ -68,25 +68,20 @@ export function LoginForm() {
       if (!response.ok) {
         // Handle different error responses
         if (response.status === 429) {
-          // Rate limit error
           setError(
-            `Too many login attempts. Please try again after ${new Date(result.resetTime).toLocaleTimeString()}.`
+            `Demasiados intentos de inicio de sesión. Intenta nuevamente después de ${new Date(result.resetTime).toLocaleTimeString()}.`
           );
         } else if (response.status === 401) {
-          // Invalid credentials
-          setError('Invalid email or password. Please try again.');
+          setError('Correo o contraseña incorrectos. Intenta nuevamente.');
         } else if (response.status === 403) {
-          // Email not verified
           setError(
             result.message ||
-              'Please verify your email before logging in. Check your inbox for the verification link.'
+              'Verifica tu correo electrónico antes de iniciar sesión. Revisa tu bandeja de entrada.'
           );
         } else if (response.status === 400 && result.details) {
-          // Validation error
-          setError(result.details[0]?.message || 'Invalid input data.');
+          setError(result.details[0]?.message || 'Datos inválidos.');
         } else {
-          // Generic error
-          setError(result.message || 'Login failed. Please try again.');
+          setError(result.message || 'Error al iniciar sesión. Intenta nuevamente.');
         }
         return;
       }
@@ -101,7 +96,7 @@ export function LoginForm() {
       router.refresh();
     } catch (err) {
       console.error('Login error:', err);
-      setError('An unexpected error occurred. Please try again.');
+      setError('Error inesperado. Por favor intenta nuevamente.');
     } finally {
       setIsLoading(false);
     }
@@ -123,7 +118,7 @@ export function LoginForm() {
           name="email"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Email</FormLabel>
+              <FormLabel>Correo electrónico</FormLabel>
               <FormControl>
                 <Input
                   type="email"
@@ -144,7 +139,7 @@ export function LoginForm() {
           name="password"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Password</FormLabel>
+              <FormLabel>Contraseña</FormLabel>
               <FormControl>
                 <div className="relative">
                   <Input
@@ -160,7 +155,7 @@ export function LoginForm() {
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     disabled={isLoading}
-                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                   >
                     {showPassword ? (
                       <EyeOff className="h-4 w-4" />
@@ -188,7 +183,7 @@ export function LoginForm() {
               htmlFor="remember-me"
               className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
             >
-              Remember me
+              Recordarme
             </label>
           </div>
 
@@ -197,7 +192,7 @@ export function LoginForm() {
             className="text-sm font-medium text-primary hover:underline underline-offset-4"
             tabIndex={isLoading ? -1 : 0}
           >
-            Forgot password?
+            ¿Olvidaste tu contraseña?
           </a>
         </div>
 
@@ -206,10 +201,10 @@ export function LoginForm() {
           {isLoading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Signing in...
+              Iniciando sesión...
             </>
           ) : (
-            'Sign in'
+            'Iniciar sesión'
           )}
         </Button>
       </form>

@@ -6,9 +6,9 @@ export default function LoginPage() {
   return (
     <div className="space-y-6">
       <div className="space-y-2 text-center">
-        <h1 className="text-3xl font-bold tracking-tight">Welcome back</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Bienvenido de vuelta</h1>
         <p className="text-muted-foreground">
-          Sign in to your account to continue
+          Inicia sesión para continuar
         </p>
       </div>
 
@@ -25,12 +25,12 @@ export default function LoginPage() {
       </div>
 
       <p className="text-center text-sm text-muted-foreground mt-4">
-        Don&apos;t have an account?{' '}
+        ¿No tienes cuenta?{' '}
         <a
           href="/register"
           className="font-medium text-primary hover:underline underline-offset-4"
         >
-          Sign up
+          Regístrate
         </a>
       </p>
     </div>

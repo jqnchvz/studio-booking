@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     if (!user) {
       console.log('❌ No authenticated user found');
       return NextResponse.json(
-        { error: 'Unauthorized', message: 'Authentication required' },
+        { error: 'No autorizado', message: 'Autenticación requerida' },
         { status: 401 }
       );
     }
@@ -41,8 +41,8 @@ export async function POST(request: NextRequest) {
       console.log('❌ Email not verified for user:', user.id);
       return NextResponse.json(
         {
-          error: 'Email not verified',
-          message: 'Please verify your email address before reactivating your subscription',
+          error: 'Correo no verificado',
+          message: 'Verifica tu correo electrónico antes de reactivar tu suscripción',
         },
         { status: 403 }
       );
@@ -56,8 +56,8 @@ export async function POST(request: NextRequest) {
       console.log('❌ Invalid request body:', result.error.issues);
       return NextResponse.json(
         {
-          error: 'Invalid input',
-          message: 'Invalid request data',
+          error: 'Datos inválidos',
+          message: 'Datos de solicitud inválidos',
           details: result.error.issues,
         },
         { status: 400 }
@@ -85,8 +85,8 @@ export async function POST(request: NextRequest) {
       console.log('❌ No subscription found for user:', user.id);
       return NextResponse.json(
         {
-          error: 'No subscription found',
-          message: 'No subscription found to reactivate',
+          error: 'Suscripción no encontrada',
+          message: 'No se encontró una suscripción para reactivar',
         },
         { status: 404 }
       );
@@ -99,8 +99,8 @@ export async function POST(request: NextRequest) {
       console.log('❌ Subscription cannot be reactivated:', subscription.status);
       return NextResponse.json(
         {
-          error: 'Cannot reactivate',
-          message: `Cannot reactivate subscription with status: ${subscription.status}`,
+          error: 'No se puede reactivar',
+          message: `No se puede reactivar la suscripción con estado: ${subscription.status}`,
         },
         { status: 400 }
       );
@@ -123,14 +123,14 @@ export async function POST(request: NextRequest) {
 
       if (!newPlan) {
         return NextResponse.json(
-          { error: 'Plan not found', message: 'Selected plan does not exist' },
+          { error: 'Plan no encontrado', message: 'El plan seleccionado no existe' },
           { status: 404 }
         );
       }
 
       if (!newPlan.isActive) {
         return NextResponse.json(
-          { error: 'Plan not available', message: 'Selected plan is no longer available' },
+          { error: 'Plan no disponible', message: 'El plan seleccionado ya no está disponible' },
           { status: 400 }
         );
       }
@@ -143,8 +143,8 @@ export async function POST(request: NextRequest) {
         console.log('❌ Current plan is no longer active:', subscription.plan.name);
         return NextResponse.json(
           {
-            error: 'Plan not available',
-            message: 'Your previous plan is no longer available. Please select a new plan.',
+            error: 'Plan no disponible',
+            message: 'Tu plan anterior ya no está disponible. Por favor selecciona un nuevo plan.',
           },
           { status: 400 }
         );
@@ -200,7 +200,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: true,
-        message: 'Subscription reactivation initiated',
+        message: 'Reactivación de suscripción iniciada',
         data: {
           subscriptionId: updatedSubscription.id,
           initPoint: preference.init_point,
@@ -223,8 +223,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(
       {
-        error: 'Internal server error',
-        message: 'An error occurred while reactivating subscription',
+        error: 'Error interno del servidor',
+        message: 'Ocurrió un error al reactivar la suscripción',
       },
       { status: 500 }
     );

@@ -13,9 +13,9 @@ export default function RegisterPage() {
   return (
     <div className="space-y-6">
       <div className="space-y-2 text-center">
-        <h1 className="text-3xl font-bold tracking-tight">Create your account</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Crea tu cuenta</h1>
         <p className="text-muted-foreground">
-          Enter your details to get started
+          Ingresa tus datos para empezar
         </p>
       </div>
 
@@ -24,12 +24,12 @@ export default function RegisterPage() {
       </div>
 
       <p className="text-center text-sm text-muted-foreground mt-4">
-        Already have an account?{' '}
+        ¿Ya tienes cuenta?{' '}
         <a
           href="/login"
           className="font-medium text-primary hover:underline underline-offset-4"
         >
-          Sign in
+          Inicia sesión
         </a>
       </p>
     </div>
