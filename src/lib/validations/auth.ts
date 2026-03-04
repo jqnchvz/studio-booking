@@ -165,6 +165,48 @@ export const updateProfileSchema = z.object({
 });
 
 /**
+ * Business owner registration schema (for API)
+ */
+export const businessRegisterSchema = z.object({
+  name: z
+    .string()
+    .min(2, 'Name must be at least 2 characters')
+    .max(50, 'Name must not exceed 50 characters')
+    .trim(),
+  email: z
+    .string()
+    .min(1, 'Email is required')
+    .email('Invalid email address')
+    .toLowerCase()
+    .trim(),
+  password: z
+    .string()
+    .min(8, 'Password must be at least 8 characters')
+    .regex(
+      passwordRegex,
+      'Password must contain uppercase, lowercase, number, and one of these special characters: @ $ ! % * ? &'
+    ),
+  businessName: z
+    .string()
+    .min(2, 'Business name must be at least 2 characters')
+    .max(100, 'Business name must not exceed 100 characters')
+    .trim(),
+  businessType: z.enum(['studio', 'gym', 'clinic', 'other']),
+});
+
+/**
+ * Business owner registration form schema (with password confirmation)
+ */
+export const businessRegisterFormSchema = businessRegisterSchema
+  .extend({
+    confirmPassword: z.string().min(1, 'Please confirm your password'),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: 'Passwords do not match',
+    path: ['confirmPassword'],
+  });
+
+/**
  * Infer TypeScript types from schemas
  */
 export type RegisterInput = z.infer<typeof registerSchema>;
@@ -175,3 +217,5 @@ export type ResetPasswordFormInput = z.infer<typeof resetPasswordFormSchema>;
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
 export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
 export type ChangePasswordFormInput = z.infer<typeof changePasswordFormSchema>;
+export type BusinessRegisterInput = z.infer<typeof businessRegisterSchema>;
+export type BusinessRegisterFormInput = z.infer<typeof businessRegisterFormSchema>;
