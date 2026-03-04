@@ -16,23 +16,23 @@ interface Requirement {
 
 const requirements: Requirement[] = [
   {
-    label: 'At least 8 characters',
+    label: 'Mínimo 8 caracteres',
     test: (password) => password.length >= 8,
   },
   {
-    label: 'One uppercase letter',
+    label: 'Una letra mayúscula',
     test: (password) => /[A-Z]/.test(password),
   },
   {
-    label: 'One lowercase letter',
+    label: 'Una letra minúscula',
     test: (password) => /[a-z]/.test(password),
   },
   {
-    label: 'One number',
+    label: 'Un número',
     test: (password) => /\d/.test(password),
   },
   {
-    label: 'One special character (@ $ ! % * ? &)',
+    label: 'Un carácter especial (@ $ ! % * ? &)',
     test: (password) => /[@$!%*?&]/.test(password),
   },
 ];
@@ -48,7 +48,7 @@ export function PasswordStrength({ password }: PasswordStrengthProps) {
   const getStrengthConfig = () => {
     if (strength <= 2) {
       return {
-        label: 'Weak',
+        label: 'Débil',
         color: 'bg-red-500',
         textColor: 'text-red-600',
         width: 'w-1/3',
@@ -56,14 +56,14 @@ export function PasswordStrength({ password }: PasswordStrengthProps) {
     }
     if (strength <= 4) {
       return {
-        label: 'Medium',
+        label: 'Media',
         color: 'bg-yellow-500',
         textColor: 'text-yellow-600',
         width: 'w-2/3',
       };
     }
     return {
-      label: 'Strong',
+      label: 'Fuerte',
       color: 'bg-green-500',
       textColor: 'text-green-600',
       width: 'w-full',
@@ -89,7 +89,7 @@ export function PasswordStrength({ password }: PasswordStrengthProps) {
       {/* Strength Bar */}
       <div className="space-y-1">
         <div className="flex items-center justify-between">
-          <span className="text-muted-foreground">Password strength:</span>
+          <span className="text-muted-foreground">Seguridad de la contraseña:</span>
           <span className={cn('font-medium', config.textColor)}>
             {config.label}
           </span>
@@ -129,13 +129,13 @@ export function PasswordStrength({ password }: PasswordStrengthProps) {
           <Alert className="border-amber-500/50 bg-amber-50 dark:bg-amber-950/20">
             <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-500" />
             <AlertDescription className="text-amber-800 dark:text-amber-300">
-              <span className="font-medium">Invalid characters detected:</span>{' '}
+              <span className="font-medium">Caracteres no permitidos:</span>{' '}
               <code className="bg-amber-100 dark:bg-amber-900/30 px-1 py-0.5 rounded text-xs">
                 {invalidChars}
               </code>
               <br />
               <span className="text-xs mt-1 block">
-                Only these special characters are allowed: @ $ ! % * ? &
+                Solo se permiten estos caracteres especiales: @ $ ! % * ? &
               </span>
             </AlertDescription>
           </Alert>

@@ -64,7 +64,7 @@ export function RegistrationForm() {
       if (!contentType || !contentType.includes('application/json')) {
         const text = await response.text();
         console.error('Invalid response:', text);
-        throw new Error('Server returned an invalid response');
+        throw new Error('El servidor devolvió una respuesta inválida');
       }
 
       const result = await response.json();
@@ -73,17 +73,16 @@ export function RegistrationForm() {
         // Handle different error types
         if (response.status === 429) {
           setError(
-            `Too many registration attempts. Please try again after ${new Date(
+            `Demasiados intentos de registro. Intenta nuevamente después de ${new Date(
               result.resetTime
             ).toLocaleTimeString()}.`
           );
         } else if (response.status === 409) {
-          setError('An account with this email already exists.');
+          setError('Ya existe una cuenta con este correo electrónico.');
         } else if (response.status === 400 && result.details) {
-          // Show first validation error
-          setError(result.details[0]?.message || 'Invalid input data.');
+          setError(result.details[0]?.message || 'Datos inválidos.');
         } else {
-          setError(result.message || 'Registration failed. Please try again.');
+          setError(result.message || 'Error al registrar. Por favor intenta nuevamente.');
         }
         return;
       }
@@ -91,7 +90,7 @@ export function RegistrationForm() {
       // Success - redirect to pending verification page
       router.push(`/verify-email/pending?email=${encodeURIComponent(data.email)}`);
     } catch (err) {
-      setError('An unexpected error occurred. Please try again.');
+      setError('Error inesperado. Por favor intenta nuevamente.');
       console.error('Registration error:', err);
     } finally {
       setIsLoading(false);
@@ -112,10 +111,10 @@ export function RegistrationForm() {
           name="name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Full Name</FormLabel>
+              <FormLabel>Nombre completo</FormLabel>
               <FormControl>
                 <Input
-                  placeholder="John Doe"
+                  placeholder="Juan Pérez"
                   {...field}
                   disabled={isLoading}
                 />
@@ -130,11 +129,11 @@ export function RegistrationForm() {
           name="email"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Email</FormLabel>
+              <FormLabel>Correo electrónico</FormLabel>
               <FormControl>
                 <Input
                   type="email"
-                  placeholder="you@example.com"
+                  placeholder="tu@correo.cl"
                   {...field}
                   disabled={isLoading}
                 />
@@ -149,12 +148,12 @@ export function RegistrationForm() {
           name="password"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Password</FormLabel>
+              <FormLabel>Contraseña</FormLabel>
               <FormControl>
                 <div className="relative">
                   <Input
                     type={showPassword ? 'text' : 'password'}
-                    placeholder="Create a strong password"
+                    placeholder="Crea una contraseña segura"
                     {...field}
                     disabled={isLoading}
                     className="pr-10"
@@ -164,7 +163,7 @@ export function RegistrationForm() {
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                     disabled={isLoading}
-                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                   >
                     {showPassword ? (
                       <EyeOff className="h-4 w-4" />
@@ -185,12 +184,12 @@ export function RegistrationForm() {
           name="confirmPassword"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Confirm Password</FormLabel>
+              <FormLabel>Confirmar contraseña</FormLabel>
               <FormControl>
                 <div className="relative">
                   <Input
                     type={showConfirmPassword ? 'text' : 'password'}
-                    placeholder="Re-enter your password"
+                    placeholder="Repite tu contraseña"
                     {...field}
                     disabled={isLoading}
                     className="pr-10"
@@ -201,7 +200,7 @@ export function RegistrationForm() {
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                     disabled={isLoading}
                     aria-label={
-                      showConfirmPassword ? 'Hide password' : 'Show password'
+                      showConfirmPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'
                     }
                   >
                     {showConfirmPassword ? (
@@ -221,10 +220,10 @@ export function RegistrationForm() {
           {isLoading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Creating account...
+              Creando cuenta...
             </>
           ) : (
-            'Create account'
+            'Crear cuenta'
           )}
         </Button>
       </form>

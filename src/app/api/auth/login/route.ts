@@ -24,8 +24,8 @@ export async function POST(request: NextRequest) {
     if (!rateLimit.allowed) {
       return NextResponse.json(
         {
-          error: 'Too many login attempts',
-          message: 'Please try again later',
+          error: 'Demasiados intentos de inicio de sesión',
+          message: 'Por favor intenta nuevamente más tarde',
           resetTime: rateLimit.resetTime.toISOString(),
         },
         {
@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: true,
-        message: 'Login successful',
+        message: 'Inicio de sesión exitoso',
         user: {
           id: user.id,
           email: user.email,
@@ -88,8 +88,8 @@ export async function POST(request: NextRequest) {
     if (error instanceof ZodError) {
       return NextResponse.json(
         {
-          error: 'Validation failed',
-          message: 'Invalid input data',
+          error: 'Validación fallida',
+          message: 'Datos de entrada inválidos',
           details: error.issues.map((err) => ({
             field: err.path.join('.'),
             message: err.message,
@@ -104,8 +104,8 @@ export async function POST(request: NextRequest) {
       if (error.message === 'Invalid credentials') {
         return NextResponse.json(
           {
-            error: 'Authentication failed',
-            message: 'Invalid email or password',
+            error: 'Autenticación fallida',
+            message: 'Correo o contraseña incorrectos',
           },
           { status: 401 }
         );
@@ -114,8 +114,8 @@ export async function POST(request: NextRequest) {
       if (error.message === 'Email not verified') {
         return NextResponse.json(
           {
-            error: 'Email not verified',
-            message: 'Please verify your email before logging in',
+            error: 'Correo no verificado',
+            message: 'Verifica tu correo electrónico antes de iniciar sesión',
           },
           { status: 403 }
         );
@@ -126,8 +126,8 @@ export async function POST(request: NextRequest) {
     console.error('Login error:', error);
     return NextResponse.json(
       {
-        error: 'Login failed',
-        message: 'An unexpected error occurred. Please try again later.',
+        error: 'Error al iniciar sesión',
+        message: 'Ocurrió un error inesperado. Por favor intenta nuevamente.',
       },
       { status: 500 }
     );
