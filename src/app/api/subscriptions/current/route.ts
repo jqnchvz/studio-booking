@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     if (!sessionCookie) {
       console.log('❌ No session cookie found');
       return NextResponse.json(
-        { error: 'Unauthorized', message: 'No session found' },
+        { error: 'No autorizado', message: 'No se encontró sesión' },
         { status: 401 }
       );
     }
@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
     if (!payload) {
       console.log('❌ Invalid session token');
       return NextResponse.json(
-        { error: 'Unauthorized', message: 'Invalid session' },
+        { error: 'No autorizado', message: 'Sesión inválida' },
         { status: 401 }
       );
     }
@@ -80,8 +80,8 @@ export async function GET(request: NextRequest) {
       console.log('❌ No subscription found for user:', payload.userId);
       return NextResponse.json(
         {
-          error: 'No subscription found',
-          message: 'You do not have an active subscription',
+          error: 'Suscripción no encontrada',
+          message: 'No tienes una suscripción activa',
         },
         { status: 404 }
       );
@@ -103,8 +103,8 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(
       {
-        error: 'Internal server error',
-        message: 'An error occurred while fetching subscription',
+        error: 'Error interno del servidor',
+        message: 'Ocurrió un error al obtener la suscripción',
       },
       { status: 500 }
     );

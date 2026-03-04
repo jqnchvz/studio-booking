@@ -17,21 +17,21 @@ const passwordRegex =
 export const registerSchema = z.object({
   email: z
     .string()
-    .min(1, 'Email is required')
-    .email('Invalid email address')
+    .min(1, 'El correo es requerido')
+    .email('Correo electrónico inválido')
     .toLowerCase()
     .trim(),
   password: z
     .string()
-    .min(8, 'Password must be at least 8 characters')
+    .min(8, 'La contraseña debe tener al menos 8 caracteres')
     .regex(
       passwordRegex,
-      'Password must contain uppercase, lowercase, number, and one of these special characters: @ $ ! % * ? &'
+      'La contraseña debe contener mayúscula, minúscula, número y un carácter especial: @ $ ! % * ? &'
     ),
   name: z
     .string()
-    .min(2, 'Name must be at least 2 characters')
-    .max(50, 'Name must not exceed 50 characters')
+    .min(2, 'El nombre debe tener al menos 2 caracteres')
+    .max(50, 'El nombre no puede superar 50 caracteres')
     .trim(),
 });
 
@@ -42,26 +42,26 @@ export const registerFormSchema = z
   .object({
     email: z
       .string()
-      .min(1, 'Email is required')
-      .email('Invalid email address')
+      .min(1, 'El correo es requerido')
+      .email('Correo electrónico inválido')
       .toLowerCase()
       .trim(),
     password: z
       .string()
-      .min(8, 'Password must be at least 8 characters')
+      .min(8, 'La contraseña debe tener al menos 8 caracteres')
       .regex(
         passwordRegex,
-        'Password must contain uppercase, lowercase, number, and one of these special characters: @ $ ! % * ? &'
+        'La contraseña debe contener mayúscula, minúscula, número y un carácter especial: @ $ ! % * ? &'
       ),
-    confirmPassword: z.string().min(1, 'Please confirm your password'),
+    confirmPassword: z.string().min(1, 'Por favor confirma tu contraseña'),
     name: z
       .string()
-      .min(2, 'Name must be at least 2 characters')
-      .max(50, 'Name must not exceed 50 characters')
+      .min(2, 'El nombre debe tener al menos 2 caracteres')
+      .max(50, 'El nombre no puede superar 50 caracteres')
       .trim(),
   })
   .refine((data) => data.password === data.confirmPassword, {
-    message: 'Passwords do not match',
+    message: 'Las contraseñas no coinciden',
     path: ['confirmPassword'],
   });
 
@@ -71,24 +71,24 @@ export const registerFormSchema = z
 export const loginSchema = z.object({
   email: z
     .string()
-    .min(1, 'Email is required')
-    .email('Invalid email address')
+    .min(1, 'El correo es requerido')
+    .email('Correo electrónico inválido')
     .toLowerCase()
     .trim(),
-  password: z.string().min(1, 'Password is required'),
+  password: z.string().min(1, 'La contraseña es requerida'),
 });
 
 /**
  * Password reset validation schema (API)
  */
 export const resetPasswordSchema = z.object({
-  token: z.string().min(1, 'Reset token is required'),
+  token: z.string().min(1, 'El token de restablecimiento es requerido'),
   newPassword: z
     .string()
-    .min(8, 'Password must be at least 8 characters')
+    .min(8, 'La contraseña debe tener al menos 8 caracteres')
     .regex(
       passwordRegex,
-      'Password must contain uppercase, lowercase, number, and one of these special characters: @ $ ! % * ? &'
+      'La contraseña debe contener mayúscula, minúscula, número y un carácter especial: @ $ ! % * ? &'
     ),
 });
 
@@ -99,15 +99,15 @@ export const resetPasswordFormSchema = z
   .object({
     newPassword: z
       .string()
-      .min(8, 'Password must be at least 8 characters')
+      .min(8, 'La contraseña debe tener al menos 8 caracteres')
       .regex(
         passwordRegex,
-        'Password must contain uppercase, lowercase, number, and one of these special characters: @ $ ! % * ? &'
+        'La contraseña debe contener mayúscula, minúscula, número y un carácter especial: @ $ ! % * ? &'
       ),
-    confirmPassword: z.string().min(1, 'Please confirm your password'),
+    confirmPassword: z.string().min(1, 'Por favor confirma tu contraseña'),
   })
   .refine((data) => data.newPassword === data.confirmPassword, {
-    message: 'Passwords do not match',
+    message: 'Las contraseñas no coinciden',
     path: ['confirmPassword'],
   });
 
@@ -151,14 +151,14 @@ export const changePasswordFormSchema = z
 export const updateProfileSchema = z.object({
   name: z
     .string()
-    .min(2, 'Name must be at least 2 characters')
-    .max(50, 'Name must not exceed 50 characters')
+    .min(2, 'El nombre debe tener al menos 2 caracteres')
+    .max(50, 'El nombre no puede superar 50 caracteres')
     .trim()
     .optional(),
   email: z
     .string()
-    .min(1, 'Email is required')
-    .email('Invalid email address')
+    .min(1, 'El correo es requerido')
+    .email('Correo electrónico inválido')
     .toLowerCase()
     .trim()
     .optional(),
@@ -170,26 +170,26 @@ export const updateProfileSchema = z.object({
 export const businessRegisterSchema = z.object({
   name: z
     .string()
-    .min(2, 'Name must be at least 2 characters')
-    .max(50, 'Name must not exceed 50 characters')
+    .min(2, 'El nombre debe tener al menos 2 caracteres')
+    .max(50, 'El nombre no puede superar 50 caracteres')
     .trim(),
   email: z
     .string()
-    .min(1, 'Email is required')
-    .email('Invalid email address')
+    .min(1, 'El correo es requerido')
+    .email('Correo electrónico inválido')
     .toLowerCase()
     .trim(),
   password: z
     .string()
-    .min(8, 'Password must be at least 8 characters')
+    .min(8, 'La contraseña debe tener al menos 8 caracteres')
     .regex(
       passwordRegex,
-      'Password must contain uppercase, lowercase, number, and one of these special characters: @ $ ! % * ? &'
+      'La contraseña debe contener mayúscula, minúscula, número y un carácter especial: @ $ ! % * ? &'
     ),
   businessName: z
     .string()
-    .min(2, 'Business name must be at least 2 characters')
-    .max(100, 'Business name must not exceed 100 characters')
+    .min(2, 'El nombre del negocio debe tener al menos 2 caracteres')
+    .max(100, 'El nombre del negocio no puede superar 100 caracteres')
     .trim(),
   businessType: z.enum(['studio', 'gym', 'clinic', 'other']),
 });
@@ -199,10 +199,10 @@ export const businessRegisterSchema = z.object({
  */
 export const businessRegisterFormSchema = businessRegisterSchema
   .extend({
-    confirmPassword: z.string().min(1, 'Please confirm your password'),
+    confirmPassword: z.string().min(1, 'Por favor confirma tu contraseña'),
   })
   .refine((data) => data.password === data.confirmPassword, {
-    message: 'Passwords do not match',
+    message: 'Las contraseñas no coinciden',
     path: ['confirmPassword'],
   });
 
