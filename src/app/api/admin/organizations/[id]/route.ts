@@ -30,35 +30,58 @@ export async function GET(
 
     const { id } = await params;
 
-    const org = await db.organization.findUnique({
-      where: { id },
-      select: {
-        id: true,
-        name: true,
-        slug: true,
-        status: true,
-        createdAt: true,
-        updatedAt: true,
-        owner: {
-          select: { id: true, name: true, email: true },
-        },
-        settings: {
+    const [org, activeSubscriptions, totalReservations, recentReservations] =
+      await Promise.all([
+        db.organization.findUnique({
+          where: { id },
           select: {
-            businessType: true,
-            phone: true,
-            address: true,
-            logoUrl: true,
-            timezone: true,
-            mpAccessToken: true,
-            mpPublicKey: true,
-            mpWebhookSecret: true,
+            id: true,
+            name: true,
+            slug: true,
+            status: true,
+            createdAt: true,
+            updatedAt: true,
+            owner: {
+              select: { id: true, name: true, email: true, emailVerified: true },
+            },
+            settings: {
+              select: {
+                businessType: true,
+                phone: true,
+                address: true,
+                logoUrl: true,
+                timezone: true,
+                mpAccessToken: true,
+                mpPublicKey: true,
+                mpWebhookSecret: true,
+              },
+            },
+            _count: {
+              select: { users: true, resources: true, plans: true },
+            },
           },
-        },
-        _count: {
-          select: { users: true, resources: true, plans: true },
-        },
-      },
-    });
+        }),
+        db.subscription.count({
+          where: { plan: { organizationId: id }, status: 'active' },
+        }),
+        db.reservation.count({
+          where: { resource: { organizationId: id } },
+        }),
+        db.reservation.findMany({
+          where: { resource: { organizationId: id } },
+          orderBy: { createdAt: 'desc' },
+          take: 10,
+          select: {
+            id: true,
+            status: true,
+            startTime: true,
+            endTime: true,
+            createdAt: true,
+            resource: { select: { name: true } },
+            user: { select: { name: true, email: true } },
+          },
+        }),
+      ]);
 
     if (!org) {
       return NextResponse.json(
@@ -93,7 +116,20 @@ export async function GET(
           memberCount: org._count.users,
           resourceCount: org._count.resources,
           planCount: org._count.plans,
+          activeSubscriptions,
+          totalReservations,
         },
+        recentActivity: recentReservations.map((r) => ({
+          id: r.id,
+          type: 'reservation' as const,
+          status: r.status,
+          startTime: r.startTime.toISOString(),
+          endTime: r.endTime.toISOString(),
+          createdAt: r.createdAt.toISOString(),
+          resourceName: r.resource.name,
+          userName: r.user.name,
+          userEmail: r.user.email,
+        })),
       },
     });
   } catch (error) {
