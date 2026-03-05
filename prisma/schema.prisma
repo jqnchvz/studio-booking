@@ -224,6 +224,20 @@ model OrganizationSettings {
   @@map("organization_settings")
 }
 
+model PlatformPlan {
+  id           String   @id @default(cuid())
+  name         String   // "Básico" | "Pro"
+  price        Int      // monthly price in CLP (0 for free tier)
+  maxResources Int      // max resources the org can create
+  maxUsers     Int      // max end-users per org
+  features     Json     // array of feature strings
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("platform_plans")
+}
+
 model EmailLog {
   id        String   @id @default(cuid())
   userId    String?
