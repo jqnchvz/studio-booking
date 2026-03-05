@@ -2,25 +2,13 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import {
-  LayoutDashboard,
-  Users,
-  DollarSign,
-  Calendar,
-  CreditCard,
-  Settings,
-  Building2,
-} from 'lucide-react';
+import { LayoutDashboard, Settings, Building2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 // Icon map keeps functions server-side-safe: server passes a string key,
 // this client component resolves the actual function.
 const iconMap = {
   dashboard: LayoutDashboard,
-  users: Users,
-  payments: DollarSign,
-  reservations: Calendar,
-  subscriptions: CreditCard,
   settings: Settings,
   tenants: Building2,
 } as const;
@@ -44,7 +32,7 @@ interface AdminNavLinkProps {
  *
  * Active detection:
  * - Exact match for /admin (dashboard root)
- * - Prefix match for all other sections (/admin/users, /admin/payments, etc.)
+ * - Prefix match for all other sections (/admin/tenants, /admin/settings, etc.)
  */
 export function AdminNavLink({ href, icon, children }: AdminNavLinkProps) {
   const pathname = usePathname();

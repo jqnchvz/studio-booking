@@ -46,18 +46,6 @@ export default async function AdminLayout({
           <AdminNavLink href="/admin" icon="dashboard">
             Dashboard
           </AdminNavLink>
-          <AdminNavLink href="/admin/users" icon="users">
-            Usuarios
-          </AdminNavLink>
-          <AdminNavLink href="/admin/payments" icon="payments">
-            Pagos
-          </AdminNavLink>
-          <AdminNavLink href="/admin/reservations" icon="reservations">
-            Reservas
-          </AdminNavLink>
-          <AdminNavLink href="/admin/subscriptions" icon="subscriptions">
-            Suscripciones
-          </AdminNavLink>
           <AdminNavLink href="/admin/tenants" icon="tenants">
             Empresas
           </AdminNavLink>
