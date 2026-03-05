@@ -9,6 +9,7 @@ import {
   Calendar,
   CreditCard,
   Settings,
+  Building2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -21,6 +22,7 @@ const iconMap = {
   reservations: Calendar,
   subscriptions: CreditCard,
   settings: Settings,
+  tenants: Building2,
 } as const;
 
 type IconKey = keyof typeof iconMap;

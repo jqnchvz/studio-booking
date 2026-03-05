@@ -58,6 +58,9 @@ export default async function AdminLayout({
           <AdminNavLink href="/admin/subscriptions" icon="subscriptions">
             Suscripciones
           </AdminNavLink>
+          <AdminNavLink href="/admin/tenants" icon="tenants">
+            Empresas
+          </AdminNavLink>
           <AdminNavLink href="/admin/settings" icon="settings">
             Configuración
           </AdminNavLink>
