@@ -7,6 +7,7 @@ export interface SessionPayload {
   userId: string;
   email: string;
   isAdmin: boolean;
+  isOwner: boolean;
 }
 
 /**

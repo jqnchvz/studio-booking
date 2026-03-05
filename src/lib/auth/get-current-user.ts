@@ -31,6 +31,8 @@ export async function getCurrentUser() {
         name: true,
         emailVerified: true,
         isAdmin: true,
+        isOwner: true,
+        organizationId: true,
         createdAt: true,
       },
     });

@@ -112,6 +112,7 @@ export async function validateCredentials(email: string, password: string) {
     name: user.name,
     emailVerified: user.emailVerified,
     isAdmin: user.isAdmin,
+    isOwner: user.isOwner,
     createdAt: user.createdAt,
   };
 }

@@ -52,6 +52,11 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
+  // Check owner access for owner portal routes
+  if (pathname.startsWith('/owner') && !payload.isOwner) {
+    return NextResponse.redirect(new URL('/dashboard', request.url));
+  }
+
   // Allow authenticated request
   return NextResponse.next();
 }
@@ -63,6 +68,7 @@ export const config = {
     '/reservations/:path*',
     '/subscription/:path*',
     '/admin/:path*',
+    '/owner/:path*',
     '/profile/:path*',
     // Auth routes (so authenticated users get redirected away)
     '/login',
