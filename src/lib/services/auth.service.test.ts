@@ -202,6 +202,7 @@ describe('Auth Service', () => {
         name: mockUser.name,
         emailVerified: mockUser.emailVerified,
         isAdmin: mockUser.isAdmin,
+        isOwner: mockUser.isOwner,
         createdAt: mockUser.createdAt,
       });
       expect(result).not.toHaveProperty('passwordHash');

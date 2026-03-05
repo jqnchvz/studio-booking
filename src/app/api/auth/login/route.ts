@@ -54,6 +54,7 @@ export async function POST(request: NextRequest) {
       userId: user.id,
       email: user.email,
       isAdmin: user.isAdmin,
+      isOwner: user.isOwner,
     });
 
     // Set session cookie

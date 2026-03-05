@@ -11,6 +11,7 @@ describe('Session Utilities', () => {
     userId: 'user-123',
     email: 'test@example.com',
     isAdmin: false,
+    isOwner: false,
   };
 
   describe('generateToken', () => {

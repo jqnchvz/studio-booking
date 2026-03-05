@@ -52,6 +52,7 @@ describe('GET /api/user/profile', () => {
       userId: 'user-123',
       email: 'test@example.com',
       isAdmin: false,
+      isOwner: false,
     });
 
     vi.mocked(db.user.findUnique).mockResolvedValue(mockUser as any);
@@ -135,6 +136,7 @@ describe('GET /api/user/profile', () => {
       userId: 'non-existent-user',
       email: 'test@example.com',
       isAdmin: false,
+      isOwner: false,
     });
 
     vi.mocked(db.user.findUnique).mockResolvedValue(null);
@@ -187,6 +189,7 @@ describe('PATCH /api/user/profile', () => {
       userId: 'user-123',
       email: 'old@example.com',
       isAdmin: false,
+      isOwner: false,
     });
 
     vi.mocked(db.user.findUnique).mockResolvedValue(currentUser as any);
@@ -242,6 +245,7 @@ describe('PATCH /api/user/profile', () => {
       userId: 'user-123',
       email: 'old@example.com',
       isAdmin: false,
+      isOwner: false,
     });
 
     vi.mocked(db.user.findUnique)
@@ -308,6 +312,7 @@ describe('PATCH /api/user/profile', () => {
       userId: 'user-123',
       email: 'old@example.com',
       isAdmin: false,
+      isOwner: false,
     });
 
     vi.mocked(db.user.findUnique)
@@ -340,6 +345,7 @@ describe('PATCH /api/user/profile', () => {
       userId: 'user-123',
       email: 'test@example.com',
       isAdmin: false,
+      isOwner: false,
     });
 
     vi.mocked(db.user.findUnique).mockResolvedValue({
@@ -412,6 +418,7 @@ describe('PATCH /api/user/profile', () => {
       userId: 'user-123',
       email: 'old@example.com',
       isAdmin: false,
+      isOwner: false,
     });
 
     vi.mocked(db.user.findUnique)
@@ -484,6 +491,7 @@ describe('PATCH /api/user/profile', () => {
       userId: 'user-123',
       email: 'old@example.com',
       isAdmin: false,
+      isOwner: false,
     });
 
     vi.mocked(db.user.findUnique)
