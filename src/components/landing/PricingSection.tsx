@@ -2,23 +2,26 @@ import Link from 'next/link';
 import { Check, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatCLP } from '@/lib/utils/format';
+import { db } from '@/lib/db';
 
 interface Plan {
   id: string;
   name: string;
-  description: string;
   price: number;
-  interval: string;
   features: string[];
 }
 
 async function getPlans(): Promise<Plan[]> {
   try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/public/plans`, {
-      next: { revalidate: 3600 },
+    const plans = await db.platformPlan.findMany({
+      where: { isActive: true },
+      orderBy: { price: 'asc' },
+      select: { id: true, name: true, price: true, features: true },
     });
-    if (!res.ok) return [];
-    return res.json();
+    return plans.map((p) => ({
+      ...p,
+      features: Array.isArray(p.features) ? (p.features as string[]) : [],
+    }));
   } catch {
     return [];
   }
@@ -40,7 +43,7 @@ export async function PricingSection() {
         </div>
 
         {plans.length === 0 ? (
-          <p className="text-center text-muted-foreground">Cargando planes...</p>
+          <p className="text-center text-muted-foreground">No hay planes disponibles en este momento.</p>
         ) : (
           <div
             className={`grid gap-8 ${
@@ -73,9 +76,8 @@ export async function PricingSection() {
                     </div>
                   )}
 
-                  <div className="space-y-2">
+                  <div>
                     <h3 className="text-xl font-bold">{plan.name}</h3>
-                    <p className="text-sm text-muted-foreground">{plan.description}</p>
                   </div>
 
                   <div className="flex items-end gap-1">
