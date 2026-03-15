@@ -4,10 +4,11 @@ import {
   type SubscriptionRow,
 } from '@/components/features/owner/SubscriptionsTable';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Info } from 'lucide-react';
 
 export default async function OwnerSubscriptionsPage() {
   let subscriptions: SubscriptionRow[] = [];
+  let truncated = false;
   let error: string | null = null;
 
   try {
@@ -18,7 +19,7 @@ export default async function OwnerSubscriptionsPage() {
       .join('; ');
 
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_APP_URL}/api/owner/subscriptions`,
+      `${process.env.NEXT_PUBLIC_APP_URL}/api/owner/subscriptions?take=200`,
       {
         cache: 'no-store',
         headers: { Cookie: cookieHeader },
@@ -26,7 +27,9 @@ export default async function OwnerSubscriptionsPage() {
     );
 
     if (!response.ok) throw new Error('Failed to fetch subscriptions');
-    subscriptions = await response.json();
+    const json = await response.json();
+    subscriptions = json.data;
+    truncated = json.nextCursor !== null;
   } catch (err) {
     console.error('Error loading subscriptions:', err);
     error = 'No se pudo cargar la lista de suscripciones. Por favor, recarga la página.';
@@ -45,6 +48,13 @@ export default async function OwnerSubscriptionsPage() {
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
+      {truncated && (
+        <Alert>
+          <Info className="h-4 w-4" />
+          <AlertDescription>Mostrando los últimos 200 registros.</AlertDescription>
         </Alert>
       )}
 

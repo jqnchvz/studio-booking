@@ -5,7 +5,11 @@ import { db } from '@/lib/db';
 /**
  * GET /api/owner/subscriptions
  *
- * Returns all subscriptions to plans belonging to this owner's organization.
+ * Returns subscriptions to plans belonging to this owner's organization.
+ *
+ * Query Parameters:
+ * - cursor: last item id for cursor-based pagination
+ * - take: page size (default: 50, max: 200)
  */
 export async function GET(request: NextRequest) {
   try {
@@ -14,9 +18,15 @@ export async function GET(request: NextRequest) {
 
     const { organizationId } = ownerResult.user;
 
-    const subscriptions = await db.subscription.findMany({
+    const url = new URL(request.url);
+    const cursor = url.searchParams.get('cursor') || undefined;
+    const takeN = Math.min(parseInt(url.searchParams.get('take') || '50'), 200);
+
+    const rows = await db.subscription.findMany({
       where: { plan: { organizationId } },
       orderBy: { createdAt: 'desc' },
+      take: takeN + 1,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
       select: {
         id: true,
         status: true,
@@ -30,8 +40,12 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    return NextResponse.json(
-      subscriptions.map((s) => ({
+    const hasMore = rows.length > takeN;
+    const data = hasMore ? rows.slice(0, takeN) : rows;
+    const nextCursor = hasMore ? data[data.length - 1].id : null;
+
+    return NextResponse.json({
+      data: data.map((s) => ({
         id: s.id,
         client: { name: s.user.name, email: s.user.email },
         plan: s.plan.name,
@@ -40,8 +54,9 @@ export async function GET(request: NextRequest) {
         nextBillingDate: s.nextBillingDate,
         cancelledAt: s.cancelledAt,
         createdAt: s.createdAt,
-      }))
-    );
+      })),
+      nextCursor,
+    });
   } catch (error) {
     console.error('Error fetching owner subscriptions:', error);
     return NextResponse.json({ error: 'Error al cargar suscripciones' }, { status: 500 });
