@@ -1,10 +1,11 @@
 import { cookies } from 'next/headers';
 import { PaymentsTable, type PaymentRow } from '@/components/features/owner/PaymentsTable';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Info } from 'lucide-react';
 
 export default async function OwnerPaymentsPage() {
   let payments: PaymentRow[] = [];
+  let truncated = false;
   let error: string | null = null;
 
   try {
@@ -15,7 +16,7 @@ export default async function OwnerPaymentsPage() {
       .join('; ');
 
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_APP_URL}/api/owner/payments`,
+      `${process.env.NEXT_PUBLIC_APP_URL}/api/owner/payments?take=200`,
       {
         cache: 'no-store',
         headers: { Cookie: cookieHeader },
@@ -23,7 +24,9 @@ export default async function OwnerPaymentsPage() {
     );
 
     if (!response.ok) throw new Error('Failed to fetch payments');
-    payments = await response.json();
+    const json = await response.json();
+    payments = json.data;
+    truncated = json.nextCursor !== null;
   } catch (err) {
     console.error('Error loading payments:', err);
     error = 'No se pudo cargar el historial de pagos. Por favor, recarga la página.';
@@ -42,6 +45,13 @@ export default async function OwnerPaymentsPage() {
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
+      {truncated && (
+        <Alert>
+          <Info className="h-4 w-4" />
+          <AlertDescription>Mostrando los últimos 200 registros.</AlertDescription>
         </Alert>
       )}
 

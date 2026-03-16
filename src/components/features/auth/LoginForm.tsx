@@ -87,10 +87,11 @@ export function LoginForm() {
       }
 
       // Success - redirect based on user role
-      // Admin users go to /admin, regular users to dashboard
       const destination = result.user?.isAdmin
         ? '/admin'
-        : redirectTo;
+        : result.user?.isOwner
+          ? '/owner'
+          : redirectTo;
 
       router.push(destination);
       router.refresh();
