@@ -45,8 +45,9 @@ export default async function DashboardPage() {
   const user = await getCurrentUser();
   if (!user) redirect('/login');
 
-  // Admins have their own panel at /admin
+  // Admins and owners have their own panels
   if (user.isAdmin) redirect('/admin');
+  if (user.isOwner) redirect('/owner');
 
   // ── User view ───────────────────────────────────────────────────────────
 
