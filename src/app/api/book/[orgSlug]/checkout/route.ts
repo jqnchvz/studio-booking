@@ -161,7 +161,7 @@ export async function POST(
           failure: `${appUrl}/book/${orgSlug}/failure`,
           pending: `${appUrl}/book/${orgSlug}/pending`,
         },
-        auto_return: 'approved',
+        ...(appUrl.startsWith('https') ? { auto_return: 'approved' as const } : {}),
         notification_url: `${appUrl}/api/webhooks/dropin/${orgSlug}`,
         external_reference: reservation.id,
       },
