@@ -235,7 +235,7 @@ export interface ReservationListItem {
     id: string;
     name: string;
     email: string;
-  };
+  } | null;
   resource: {
     id: string;
     name: string;

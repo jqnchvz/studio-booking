@@ -79,6 +79,8 @@ export async function GET(
             createdAt: true,
             resource: { select: { name: true } },
             user: { select: { name: true, email: true } },
+            guestName: true,
+            guestEmail: true,
           },
         }),
       ]);
@@ -127,8 +129,8 @@ export async function GET(
           endTime: r.endTime.toISOString(),
           createdAt: r.createdAt.toISOString(),
           resourceName: r.resource.name,
-          userName: r.user.name,
-          userEmail: r.user.email,
+          userName: r.user?.name ?? r.guestName ?? 'Guest',
+          userEmail: r.user?.email ?? r.guestEmail ?? '',
         })),
       },
     });

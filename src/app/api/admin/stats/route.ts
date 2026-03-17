@@ -133,6 +133,7 @@ export async function GET(request: NextRequest) {
             user: {
               select: { name: true },
             },
+            guestName: true,
             resource: {
               select: { name: true },
             },
@@ -240,7 +241,7 @@ export async function GET(request: NextRequest) {
         action: `Nueva reserva en ${res.resource.name}`,
         timestamp: res.createdAt.toISOString(),
         metadata: {
-          userName: res.user.name,
+          userName: res.user?.name ?? res.guestName ?? 'Guest',
           resourceName: res.resource.name,
         },
       });

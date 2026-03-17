@@ -346,7 +346,7 @@ export function ReservationCalendar({
                           onClick={() =>
                             router.push(`/admin/reservations/${r.id}`)
                           }
-                          title={`${r.title} · ${r.user.name}`}
+                          title={`${r.title} · ${r.user?.name ?? 'Guest'}`}
                           className={[
                             'w-full text-left text-[11px] px-1.5 py-0.5 rounded truncate',
                             'transition-colors cursor-pointer',

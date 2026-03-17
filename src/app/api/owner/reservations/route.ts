@@ -34,6 +34,8 @@ export async function GET(request: NextRequest) {
         endTime: true,
         createdAt: true,
         user: { select: { name: true, email: true } },
+        guestName: true,
+        guestEmail: true,
         resource: { select: { name: true } },
       },
     });
@@ -45,7 +47,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       data: data.map((r) => ({
         id: r.id,
-        client: { name: r.user.name, email: r.user.email },
+        client: { name: r.user?.name ?? r.guestName ?? 'Guest', email: r.user?.email ?? r.guestEmail ?? '' },
         resource: r.resource.name,
         startTime: r.startTime,
         endTime: r.endTime,
