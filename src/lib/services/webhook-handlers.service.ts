@@ -1,10 +1,11 @@
 import { db } from '@/lib/db';
-import { fetchPaymentDetails } from './mercadopago.service';
+import { fetchPaymentDetails, getPreApprovalStatus } from './mercadopago.service';
 import { sendEmailWithLogging } from '@/lib/email/send-email';
 import { PaymentSuccess } from '../../../emails/payment-success';
 import { PaymentOverdue } from '../../../emails/payment-overdue';
 import { SubscriptionActivated } from '../../../emails/subscription-activated';
 import { SubscriptionSuspended } from '../../../emails/subscription-suspended';
+import { SubscriptionCancelled } from '../../../emails/subscription-cancelled';
 
 /**
  * MercadoPago Webhook Event Types
@@ -216,15 +217,73 @@ async function handleOverduePayment(
 
 /**
  * Handle payment.created event
+ * Seeds a pending Payment record so payment.updated can update it later.
  * @param paymentId - MercadoPago payment ID
  */
 export async function handlePaymentCreated(paymentId: string): Promise<void> {
   console.log(`📧 Payment created: ${paymentId}`);
 
-  // TODO (RES-19): Implement payment creation logic
-  // - Fetch payment details from MercadoPago API
-  // - Create Payment record in database
-  // - Link to subscription via external_reference
+  try {
+    const payment = await fetchPaymentDetails(paymentId);
+
+    if (!payment.external_reference) {
+      console.error(`❌ payment.created ${paymentId} has no external_reference — skipping`);
+      return;
+    }
+
+    // Overdue payments are seeded by our own code — skip to avoid duplicates
+    if (payment.external_reference.startsWith('overdue-')) {
+      console.log(`⏭️  Skipping overdue payment ${paymentId} in payment.created`);
+      return;
+    }
+
+    const [userId, planId] = payment.external_reference.split('-');
+    if (!userId || !planId) {
+      console.error(`❌ Invalid external_reference: ${payment.external_reference}`);
+      return;
+    }
+
+    const subscription = await db.subscription.findUnique({
+      where: { userId },
+      select: { id: true },
+    });
+
+    if (!subscription) {
+      console.error(`❌ Subscription not found for user ${userId}`);
+      return;
+    }
+
+    // Idempotency: skip if record already exists
+    const existing = await db.payment.findUnique({
+      where: { mercadopagoId: payment.id!.toString() },
+    });
+
+    if (existing) {
+      console.log(`⏭️  Payment record already exists for ${paymentId} — skipping`);
+      return;
+    }
+
+    const amount = Math.round(payment.transaction_amount || 0);
+
+    await db.payment.create({
+      data: {
+        userId,
+        subscriptionId: subscription.id,
+        mercadopagoId: payment.id!.toString(),
+        amount,
+        penaltyFee: 0,
+        totalAmount: amount,
+        status: 'pending',
+        dueDate: new Date(),
+        metadata: payment as object,
+      },
+    });
+
+    console.log(`✅ Pending payment record created for ${paymentId}`);
+  } catch (error) {
+    console.error(`❌ Error handling payment.created:`, error);
+    throw error;
+  }
 }
 
 /**
@@ -600,17 +659,83 @@ export async function handleSubscriptionCreated(
 
 /**
  * Handle subscription.updated event
- * @param subscriptionId - MercadoPago subscription ID
+ * Syncs subscription status from MercadoPago: authorized→active, paused→past_due, cancelled→cancelled.
+ * @param subscriptionId - MercadoPago preapproval ID
  */
 export async function handleSubscriptionUpdated(
   subscriptionId: string
 ): Promise<void> {
   console.log(`🔄 Subscription updated: ${subscriptionId}`);
 
-  // TODO: Implement subscription update logic
-  // - Fetch subscription details from MercadoPago API
-  // - Update subscription status in database
-  // - Handle subscription pause, resume, cancellation
+  try {
+    const preapproval = await getPreApprovalStatus(subscriptionId);
+
+    const subscription = await db.subscription.findFirst({
+      where: { mercadopagoSubId: subscriptionId },
+      include: { user: true, plan: true },
+    });
+
+    if (!subscription) {
+      console.error(`❌ No subscription found with mercadopagoSubId: ${subscriptionId}`);
+      return;
+    }
+
+    const mpStatus = preapproval.status;
+    console.log(`   MercadoPago status: ${mpStatus}`);
+    console.log(`   Current DB status: ${subscription.status}`);
+
+    const now = new Date();
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+
+    if (mpStatus === 'authorized') {
+      await db.subscription.update({
+        where: { id: subscription.id },
+        data: { status: 'active', gracePeriodEnd: null, cancelledAt: null },
+      });
+      console.log(`✅ Subscription ${subscription.id} set to active`);
+
+    } else if (mpStatus === 'paused') {
+      const gracePeriodEnd = subscription.gracePeriodEnd ?? (() => {
+        const d = new Date(now);
+        d.setDate(d.getDate() + 3);
+        return d;
+      })();
+
+      await db.subscription.update({
+        where: { id: subscription.id },
+        data: { status: 'past_due', gracePeriodEnd },
+      });
+      console.log(`⚠️  Subscription ${subscription.id} set to past_due (paused by MercadoPago)`);
+
+    } else if (mpStatus === 'cancelled') {
+      await db.subscription.update({
+        where: { id: subscription.id },
+        data: { status: 'cancelled', cancelledAt: now, gracePeriodEnd: null },
+      });
+      console.log(`❌ Subscription ${subscription.id} cancelled`);
+
+      sendEmailWithLogging({
+        userId: subscription.user.id,
+        type: 'subscription_cancelled',
+        to: subscription.user.email,
+        subject: 'Tu suscripcion ha sido cancelada - Reservapp',
+        template: SubscriptionCancelled({
+          reactivateUrl: `${appUrl}/dashboard/subscribe`,
+          name: subscription.user.name,
+          planName: subscription.plan.name,
+          accessUntil: subscription.currentPeriodEnd,
+          cancelledAt: now,
+        }),
+        metadata: { subscriptionId: subscription.id },
+      }).catch((err) => console.error('Failed to send cancellation email:', err));
+
+    } else {
+      console.log(`⏳ Unhandled MercadoPago subscription status: ${mpStatus} — no action taken`);
+    }
+  } catch (error) {
+    console.error(`❌ Error handling subscription.updated:`, error);
+    throw error;
+  }
 }
 
 /**

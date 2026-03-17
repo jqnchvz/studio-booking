@@ -17,6 +17,7 @@ vi.mock('@/lib/email/send-email', () => ({
 
 // Mock the database
 const mockFindUnique = vi.fn();
+const mockFindFirst = vi.fn();
 const mockFindMany = vi.fn();
 const mockCreate = vi.fn();
 const mockUpdate = vi.fn();
@@ -44,6 +45,7 @@ vi.mock('@/lib/db', () => ({
   db: {
     subscription: {
       findUnique: (...args: unknown[]) => mockFindUnique(...args),
+      findFirst: (...args: unknown[]) => mockFindFirst(...args),
       update: (...args: unknown[]) => mockUpdate(...args),
     },
     payment: {
@@ -65,8 +67,10 @@ vi.mock('@/lib/db', () => ({
 
 // Mock MercadoPago service
 const mockFetchPaymentDetails = vi.fn();
+const mockGetPreApprovalStatus = vi.fn();
 vi.mock('./mercadopago.service', () => ({
   fetchPaymentDetails: (...args: unknown[]) => mockFetchPaymentDetails(...args),
+  getPreApprovalStatus: (...args: unknown[]) => mockGetPreApprovalStatus(...args),
 }));
 
 // Helper to build a mock subscription
@@ -504,13 +508,106 @@ describe('markEventAsProcessed', () => {
 });
 
 describe('handlePaymentCreated', () => {
-  it('should log payment creation (placeholder)', async () => {
-    await expect(handlePaymentCreated('pay-123')).resolves.toBeUndefined();
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('creates a pending payment record for a new payment', async () => {
+    // Use cuid-style IDs (no dashes) so split('-') works correctly
+    mockFetchPaymentDetails.mockResolvedValueOnce({
+      id: 9999,
+      status: 'pending',
+      external_reference: 'userid1-planid1',
+      transaction_amount: 50000,
+    });
+    mockFindUnique.mockResolvedValueOnce({ id: 'sub-1' }); // subscription
+    mockPaymentFindUnique.mockResolvedValueOnce(null); // no existing payment
+    mockCreate.mockResolvedValueOnce({ id: 'pay-new' });
+
+    await handlePaymentCreated('9999');
+
+    expect(mockCreate).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        userId: 'userid1',
+        subscriptionId: 'sub-1',
+        mercadopagoId: '9999',
+        status: 'pending',
+        amount: 50000,
+        penaltyFee: 0,
+        totalAmount: 50000,
+      }),
+    });
+  });
+
+  it('skips if payment record already exists (idempotency)', async () => {
+    mockFetchPaymentDetails.mockResolvedValueOnce({
+      id: 9999,
+      status: 'pending',
+      external_reference: 'user-1-plan-1',
+      transaction_amount: 50000,
+    });
+    mockFindUnique.mockResolvedValueOnce({ id: 'sub-1' });
+    mockPaymentFindUnique.mockResolvedValueOnce({ id: 'pay-existing' });
+
+    await handlePaymentCreated('9999');
+
+    expect(mockCreate).not.toHaveBeenCalled();
+  });
+
+  it('skips overdue payments (handled by payment.updated)', async () => {
+    mockFetchPaymentDetails.mockResolvedValueOnce({
+      id: 9999,
+      status: 'pending',
+      external_reference: 'overdue-pay123-user-1',
+      transaction_amount: 55000,
+    });
+
+    await handlePaymentCreated('9999');
+
+    expect(mockFindUnique).not.toHaveBeenCalled();
+    expect(mockCreate).not.toHaveBeenCalled();
+  });
+
+  it('logs error when no external_reference', async () => {
+    mockFetchPaymentDetails.mockResolvedValueOnce({
+      id: 9999,
+      status: 'pending',
+      external_reference: null,
+      transaction_amount: 50000,
+    });
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    await handlePaymentCreated('9999');
+
+    expect(consoleSpy).toHaveBeenCalledWith(
+      expect.stringContaining('has no external_reference')
+    );
+    expect(mockCreate).not.toHaveBeenCalled();
+    consoleSpy.mockRestore();
+  });
+
+  it('logs error when subscription not found', async () => {
+    mockFetchPaymentDetails.mockResolvedValueOnce({
+      id: 9999,
+      status: 'pending',
+      external_reference: 'user-unknown-plan-1',
+      transaction_amount: 50000,
+    });
+    mockFindUnique.mockResolvedValueOnce(null);
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    await handlePaymentCreated('9999');
+
+    expect(consoleSpy).toHaveBeenCalledWith(
+      expect.stringContaining('Subscription not found')
+    );
+    expect(mockCreate).not.toHaveBeenCalled();
+    consoleSpy.mockRestore();
   });
 });
 
 describe('handleSubscriptionCreated', () => {
-  it('should log subscription creation (placeholder)', async () => {
+  it('should resolve without error (stub)', async () => {
     await expect(
       handleSubscriptionCreated('sub-123')
     ).resolves.toBeUndefined();
@@ -518,10 +615,118 @@ describe('handleSubscriptionCreated', () => {
 });
 
 describe('handleSubscriptionUpdated', () => {
-  it('should log subscription update (placeholder)', async () => {
-    await expect(
-      handleSubscriptionUpdated('sub-123')
-    ).resolves.toBeUndefined();
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-02-04T12:00:00Z'));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  function mockSub(overrides: Record<string, unknown> = {}) {
+    return {
+      id: 'sub-1',
+      userId: 'user-1',
+      status: 'active',
+      gracePeriodEnd: null,
+      cancelledAt: null,
+      currentPeriodEnd: new Date('2026-03-04T12:00:00Z'),
+      mercadopagoSubId: 'mp-sub-1',
+      user: { id: 'user-1', email: 'test@example.com', name: 'Test' },
+      plan: { id: 'plan-1', name: 'Plan Pro', interval: 'monthly' },
+      ...overrides,
+    };
+  }
+
+  it('sets subscription to active when MercadoPago status is authorized', async () => {
+    mockGetPreApprovalStatus.mockResolvedValueOnce({ status: 'authorized' });
+    mockFindFirst.mockResolvedValueOnce(mockSub());
+    mockUpdate.mockResolvedValueOnce({});
+
+    await handleSubscriptionUpdated('mp-sub-1');
+
+    expect(mockUpdate).toHaveBeenCalledWith({
+      where: { id: 'sub-1' },
+      data: { status: 'active', gracePeriodEnd: null, cancelledAt: null },
+    });
+  });
+
+  it('sets subscription to past_due when MercadoPago status is paused', async () => {
+    mockGetPreApprovalStatus.mockResolvedValueOnce({ status: 'paused' });
+    mockFindFirst.mockResolvedValueOnce(mockSub());
+    mockUpdate.mockResolvedValueOnce({});
+
+    await handleSubscriptionUpdated('mp-sub-1');
+
+    expect(mockUpdate).toHaveBeenCalledWith({
+      where: { id: 'sub-1' },
+      data: {
+        status: 'past_due',
+        gracePeriodEnd: new Date('2026-02-07T12:00:00Z'),
+      },
+    });
+  });
+
+  it('preserves existing gracePeriodEnd when already set (paused)', async () => {
+    const existingGrace = new Date('2026-02-06T12:00:00Z');
+    mockGetPreApprovalStatus.mockResolvedValueOnce({ status: 'paused' });
+    mockFindFirst.mockResolvedValueOnce(mockSub({ gracePeriodEnd: existingGrace }));
+    mockUpdate.mockResolvedValueOnce({});
+
+    await handleSubscriptionUpdated('mp-sub-1');
+
+    expect(mockUpdate).toHaveBeenCalledWith({
+      where: { id: 'sub-1' },
+      data: { status: 'past_due', gracePeriodEnd: existingGrace },
+    });
+  });
+
+  it('sets subscription to cancelled and sends email when MercadoPago status is cancelled', async () => {
+    mockGetPreApprovalStatus.mockResolvedValueOnce({ status: 'cancelled' });
+    mockFindFirst.mockResolvedValueOnce(mockSub());
+    mockUpdate.mockResolvedValueOnce({});
+
+    await handleSubscriptionUpdated('mp-sub-1');
+
+    expect(mockUpdate).toHaveBeenCalledWith({
+      where: { id: 'sub-1' },
+      data: {
+        status: 'cancelled',
+        cancelledAt: new Date('2026-02-04T12:00:00Z'),
+        gracePeriodEnd: null,
+      },
+    });
+
+    const { sendEmailWithLogging } = await import('@/lib/email/send-email');
+    // Fire-and-forget: email is called but not awaited
+    expect(vi.mocked(sendEmailWithLogging)).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'subscription_cancelled' })
+    );
+  });
+
+  it('logs error and returns when subscription not found', async () => {
+    mockGetPreApprovalStatus.mockResolvedValueOnce({ status: 'cancelled' });
+    mockFindFirst.mockResolvedValueOnce(null);
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    await handleSubscriptionUpdated('mp-sub-unknown');
+
+    expect(consoleSpy).toHaveBeenCalledWith(
+      expect.stringContaining('No subscription found')
+    );
+    expect(mockUpdate).not.toHaveBeenCalled();
+    consoleSpy.mockRestore();
+  });
+
+  it('takes no action for unknown MercadoPago status', async () => {
+    mockGetPreApprovalStatus.mockResolvedValueOnce({ status: 'pending' });
+    mockFindFirst.mockResolvedValueOnce(mockSub());
+
+    await handleSubscriptionUpdated('mp-sub-1');
+
+    expect(mockUpdate).not.toHaveBeenCalled();
   });
 });
 
@@ -556,6 +761,8 @@ describe('handleWebhookEvent', () => {
     mockWebhookFindUnique.mockResolvedValueOnce(null);
     mockWebhookCreate.mockResolvedValueOnce({ id: 'wh-1' });
     mockWebhookUpdate.mockResolvedValueOnce({});
+    // handlePaymentCreated will fetch payment details — return one with no external_reference so it returns early
+    mockFetchPaymentDetails.mockResolvedValueOnce({ id: 99999, external_reference: null });
 
     await handleWebhookEvent({
       id: 200,
