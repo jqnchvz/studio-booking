@@ -8,6 +8,7 @@ export interface SessionPayload {
   email: string;
   isAdmin: boolean;
   isOwner: boolean;
+  iat?: number; // issued-at (added by jwt.sign, used for passwordChangedAt check)
 }
 
 /**

@@ -19,6 +19,7 @@ model User {
   verificationTokenExpiry DateTime?
   resetToken              String?             @unique
   resetTokenExpiry        DateTime?
+  passwordChangedAt       DateTime?
   isAdmin                 Boolean             @default(false)
   isOwner                 Boolean             @default(false) // business owner on the platform
   organizationId          String?             // end-user membership in an org
