@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireOwner } from '@/lib/middleware/owner';
 import { db } from '@/lib/db';
-
-const VALID_TYPES = ['room', 'court', 'equipment', 'other'];
+import { createResourceSchema } from '@/lib/validations/owner';
 
 /**
  * GET /api/owner/resources
@@ -60,17 +59,14 @@ export async function POST(request: NextRequest) {
 
     const { organizationId } = ownerResult.user;
     const body = await request.json();
-    const { name, type, description, capacity, dropInEnabled, dropInPricePerHour } = body;
-
-    if (!name || typeof name !== 'string' || name.trim() === '') {
-      return NextResponse.json({ error: 'El nombre es requerido' }, { status: 400 });
-    }
-    if (!VALID_TYPES.includes(type)) {
+    const parsed = createResourceSchema.safeParse(body);
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: 'El tipo debe ser room, court, equipment u other' },
+        { error: parsed.error.issues[0].message },
         { status: 400 }
       );
     }
+    const { name, type, description, capacity, dropInEnabled, dropInPricePerHour } = parsed.data;
 
     // Enforce resource limit per org plan
     const org = await db.organization.findUnique({

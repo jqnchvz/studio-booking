@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireOwner } from '@/lib/middleware/owner';
 import { db } from '@/lib/db';
+import { updatePlanSchema, toggleActiveSchema } from '@/lib/validations/owner';
 
 /** Fetch and verify the plan belongs to this owner's org. */
 async function getOwnedPlan(id: string, organizationId: string) {
@@ -33,20 +34,14 @@ export async function PUT(
     if ('error' in check) return NextResponse.json({ error: check.error }, { status: check.status });
 
     const body = await request.json();
-    const { name, description, price, interval, features } = body;
-
-    if (!name || typeof name !== 'string' || name.trim() === '') {
-      return NextResponse.json({ error: 'El nombre es requerido' }, { status: 400 });
+    const parsed = updatePlanSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: parsed.error.issues[0].message },
+        { status: 400 }
+      );
     }
-    if (!description || typeof description !== 'string' || description.trim() === '') {
-      return NextResponse.json({ error: 'La descripción es requerida' }, { status: 400 });
-    }
-    if (typeof price !== 'number' || price <= 0) {
-      return NextResponse.json({ error: 'El precio debe ser un número positivo' }, { status: 400 });
-    }
-    if (!['monthly', 'yearly'].includes(interval)) {
-      return NextResponse.json({ error: 'El intervalo debe ser monthly o yearly' }, { status: 400 });
-    }
+    const { name, description, price, interval, features } = parsed.data;
 
     const updated = await db.subscriptionPlan.update({
       where: { id },
@@ -98,13 +93,17 @@ export async function PATCH(
     if ('error' in check) return NextResponse.json({ error: check.error }, { status: check.status });
 
     const body = await request.json();
-    if (typeof body.isActive !== 'boolean') {
-      return NextResponse.json({ error: 'El campo isActive debe ser un booleano' }, { status: 400 });
+    const parsed = toggleActiveSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: parsed.error.issues[0].message },
+        { status: 400 }
+      );
     }
 
     const updated = await db.subscriptionPlan.update({
       where: { id },
-      data: { isActive: body.isActive },
+      data: { isActive: parsed.data.isActive },
       select: { id: true, name: true, isActive: true },
     });
 

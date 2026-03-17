@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireOwner } from '@/lib/middleware/owner';
 import { db } from '@/lib/db';
+import { createPlanSchema } from '@/lib/validations/owner';
 
 /**
  * GET /api/owner/plans
@@ -50,23 +51,14 @@ export async function POST(request: NextRequest) {
 
     const { organizationId } = ownerResult.user;
     const body = await request.json();
-    const { name, description, price, interval, features } = body;
-
-    if (!name || typeof name !== 'string' || name.trim() === '') {
-      return NextResponse.json({ error: 'El nombre es requerido' }, { status: 400 });
-    }
-    if (!description || typeof description !== 'string' || description.trim() === '') {
-      return NextResponse.json({ error: 'La descripción es requerida' }, { status: 400 });
-    }
-    if (typeof price !== 'number' || price <= 0) {
-      return NextResponse.json({ error: 'El precio debe ser un número positivo' }, { status: 400 });
-    }
-    if (!['monthly', 'yearly'].includes(interval)) {
+    const parsed = createPlanSchema.safeParse(body);
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: 'El intervalo debe ser monthly o yearly' },
+        { error: parsed.error.issues[0].message },
         { status: 400 }
       );
     }
+    const { name, description, price, interval, features } = parsed.data;
 
     const plan = await db.subscriptionPlan.create({
       data: {
