@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { MercadoPagoConfig, Preference } from 'mercadopago';
 import { db } from '@/lib/db';
+import { decrypt } from '@/lib/utils/encryption';
 
 /**
  * POST /api/book/[orgSlug]/checkout
@@ -132,8 +133,16 @@ export async function POST(
     });
 
     // ── Create MercadoPago preference with org credentials ────────────
+    const plainAccessToken = decrypt(org.settings.mpAccessToken);
+    if (!plainAccessToken) {
+      return NextResponse.json(
+        { error: 'Error al descifrar credenciales de pago' },
+        { status: 500 }
+      );
+    }
+
     const mpClient = new MercadoPagoConfig({
-      accessToken: org.settings.mpAccessToken,
+      accessToken: plainAccessToken,
       options: { timeout: 5000 },
     });
 

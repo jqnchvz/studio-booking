@@ -2,13 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireAdmin } from '@/lib/middleware/admin';
 import { db } from '@/lib/db';
-
-/** Show only the last 4 characters of a credential value. */
-function maskKey(value: string | null | undefined): string | null {
-  if (!value) return null;
-  if (value.length <= 4) return '••••';
-  return '•'.repeat(8) + value.slice(-4);
-}
+import { decrypt, maskCredential } from '@/lib/utils/encryption';
 
 const PatchSchema = z.object({
   status: z.enum(['active', 'suspended']),
@@ -108,9 +102,9 @@ export async function GET(
               address: org.settings.address,
               logoUrl: org.settings.logoUrl,
               timezone: org.settings.timezone,
-              // MP keys are masked — never returned in plaintext
-              mpAccessToken: maskKey(org.settings.mpAccessToken),
-              mpPublicKey: maskKey(org.settings.mpPublicKey),
+              // Decrypt then mask — full values never leave the server
+              mpAccessToken: maskCredential(decrypt(org.settings.mpAccessToken ?? '')),
+              mpPublicKey: maskCredential(decrypt(org.settings.mpPublicKey ?? '')),
               mpWebhookSecret: org.settings.mpWebhookSecret ? '••••••••' : null,
             }
           : null,

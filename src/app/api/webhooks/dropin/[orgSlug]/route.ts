@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { MercadoPagoConfig, Payment } from 'mercadopago';
 import { db } from '@/lib/db';
 import { queueEmail } from '@/lib/queue/email-queue';
+import { decrypt } from '@/lib/utils/encryption';
 
 /**
  * POST /api/webhooks/dropin/[orgSlug]
@@ -77,8 +78,18 @@ export async function POST(
     }
 
     // ── Fetch payment from MercadoPago ────────────────────────────────
+    const plainAccessToken = decrypt(org.settings.mpAccessToken);
+    if (!plainAccessToken) {
+      console.error('   Failed to decrypt MP access token');
+      await db.webhookEvent.update({
+        where: { eventId },
+        data: { processed: true },
+      });
+      return NextResponse.json({ success: true });
+    }
+
     const mpClient = new MercadoPagoConfig({
-      accessToken: org.settings.mpAccessToken,
+      accessToken: plainAccessToken,
       options: { timeout: 5000 },
     });
 
