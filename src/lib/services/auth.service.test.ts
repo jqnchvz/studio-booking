@@ -183,6 +183,7 @@ describe('Auth Service', () => {
       verificationTokenExpiry: null,
       resetToken: null,
       resetTokenExpiry: null,
+      passwordChangedAt: null,
     };
 
     it('should validate correct credentials and return user data', async () => {
@@ -310,6 +311,7 @@ describe('Auth Service', () => {
       verificationTokenExpiry: null,
       resetToken: null,
       resetTokenExpiry: null,
+      passwordChangedAt: null,
     };
 
     it('should set isAdmin to true for the first user', async () => {

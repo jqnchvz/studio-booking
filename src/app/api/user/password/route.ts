@@ -78,7 +78,7 @@ export async function PUT(request: NextRequest) {
 
     await db.user.update({
       where: { id: user.id },
-      data: { passwordHash: newPasswordHash },
+      data: { passwordHash: newPasswordHash, passwordChangedAt: new Date() },
     });
 
     return NextResponse.json(

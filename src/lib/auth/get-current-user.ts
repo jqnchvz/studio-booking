@@ -34,8 +34,19 @@ export async function getCurrentUser() {
         isOwner: true,
         organizationId: true,
         createdAt: true,
+        passwordChangedAt: true,
       },
     });
+
+    if (!user) return null;
+
+    // Reject tokens issued before the last password change
+    if (user.passwordChangedAt && payload.iat) {
+      const changedAtSeconds = Math.floor(user.passwordChangedAt.getTime() / 1000);
+      if (payload.iat < changedAtSeconds) {
+        return null;
+      }
+    }
 
     return user;
   } catch (error) {
