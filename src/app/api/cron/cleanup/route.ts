@@ -4,16 +4,17 @@ import { db } from '@/lib/db';
 /**
  * GET /api/cron/cleanup
  *
- * Daily data retention cleanup job. Called by Vercel Cron at 3am UTC.
- * Protected by CRON_SECRET — Vercel sets Authorization: Bearer <secret> automatically.
+ * Daily data retention cleanup job. Called by Railway Cron at 3am UTC.
+ * Protected by CRON_SECRET bearer token.
  *
  * Deletes:
  * - EmailLog records older than 90 days
  * - WebhookEvent records that are processed and older than 30 days
  */
 export async function GET(request: NextRequest) {
+  const cronSecret = process.env.CRON_SECRET;
   const authHeader = request.headers.get('authorization');
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 

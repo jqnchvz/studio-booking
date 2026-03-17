@@ -42,6 +42,9 @@ export async function GET(request: NextRequest) {
   }
 }
 
+// TODO(RES-97): replace with actual limit from org's PlatformSubscription once built
+const DEFAULT_MAX_RESOURCES = 10;
+
 /**
  * POST /api/owner/resources
  *
@@ -64,6 +67,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'El tipo debe ser room, court, equipment u other' },
         { status: 400 }
+      );
+    }
+
+    // Enforce resource limit per org plan
+    const org = await db.organization.findUnique({
+      where: { id: organizationId },
+      select: { _count: { select: { resources: { where: { isActive: true } } } } },
+    });
+
+    if (org && org._count.resources >= DEFAULT_MAX_RESOURCES) {
+      return NextResponse.json(
+        {
+          error: `Has alcanzado el límite de ${DEFAULT_MAX_RESOURCES} recursos de tu plan. Actualiza tu plan para agregar más.`,
+        },
+        { status: 403 }
       );
     }
 
