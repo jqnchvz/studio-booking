@@ -37,12 +37,14 @@ export interface AvailabilityCheckResult {
  * @param startTime - Requested start time
  * @param endTime - Requested end time
  * @param transaction - Optional Prisma transaction client
+ * @param excludeReservationId - Reservation ID to exclude from overlap check (used when editing)
  */
 export async function checkResourceAvailability(
   resourceId: string,
   startTime: Date,
   endTime: Date,
-  transaction?: Prisma.TransactionClient
+  transaction?: Prisma.TransactionClient,
+  excludeReservationId?: string
 ): Promise<AvailabilityCheckResult> {
   const client = transaction || db;
 
@@ -127,20 +129,28 @@ export async function checkResourceAvailability(
   // SKIP LOCKED prevents deadlocks by skipping rows already locked by another
   // transaction (i.e., a concurrent booking attempt in flight).
   // This must run inside a $transaction so the lock is held until commit/rollback.
+  //
+  // excludeReservationId is used when editing — excludes the reservation being
+  // moved so it doesn't conflict with itself.
+  const excludeCondition = excludeReservationId
+    ? Prisma.sql`AND id != ${excludeReservationId}`
+    : Prisma.sql``;
+
   const overlappingReservations = await client.$queryRaw<
     Array<{ id: string; startTime: Date; endTime: Date }>
-  >`
+  >(Prisma.sql`
     SELECT id, "startTime", "endTime"
     FROM reservations
     WHERE "resourceId" = ${resourceId}
       AND status IN ('pending', 'confirmed')
+      ${excludeCondition}
       AND (
         ("startTime" <= ${startTime} AND "endTime" > ${startTime})
         OR ("startTime" < ${endTime} AND "endTime" >= ${endTime})
         OR ("startTime" >= ${startTime} AND "endTime" <= ${endTime})
       )
     FOR UPDATE SKIP LOCKED
-  `;
+  `);
 
   if (overlappingReservations.length > 0) {
     return {

@@ -198,6 +198,93 @@ describe('Reservation Service', () => {
       expect(result.available).toBe(true);
       expect(result.reason).toBeUndefined();
     });
+
+    it('should return true when only conflict is the excluded reservation', async () => {
+      const excludedId = 'reservation-being-edited';
+
+      vi.mocked(db.resource.findUnique).mockResolvedValueOnce({
+        id: resourceId,
+        name: 'Test Resource',
+        isActive: true,
+        capacity: 10,
+        availability: [
+          {
+            id: 'avail-1',
+            resourceId,
+            dayOfWeek: 1,
+            startTime: '09:00',
+            endTime: '18:00',
+            isActive: true,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+        ],
+        description: null,
+        type: 'room',
+        metadata: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      } as any);
+
+      // No conflicts after exclusion (the raw SQL already filters it out)
+      vi.mocked(db.$queryRaw).mockResolvedValueOnce([]);
+
+      const result = await checkResourceAvailability(
+        resourceId,
+        startTime,
+        endTime,
+        undefined,
+        excludedId
+      );
+
+      expect(result.available).toBe(true);
+    });
+
+    it('should return false when another reservation conflicts even with excludeReservationId', async () => {
+      vi.mocked(db.resource.findUnique).mockResolvedValueOnce({
+        id: resourceId,
+        name: 'Test Resource',
+        isActive: true,
+        capacity: 10,
+        availability: [
+          {
+            id: 'avail-1',
+            resourceId,
+            dayOfWeek: 1,
+            startTime: '09:00',
+            endTime: '18:00',
+            isActive: true,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+        ],
+        description: null,
+        type: 'room',
+        metadata: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      } as any);
+
+      // A different reservation still conflicts
+      vi.mocked(db.$queryRaw).mockResolvedValueOnce([
+        {
+          id: 'different-reservation',
+          startTime: new Date('2026-02-09T13:00:00-03:00'),
+          endTime: new Date('2026-02-09T15:00:00-03:00'),
+        },
+      ]);
+
+      const result = await checkResourceAvailability(
+        resourceId,
+        startTime,
+        endTime,
+        undefined,
+        'reservation-being-edited'
+      );
+
+      expect(result.available).toBe(false);
+      expect(result.reason).toBe('El recurso ya está reservado para este horario');
+    });
   });
 
   describe('checkUserReservationLimit', () => {

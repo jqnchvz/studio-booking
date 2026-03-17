@@ -83,3 +83,71 @@ export const createReservationSchema = z
  * Type inference for create reservation input
  */
 export type CreateReservationInput = z.infer<typeof createReservationSchema>;
+
+/**
+ * Reservation update (PATCH) validation schema — all fields optional.
+ * If both startTime and endTime are provided, enforces ordering and duration rules.
+ */
+export const updateReservationSchema = z
+  .object({
+    title: z
+      .string()
+      .min(3, 'El título debe tener al menos 3 caracteres')
+      .max(100, 'El título no puede exceder 100 caracteres')
+      .trim()
+      .optional(),
+
+    description: z
+      .string()
+      .max(500, 'La descripción no puede exceder 500 caracteres')
+      .trim()
+      .optional(),
+
+    startTime: z.string().datetime('Formato de fecha inválido').or(z.date()).optional(),
+
+    endTime: z.string().datetime('Formato de fecha inválido').or(z.date()).optional(),
+
+    attendees: z
+      .number()
+      .int('El número de asistentes debe ser un entero')
+      .min(1, 'Debe haber al menos 1 asistente')
+      .max(100, 'El número máximo de asistentes es 100')
+      .optional(),
+  })
+  .transform((data) => ({
+    ...data,
+    startTime:
+      data.startTime !== undefined
+        ? typeof data.startTime === 'string'
+          ? new Date(data.startTime)
+          : data.startTime
+        : undefined,
+    endTime:
+      data.endTime !== undefined
+        ? typeof data.endTime === 'string'
+          ? new Date(data.endTime)
+          : data.endTime
+        : undefined,
+  }))
+  .refine((data) => !(data.startTime && data.endTime) || data.endTime > data.startTime, {
+    message: 'La hora de finalización debe ser posterior a la hora de inicio',
+    path: ['endTime'],
+  })
+  .refine(
+    (data) => {
+      if (!data.startTime || !data.endTime) return true;
+      const durationMs = data.endTime.getTime() - data.startTime.getTime();
+      return durationMs >= 30 * 60 * 1000;
+    },
+    { message: 'La duración mínima de una reserva es de 30 minutos', path: ['endTime'] }
+  )
+  .refine(
+    (data) => {
+      if (!data.startTime || !data.endTime) return true;
+      const durationMs = data.endTime.getTime() - data.startTime.getTime();
+      return durationMs <= 8 * 60 * 60 * 1000;
+    },
+    { message: 'La duración máxima de una reserva es de 8 horas', path: ['endTime'] }
+  );
+
+export type UpdateReservationInput = z.infer<typeof updateReservationSchema>;
