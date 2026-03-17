@@ -945,6 +945,10 @@ EMAIL_FROM="noreply@yourdomain.com"
 # Redis
 REDIS_URL="redis://localhost:6379"
 
+# Encryption (used for MercadoPago credentials stored in DB)
+# Generate with: openssl rand -hex 32
+ENCRYPTION_KEY="your-64-character-hex-encryption-key"
+
 # Application
 NEXT_PUBLIC_APP_URL="http://localhost:3000"
 TZ="America/Santiago"
