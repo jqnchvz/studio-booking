@@ -90,6 +90,7 @@ model WebhookEvent {
   processed Boolean  @default(false)
   createdAt DateTime @default(now())
 
+  @@index([processed, createdAt])
   @@map("webhook_events")
 }
 
@@ -155,6 +156,8 @@ model Reservation {
   @@index([userId])
   @@index([resourceId])
   @@index([startTime, endTime])
+  @@index([status])
+  @@index([userId, status])
   @@map("reservations")
 }
 
