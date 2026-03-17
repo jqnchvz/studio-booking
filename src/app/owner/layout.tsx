@@ -11,7 +11,7 @@ import { AdminLogoutButton } from '@/components/features/admin/AdminLogoutButton
  * CSS tokens as the admin layout. Three-layer access control:
  * middleware → layout → API guard.
  *
- * Access: authenticated users with isOwner === true only.
+ * Access: authenticated users with role === 'owner' only.
  */
 export default async function OwnerLayout({
   children,
@@ -20,7 +20,7 @@ export default async function OwnerLayout({
 }) {
   const user = await getCurrentUser();
 
-  if (!user || !user.isOwner) {
+  if (!user || user.role !== 'owner') {
     redirect('/dashboard');
   }
 

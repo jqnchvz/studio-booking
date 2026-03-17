@@ -22,7 +22,7 @@ interface UserTableProps {
   pagination: PaginationMeta;
   initialSearch: string;
   initialSubscriptionFilter: string;
-  initialAdminFilter: string;
+  initialRoleFilter: string;
 }
 
 /**
@@ -41,14 +41,14 @@ export function UserTable({
   pagination,
   initialSearch,
   initialSubscriptionFilter,
-  initialAdminFilter,
+  initialRoleFilter,
 }: UserTableProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
   const [search, setSearch] = useState(initialSearch);
   const [subFilter, setSubFilter] = useState(initialSubscriptionFilter);
-  const [adminFilter, setAdminFilter] = useState(initialAdminFilter);
+  const [roleFilter, setRoleFilter] = useState(initialRoleFilter);
 
   /**
    * Update URL with new filter values
@@ -136,18 +136,19 @@ export function UserTable({
           <option value="none">Sin suscripción</option>
         </select>
 
-        {/* Admin filter */}
+        {/* Role filter */}
         <select
-          value={adminFilter}
+          value={roleFilter}
           onChange={(e) => {
-            setAdminFilter(e.target.value);
-            updateFilters({ isAdmin: e.target.value });
+            setRoleFilter(e.target.value);
+            updateFilters({ role: e.target.value });
           }}
           className="border rounded-md px-3 py-2 text-sm bg-background"
         >
-          <option value="">Todos los usuarios</option>
-          <option value="true">Solo admins</option>
-          <option value="false">Solo regulares</option>
+          <option value="">Todos los roles</option>
+          <option value="admin">Admin</option>
+          <option value="owner">Propietario</option>
+          <option value="user">Usuario</option>
         </select>
 
         {/* Export button */}
@@ -165,7 +166,7 @@ export function UserTable({
               <TableHead>Nombre</TableHead>
               <TableHead>Email</TableHead>
               <TableHead>Suscripción</TableHead>
-              <TableHead>Admin</TableHead>
+              <TableHead>Rol</TableHead>
               <TableHead>Registro</TableHead>
             </TableRow>
           </TableHeader>
@@ -197,9 +198,9 @@ export function UserTable({
                     )}
                   </TableCell>
                   <TableCell>
-                    {user.isAdmin && (
-                      <Badge variant="outline">Admin</Badge>
-                    )}
+                    <Badge variant={user.role === 'admin' ? 'default' : 'outline'}>
+                      {user.role === 'admin' ? 'Admin' : user.role === 'owner' ? 'Propietario' : 'Usuario'}
+                    </Badge>
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
                     {formatChileanDate(new Date(user.createdAt))}

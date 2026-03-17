@@ -6,7 +6,7 @@ export interface AdminUser {
   id: string;
   email: string;
   name: string;
-  isAdmin: boolean;
+  role: string;
 }
 
 type RequireAdminResult =
@@ -15,7 +15,7 @@ type RequireAdminResult =
 
 /**
  * Guard helper for admin-only API routes.
- * Checks cookie → verifies JWT → fetches user from DB → checks isAdmin.
+ * Checks cookie → verifies JWT → fetches user from DB → checks role.
  *
  * Usage in an API route:
  *   const result = await requireAdmin(request);
@@ -48,7 +48,7 @@ export async function requireAdmin(request: NextRequest): Promise<RequireAdminRe
 
   const user = await db.user.findUnique({
     where: { id: payload.userId },
-    select: { id: true, email: true, name: true, isAdmin: true },
+    select: { id: true, email: true, name: true, role: true },
   });
 
   if (!user) {
@@ -61,7 +61,7 @@ export async function requireAdmin(request: NextRequest): Promise<RequireAdminRe
     };
   }
 
-  if (!user.isAdmin) {
+  if (user.role !== 'admin') {
     return {
       success: false,
       response: NextResponse.json(

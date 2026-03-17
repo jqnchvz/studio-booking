@@ -25,14 +25,14 @@ async function main() {
   const admin = await db.user.upsert({
     where: { email: 'admin@test.com' },
     update: {
-      isAdmin: true,
+      role: 'admin',
       emailVerified: true,
     },
     create: {
       email: 'admin@test.com',
       passwordHash: adminPassword,
       name: 'Admin User',
-      isAdmin: true,
+      role: 'admin',
       emailVerified: true,
     },
   });

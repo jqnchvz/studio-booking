@@ -32,7 +32,7 @@ export async function GET(
         id: true,
         name: true,
         email: true,
-        isAdmin: true,
+        role: true,
         emailVerified: true,
         createdAt: true,
         subscription: {
@@ -103,7 +103,7 @@ export async function GET(
       id: user.id,
       name: user.name,
       email: user.email,
-      isAdmin: user.isAdmin,
+      role: user.role,
       emailVerified: user.emailVerified,
       createdAt: user.createdAt.toISOString(),
       subscription: user.subscription ? {

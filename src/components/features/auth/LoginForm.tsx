@@ -87,9 +87,9 @@ export function LoginForm() {
       }
 
       // Success - redirect based on user role
-      const destination = result.user?.isAdmin
+      const destination = result.user?.role === 'admin'
         ? '/admin'
-        : result.user?.isOwner
+        : result.user?.role === 'owner'
           ? '/owner'
           : redirectTo;
 

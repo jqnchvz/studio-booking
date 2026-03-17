@@ -6,8 +6,7 @@ import jwt from 'jsonwebtoken';
 export interface SessionPayload {
   userId: string;
   email: string;
-  isAdmin: boolean;
-  isOwner: boolean;
+  role: string;
   iat?: number; // issued-at (added by jwt.sign, used for passwordChangedAt check)
 }
 

@@ -43,7 +43,7 @@ describe('GET /api/user/profile', () => {
       email: 'test@example.com',
       name: 'Test User',
       emailVerified: true,
-      isAdmin: false,
+      role: 'user',
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -51,8 +51,7 @@ describe('GET /api/user/profile', () => {
     vi.mocked(sessionModule.verifyToken).mockReturnValue({
       userId: 'user-123',
       email: 'test@example.com',
-      isAdmin: false,
-      isOwner: false,
+      role: 'user',
     });
 
     vi.mocked(db.user.findUnique).mockResolvedValue(mockUser as any);
@@ -75,7 +74,7 @@ describe('GET /api/user/profile', () => {
     expect(data.user.email).toBe(mockUser.email);
     expect(data.user.name).toBe(mockUser.name);
     expect(data.user.emailVerified).toBe(mockUser.emailVerified);
-    expect(data.user.isAdmin).toBe(mockUser.isAdmin);
+    expect(data.user.role).toBe(mockUser.role);
     expect(sessionModule.verifyToken).toHaveBeenCalledWith('valid-token');
     expect(db.user.findUnique).toHaveBeenCalledWith({
       where: { id: 'user-123' },
@@ -84,7 +83,7 @@ describe('GET /api/user/profile', () => {
         email: true,
         name: true,
         emailVerified: true,
-        isAdmin: true,
+        role: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -135,8 +134,7 @@ describe('GET /api/user/profile', () => {
     vi.mocked(sessionModule.verifyToken).mockReturnValue({
       userId: 'non-existent-user',
       email: 'test@example.com',
-      isAdmin: false,
-      isOwner: false,
+      role: 'user',
     });
 
     vi.mocked(db.user.findUnique).mockResolvedValue(null);
@@ -180,7 +178,7 @@ describe('PATCH /api/user/profile', () => {
       email: 'old@example.com',
       name: 'New Name',
       emailVerified: true,
-      isAdmin: false,
+      role: 'user',
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -188,8 +186,7 @@ describe('PATCH /api/user/profile', () => {
     vi.mocked(sessionModule.verifyToken).mockReturnValue({
       userId: 'user-123',
       email: 'old@example.com',
-      isAdmin: false,
-      isOwner: false,
+      role: 'user',
     });
 
     vi.mocked(db.user.findUnique).mockResolvedValue(currentUser as any);
@@ -236,7 +233,7 @@ describe('PATCH /api/user/profile', () => {
       email: 'new@example.com',
       name: 'Test User',
       emailVerified: false,
-      isAdmin: false,
+      role: 'user',
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -244,8 +241,7 @@ describe('PATCH /api/user/profile', () => {
     vi.mocked(sessionModule.verifyToken).mockReturnValue({
       userId: 'user-123',
       email: 'old@example.com',
-      isAdmin: false,
-      isOwner: false,
+      role: 'user',
     });
 
     vi.mocked(db.user.findUnique)
@@ -311,8 +307,7 @@ describe('PATCH /api/user/profile', () => {
     vi.mocked(sessionModule.verifyToken).mockReturnValue({
       userId: 'user-123',
       email: 'old@example.com',
-      isAdmin: false,
-      isOwner: false,
+      role: 'user',
     });
 
     vi.mocked(db.user.findUnique)
@@ -344,8 +339,7 @@ describe('PATCH /api/user/profile', () => {
     vi.mocked(sessionModule.verifyToken).mockReturnValue({
       userId: 'user-123',
       email: 'test@example.com',
-      isAdmin: false,
-      isOwner: false,
+      role: 'user',
     });
 
     vi.mocked(db.user.findUnique).mockResolvedValue({
@@ -409,7 +403,7 @@ describe('PATCH /api/user/profile', () => {
       email: 'new@example.com',
       name: 'Test User',
       emailVerified: false,
-      isAdmin: false,
+      role: 'user',
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -417,8 +411,7 @@ describe('PATCH /api/user/profile', () => {
     vi.mocked(sessionModule.verifyToken).mockReturnValue({
       userId: 'user-123',
       email: 'old@example.com',
-      isAdmin: false,
-      isOwner: false,
+      role: 'user',
     });
 
     vi.mocked(db.user.findUnique)
@@ -482,7 +475,7 @@ describe('PATCH /api/user/profile', () => {
       email: 'new@example.com',
       name: 'Test User',
       emailVerified: false,
-      isAdmin: false,
+      role: 'user',
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -490,8 +483,7 @@ describe('PATCH /api/user/profile', () => {
     vi.mocked(sessionModule.verifyToken).mockReturnValue({
       userId: 'user-123',
       email: 'old@example.com',
-      isAdmin: false,
-      isOwner: false,
+      role: 'user',
     });
 
     vi.mocked(db.user.findUnique)

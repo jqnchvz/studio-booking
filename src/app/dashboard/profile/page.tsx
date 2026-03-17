@@ -10,7 +10,7 @@ interface User {
   email: string;
   name: string;
   emailVerified: boolean;
-  isAdmin: boolean;
+  role: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -161,9 +161,13 @@ export default function ProfilePage() {
                   Tipo de cuenta
                 </dt>
                 <dd className="mt-1">
-                  {user.isAdmin ? (
+                  {user.role === 'admin' ? (
                     <span className="inline-flex items-center rounded-full bg-primary/15 px-2.5 py-0.5 text-xs font-medium text-primary">
                       Administrador
+                    </span>
+                  ) : user.role === 'owner' ? (
+                    <span className="inline-flex items-center rounded-full bg-primary/15 px-2.5 py-0.5 text-xs font-medium text-primary">
+                      Propietario
                     </span>
                   ) : (
                     <span className="inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">

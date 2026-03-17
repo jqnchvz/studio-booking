@@ -11,7 +11,7 @@ import { db } from '@/lib/db';
  * Query Parameters (same as user list):
  * - search: string (search by name OR email)
  * - subscriptionStatus: 'active' | 'inactive' | 'none'
- * - isAdmin: 'true' | 'false'
+ * - role: 'user' | 'owner' | 'admin'
  *
  * Note: NO pagination - exports ALL matching users.
  * Requires admin authentication.
@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search') || undefined;
     const subscriptionStatus = searchParams.get('subscriptionStatus') || undefined;
-    const isAdminFilter = searchParams.get('isAdmin') || undefined;
+    const roleFilter = searchParams.get('role') || undefined;
 
     // 3. Build where clause (same logic as list API)
     const where: any = {
@@ -39,8 +39,8 @@ export async function GET(request: NextRequest) {
           ],
         } : {},
 
-        // Admin filter
-        isAdminFilter !== undefined ? { isAdmin: isAdminFilter === 'true' } : {},
+        // Role filter
+        roleFilter ? { role: roleFilter } : {},
 
         // Subscription status filter
         subscriptionStatus === 'active' ? { subscription: { status: 'active' } } :
@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
       select: {
         name: true,
         email: true,
-        isAdmin: true,
+        role: true,
         createdAt: true,
         subscription: {
           select: {
@@ -75,12 +75,12 @@ export async function GET(request: NextRequest) {
 
     // 5. Generate CSV with UTF-8 BOM for Excel compatibility
     const BOM = '\uFEFF';
-    const headers = 'Nombre,Email,Estado Suscripción,Plan,Admin,Fecha Registro\n';
+    const headers = 'Nombre,Email,Estado Suscripción,Plan,Rol,Fecha Registro\n';
 
     const rows = users.map(user => {
       const subStatus = user.subscription?.status || 'Sin suscripción';
       const planName = user.subscription?.plan.name || '-';
-      const adminStatus = user.isAdmin ? 'Sí' : 'No';
+      const roleLabel = user.role === 'admin' ? 'Admin' : user.role === 'owner' ? 'Propietario' : 'Usuario';
 
       // Chilean date format: DD/MM/YYYY
       const dateStr = new Intl.DateTimeFormat('es-CL', {
@@ -98,7 +98,7 @@ export async function GET(request: NextRequest) {
         escape(user.email),
         escape(subStatus),
         escape(planName),
-        adminStatus,
+        roleLabel,
         dateStr,
       ].join(',');
     }).join('\n');

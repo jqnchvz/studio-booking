@@ -111,8 +111,7 @@ export async function validateCredentials(email: string, password: string) {
     email: user.email,
     name: user.name,
     emailVerified: user.emailVerified,
-    isAdmin: user.isAdmin,
-    isOwner: user.isOwner,
+    role: user.role,
     createdAt: user.createdAt,
   };
 }
@@ -139,7 +138,7 @@ export async function createUser(data: RegisterInput) {
 
   // First user to register becomes admin
   const userCount = await db.user.count();
-  const isAdmin = userCount === 0;
+  const role = userCount === 0 ? 'admin' : 'user';
 
   // Create the user
   const user = await db.user.create({
@@ -148,7 +147,7 @@ export async function createUser(data: RegisterInput) {
       name,
       passwordHash,
       emailVerified: false,
-      isAdmin,
+      role: role as any,
     },
   });
 

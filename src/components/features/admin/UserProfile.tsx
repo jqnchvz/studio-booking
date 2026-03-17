@@ -7,7 +7,7 @@ import { formatChileanDate } from '@/lib/utils/format';
 import type { UserDetail } from '@/types/admin';
 
 interface UserProfileProps {
-  user: Pick<UserDetail, 'email' | 'isAdmin' | 'emailVerified' | 'createdAt'>;
+  user: Pick<UserDetail, 'email' | 'role' | 'emailVerified' | 'createdAt'>;
 }
 
 /**
@@ -59,14 +59,16 @@ export function UserProfile({ user }: UserProfileProps) {
             </p>
           </div>
 
-          {/* Admin role */}
+          {/* Role */}
           <div>
             <p className="text-sm text-muted-foreground">Rol</p>
             <div className="mt-1">
-              {user.isAdmin ? (
+              {user.role === 'admin' ? (
                 <Badge>Administrador</Badge>
+              ) : user.role === 'owner' ? (
+                <Badge variant="secondary">Propietario</Badge>
               ) : (
-                <Badge variant="outline">Usuario Regular</Badge>
+                <Badge variant="outline">Usuario</Badge>
               )}
             </div>
           </div>

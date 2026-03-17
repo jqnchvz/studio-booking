@@ -16,7 +16,7 @@ interface User {
   email: string;
   name: string;
   emailVerified: boolean;
-  isAdmin: boolean;
+  role: string;
   createdAt: string;
   updatedAt: string;
 }

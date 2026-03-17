@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 export const promoteUserSchema = z.object({
-  isAdmin: z.boolean(),
+  role: z.enum(['user', 'owner', 'admin']),
 });
 
 export type PromoteUserInput = z.infer<typeof promoteUserSchema>;

@@ -9,6 +9,12 @@ datasource db {
   provider = "postgresql"
 }
 
+enum UserRole {
+  user
+  owner
+  admin
+}
+
 model User {
   id                      String              @id @default(cuid())
   email                   String              @unique
@@ -20,8 +26,7 @@ model User {
   resetToken              String?             @unique
   resetTokenExpiry        DateTime?
   passwordChangedAt       DateTime?
-  isAdmin                 Boolean             @default(false)
-  isOwner                 Boolean             @default(false) // business owner on the platform
+  role                    UserRole            @default(user)
   organizationId          String?             // end-user membership in an org
   organization            Organization?       @relation("OrganizationUsers", fields: [organizationId], references: [id])
   ownedOrganizations      Organization[]      @relation("OwnedOrganizations")

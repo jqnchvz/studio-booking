@@ -28,13 +28,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 2. Verify user is a business owner (isOwner flag)
+    // 2. Verify user is a business owner (role check)
     const fullUser = await db.user.findUnique({
       where: { id: user.id },
-      select: { isOwner: true, emailVerified: true, email: true, name: true },
+      select: { role: true, emailVerified: true, email: true, name: true },
     });
 
-    if (!fullUser?.isOwner) {
+    if (!fullUser || fullUser.role !== 'owner') {
       return NextResponse.json(
         { error: 'Acceso denegado', message: 'Solo los propietarios de negocio pueden suscribirse a un plan de plataforma' },
         { status: 403 }
