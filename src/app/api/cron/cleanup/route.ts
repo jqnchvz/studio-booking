@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 
 /**
- * GET /api/cron/cleanup
+ * POST /api/cron/cleanup
  *
  * Daily data retention cleanup job. Called by Railway Cron at 3am UTC.
  * Protected by CRON_SECRET bearer token.
@@ -12,7 +12,7 @@ import { db } from '@/lib/db';
  * - WebhookEvent records that are processed and older than 30 days
  * - Pending drop-in reservations older than 30 minutes (free held slots)
  */
-export async function GET(request: NextRequest) {
+export async function POST(request: NextRequest) {
   const cronSecret = process.env.CRON_SECRET;
   const authHeader = request.headers.get('authorization');
   if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
