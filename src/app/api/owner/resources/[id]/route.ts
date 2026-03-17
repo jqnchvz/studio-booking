@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireOwner } from '@/lib/middleware/owner';
 import { db } from '@/lib/db';
-
-const VALID_TYPES = ['room', 'court', 'equipment', 'other'];
+import { updateResourceSchema, toggleActiveSchema } from '@/lib/validations/owner';
 
 /** Fetch and verify the resource belongs to this owner's org. */
 async function getOwnedResource(id: string, organizationId: string) {
@@ -82,24 +81,14 @@ export async function PUT(
       return NextResponse.json({ error: check.error }, { status: check.status });
 
     const body = await request.json();
-    const { name, type, description, capacity, dropInEnabled, dropInPricePerHour } = body;
-
-    if (!name || typeof name !== 'string' || name.trim() === '') {
-      return NextResponse.json({ error: 'El nombre es requerido' }, { status: 400 });
-    }
-    if (!VALID_TYPES.includes(type)) {
+    const parsed = updateResourceSchema.safeParse(body);
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: 'El tipo debe ser room, court, equipment u other' },
+        { error: parsed.error.issues[0].message },
         { status: 400 }
       );
     }
-
-    if (dropInEnabled && (!dropInPricePerHour || dropInPricePerHour <= 0)) {
-      return NextResponse.json(
-        { error: 'El precio por hora es requerido cuando drop-in está habilitado' },
-        { status: 400 }
-      );
-    }
+    const { name, type, description, capacity, dropInEnabled, dropInPricePerHour } = parsed.data;
 
     const updated = await db.resource.update({
       where: { id },
@@ -160,16 +149,17 @@ export async function PATCH(
       return NextResponse.json({ error: check.error }, { status: check.status });
 
     const body = await request.json();
-    if (typeof body.isActive !== 'boolean') {
+    const parsed = toggleActiveSchema.safeParse(body);
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: 'El campo isActive debe ser un booleano' },
+        { error: parsed.error.issues[0].message },
         { status: 400 }
       );
     }
 
     const updated = await db.resource.update({
       where: { id },
-      data: { isActive: body.isActive },
+      data: { isActive: parsed.data.isActive },
       select: { id: true, name: true, isActive: true },
     });
 
