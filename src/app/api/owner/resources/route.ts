@@ -26,6 +26,8 @@ export async function GET(request: NextRequest) {
         type: true,
         capacity: true,
         isActive: true,
+        dropInEnabled: true,
+        dropInPricePerHour: true,
         createdAt: true,
         availability: {
           orderBy: { dayOfWeek: 'asc' },
@@ -58,7 +60,7 @@ export async function POST(request: NextRequest) {
 
     const { organizationId } = ownerResult.user;
     const body = await request.json();
-    const { name, type, description, capacity } = body;
+    const { name, type, description, capacity, dropInEnabled, dropInPricePerHour } = body;
 
     if (!name || typeof name !== 'string' || name.trim() === '') {
       return NextResponse.json({ error: 'El nombre es requerido' }, { status: 400 });
@@ -91,6 +93,8 @@ export async function POST(request: NextRequest) {
         type,
         description: description ? String(description).trim() : null,
         capacity: typeof capacity === 'number' && capacity > 0 ? Math.floor(capacity) : null,
+        dropInEnabled: dropInEnabled === true,
+        dropInPricePerHour: dropInEnabled && dropInPricePerHour ? Math.floor(Number(dropInPricePerHour)) : null,
         organizationId,
       },
       select: {
@@ -100,6 +104,8 @@ export async function POST(request: NextRequest) {
         type: true,
         capacity: true,
         isActive: true,
+        dropInEnabled: true,
+        dropInPricePerHour: true,
         createdAt: true,
         availability: {
           orderBy: { dayOfWeek: 'asc' },

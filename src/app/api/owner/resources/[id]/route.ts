@@ -43,6 +43,8 @@ export async function GET(
         type: true,
         capacity: true,
         isActive: true,
+        dropInEnabled: true,
+        dropInPricePerHour: true,
         createdAt: true,
         availability: {
           orderBy: { dayOfWeek: 'asc' },
@@ -80,7 +82,7 @@ export async function PUT(
       return NextResponse.json({ error: check.error }, { status: check.status });
 
     const body = await request.json();
-    const { name, type, description, capacity } = body;
+    const { name, type, description, capacity, dropInEnabled, dropInPricePerHour } = body;
 
     if (!name || typeof name !== 'string' || name.trim() === '') {
       return NextResponse.json({ error: 'El nombre es requerido' }, { status: 400 });
@@ -92,6 +94,13 @@ export async function PUT(
       );
     }
 
+    if (dropInEnabled && (!dropInPricePerHour || dropInPricePerHour <= 0)) {
+      return NextResponse.json(
+        { error: 'El precio por hora es requerido cuando drop-in está habilitado' },
+        { status: 400 }
+      );
+    }
+
     const updated = await db.resource.update({
       where: { id },
       data: {
@@ -99,6 +108,10 @@ export async function PUT(
         type,
         description: description ? String(description).trim() : null,
         capacity: typeof capacity === 'number' && capacity > 0 ? Math.floor(capacity) : null,
+        ...(typeof dropInEnabled === 'boolean' ? { dropInEnabled } : {}),
+        ...(dropInPricePerHour !== undefined
+          ? { dropInPricePerHour: dropInEnabled ? Math.floor(Number(dropInPricePerHour)) : null }
+          : {}),
       },
       select: {
         id: true,
@@ -107,6 +120,8 @@ export async function PUT(
         type: true,
         capacity: true,
         isActive: true,
+        dropInEnabled: true,
+        dropInPricePerHour: true,
         createdAt: true,
         availability: {
           orderBy: { dayOfWeek: 'asc' },
