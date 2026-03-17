@@ -118,46 +118,55 @@ model Payment {
 }
 
 model Resource {
-  id             String                 @id @default(cuid())
-  name           String
-  description    String?
-  type           String                 // room, equipment, service
-  capacity       Int?
-  isActive       Boolean                @default(true)
-  organizationId String?
-  organization   Organization?          @relation(fields: [organizationId], references: [id])
-  metadata       Json?
-  createdAt      DateTime               @default(now())
-  updatedAt      DateTime               @updatedAt
-  reservations   Reservation[]
-  availability   ResourceAvailability[]
-  planAccess     PlanResourceAccess[]
+  id                 String                 @id @default(cuid())
+  name               String
+  description        String?
+  type               String                 // room, equipment, service
+  capacity           Int?
+  isActive           Boolean                @default(true)
+  dropInEnabled      Boolean                @default(false)
+  dropInPricePerHour Int?                   // CLP per hour; null = not set
+  organizationId     String?
+  organization       Organization?          @relation(fields: [organizationId], references: [id])
+  metadata           Json?
+  createdAt          DateTime               @default(now())
+  updatedAt          DateTime               @updatedAt
+  reservations       Reservation[]
+  availability       ResourceAvailability[]
+  planAccess         PlanResourceAccess[]
 
   @@index([organizationId])
   @@map("resources")
 }
 
 model Reservation {
-  id          String   @id @default(cuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id])
-  resourceId  String
-  resource    Resource @relation(fields: [resourceId], references: [id])
-  title       String
-  description String?
-  startTime   DateTime
-  endTime     DateTime
-  status      String   // pending, confirmed, cancelled, completed
-  attendees   Int      @default(1)
-  metadata    Json?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id              String   @id @default(cuid())
+  userId          String?
+  user            User?    @relation(fields: [userId], references: [id])
+  resourceId      String
+  resource        Resource @relation(fields: [resourceId], references: [id])
+  title           String
+  description     String?
+  startTime       DateTime
+  endTime         DateTime
+  status          String   // pending, confirmed, cancelled, completed
+  type            String   @default("subscription") // "subscription" | "dropin"
+  attendees       Int      @default(1)
+  guestName       String?
+  guestEmail      String?
+  guestPhone      String?
+  dropInPaymentId String?  @unique // MercadoPago payment ID for drop-in
+  metadata        Json?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   @@index([userId])
   @@index([resourceId])
   @@index([startTime, endTime])
   @@index([status])
   @@index([userId, status])
+  @@index([type])
+  @@index([guestEmail])
   @@map("reservations")
 }
 

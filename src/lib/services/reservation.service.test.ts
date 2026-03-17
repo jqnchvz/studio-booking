@@ -328,7 +328,7 @@ describe('Reservation Service', () => {
       expect(result.id).toBe('reservation-123');
       expect(result.status).toBe('confirmed');
       expect(result.resource.name).toBe('Test Resource');
-      expect(result.user.email).toBe('user@example.com');
+      expect(result.user!.email).toBe('user@example.com');
     });
 
     it('should throw error if availability check fails inside transaction', async () => {

@@ -258,8 +258,8 @@ export function ReservationTable({
                     <TableCell className="font-medium">{reservation.title}</TableCell>
                     <TableCell>
                       <div>
-                        <p className="font-medium">{reservation.user.name}</p>
-                        <p className="text-xs text-muted-foreground">{reservation.user.email}</p>
+                        <p className="font-medium">{reservation.user?.name ?? 'Guest'}</p>
+                        <p className="text-xs text-muted-foreground">{reservation.user?.email ?? ''}</p>
                       </div>
                     </TableCell>
                     <TableCell>{reservation.resource.name}</TableCell>
