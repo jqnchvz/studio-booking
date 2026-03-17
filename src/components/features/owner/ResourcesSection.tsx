@@ -38,6 +38,8 @@ interface Resource {
   type: string;
   capacity: number | null;
   isActive: boolean;
+  dropInEnabled: boolean;
+  dropInPricePerHour: number | null;
   availability: AvailabilitySlot[];
   _count: { reservations: number };
 }
@@ -108,6 +110,9 @@ export function ResourcesSection({ initialResources }: ResourcesSectionProps) {
   const [description, setDescription] = useState('');
   const [capacity, setCapacity] = useState('');
 
+  const [dropInEnabled, setDropInEnabled] = useState(false);
+  const [dropInPrice, setDropInPrice] = useState('');
+
   const [slots, setSlots] = useState<SlotDraft[]>([]);
   const [removedSlotIds, setRemovedSlotIds] = useState<Set<string>>(new Set());
   const [newSlotDay, setNewSlotDay] = useState('1');
@@ -121,6 +126,8 @@ export function ResourcesSection({ initialResources }: ResourcesSectionProps) {
     setType('room');
     setDescription('');
     setCapacity('');
+    setDropInEnabled(false);
+    setDropInPrice('');
     setSlots([]);
     setRemovedSlotIds(new Set());
     setNewSlotDay('1');
@@ -136,6 +143,8 @@ export function ResourcesSection({ initialResources }: ResourcesSectionProps) {
     setType(resource.type as 'room' | 'court' | 'equipment' | 'other');
     setDescription(resource.description ?? '');
     setCapacity(resource.capacity != null ? String(resource.capacity) : '');
+    setDropInEnabled(resource.dropInEnabled);
+    setDropInPrice(resource.dropInPricePerHour != null ? String(resource.dropInPricePerHour) : '');
     setSlots(
       resource.availability.map((s) => ({
         id: s.id,
@@ -190,11 +199,19 @@ export function ResourcesSection({ initialResources }: ResourcesSectionProps) {
 
     setSaveLoading(true);
     try {
+      if (dropInEnabled && (!dropInPrice || Number(dropInPrice) <= 0)) {
+        alert('El precio por hora es requerido cuando drop-in está habilitado');
+        setSaveLoading(false);
+        return;
+      }
+
       const resourceBody = {
         name: name.trim(),
         type,
         description: description.trim() || null,
         capacity: capacity ? Number(capacity) : null,
+        dropInEnabled,
+        dropInPricePerHour: dropInEnabled ? Number(dropInPrice) : null,
       };
 
       let resourceId: string;
@@ -325,6 +342,7 @@ export function ResourcesSection({ initialResources }: ResourcesSectionProps) {
                 <TableHead>Recurso</TableHead>
                 <TableHead>Tipo</TableHead>
                 <TableHead>Capacidad</TableHead>
+                <TableHead>Drop-in</TableHead>
                 <TableHead>Horarios</TableHead>
                 <TableHead>Reservas</TableHead>
                 <TableHead>Estado</TableHead>
@@ -334,7 +352,7 @@ export function ResourcesSection({ initialResources }: ResourcesSectionProps) {
             <TableBody>
               {resources.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
                     No hay recursos configurados. Crea uno para que tus clientes puedan reservar.
                   </TableCell>
                 </TableRow>
@@ -354,6 +372,11 @@ export function ResourcesSection({ initialResources }: ResourcesSectionProps) {
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
                       {resource.capacity ?? '-'}
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {resource.dropInEnabled && resource.dropInPricePerHour
+                        ? `$${resource.dropInPricePerHour.toLocaleString('es-CL')}/h`
+                        : '—'}
                     </TableCell>
                     <TableCell className="text-xs text-muted-foreground max-w-48">
                       {formatAvailability(resource.availability)}
@@ -491,6 +514,49 @@ export function ResourcesSection({ initialResources }: ResourcesSectionProps) {
                   className="w-full min-h-[60px] border rounded-md px-3 py-2 text-sm bg-background resize-y"
                   disabled={saveLoading}
                 />
+              </div>
+
+              {/* Drop-in section */}
+              <div className="border-t pt-4 space-y-3">
+                <p className="text-sm font-medium">Reservas por uso único (drop-in)</p>
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={dropInEnabled}
+                    onClick={() => setDropInEnabled(!dropInEnabled)}
+                    disabled={saveLoading}
+                    className={[
+                      'relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors',
+                      dropInEnabled ? 'bg-primary' : 'bg-muted',
+                    ].join(' ')}
+                  >
+                    <span
+                      className={[
+                        'pointer-events-none inline-block h-5 w-5 rounded-full bg-background shadow-lg ring-0 transition-transform',
+                        dropInEnabled ? 'translate-x-5' : 'translate-x-0',
+                      ].join(' ')}
+                    />
+                  </button>
+                  <Label className="text-sm font-normal">Permitir reservas drop-in</Label>
+                </div>
+
+                {dropInEnabled && (
+                  <div className="space-y-2 pl-14">
+                    <Label htmlFor="dropin-price">Precio por hora (CLP)</Label>
+                    <Input
+                      id="dropin-price"
+                      type="number"
+                      min="1"
+                      step="1"
+                      value={dropInPrice}
+                      onChange={(e) => setDropInPrice(e.target.value)}
+                      placeholder="Ej: 15000"
+                      disabled={saveLoading}
+                      required
+                    />
+                  </div>
+                )}
               </div>
 
               {/* Availability schedule editor */}
