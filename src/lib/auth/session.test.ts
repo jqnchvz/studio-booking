@@ -34,6 +34,18 @@ describe('Session Utilities', () => {
       process.env.JWT_SECRET = originalSecret;
     });
 
+    it('should throw error if JWT_SECRET is shorter than 32 characters', () => {
+      const originalSecret = process.env.JWT_SECRET;
+      process.env.JWT_SECRET = 'short-secret';
+
+      expect(() => generateToken(mockPayload)).toThrow(
+        'JWT_SECRET must be at least 32 characters'
+      );
+
+      // Restore
+      process.env.JWT_SECRET = originalSecret;
+    });
+
     it('should encode payload data in token', () => {
       const token = generateToken(mockPayload);
       const decoded = verifyToken(token);
@@ -82,6 +94,18 @@ describe('Session Utilities', () => {
 
       expect(() => verifyToken('some.token.here')).toThrow(
         'JWT_SECRET environment variable is not set'
+      );
+
+      // Restore
+      process.env.JWT_SECRET = originalSecret;
+    });
+
+    it('should throw error if JWT_SECRET is shorter than 32 characters', () => {
+      const originalSecret = process.env.JWT_SECRET;
+      process.env.JWT_SECRET = 'short-secret';
+
+      expect(() => verifyToken('some.token.here')).toThrow(
+        'JWT_SECRET must be at least 32 characters'
       );
 
       // Restore

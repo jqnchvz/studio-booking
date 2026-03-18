@@ -40,13 +40,13 @@ jobs:
       - name: Run tests with coverage
         run: npm run test:coverage
         env:
-          JWT_SECRET: test-jwt-secret-ci
+          JWT_SECRET: test-jwt-secret-ci-minimum-32-chars
           SESSION_SECRET: test-session-secret-ci
           NODE_ENV: test
 
       - name: Build project
         run: npm run build
         env:
-          JWT_SECRET: test-jwt-secret-ci
+          JWT_SECRET: test-jwt-secret-ci-minimum-32-chars
           SESSION_SECRET: test-session-secret-ci
           DATABASE_URL: postgresql://test:test@localhost:5432/test
