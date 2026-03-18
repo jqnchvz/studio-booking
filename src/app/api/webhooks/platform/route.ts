@@ -115,7 +115,7 @@ export async function POST(request: NextRequest) {
     console.log('='.repeat(60) + '\n');
     // Return 200 to prevent MercadoPago from retrying indefinitely
     return NextResponse.json(
-      { success: false, error: error instanceof Error ? error.message : 'Unknown error' },
+      { success: false, error: 'Webhook processing failed' },
       { status: 200 }
     );
   }

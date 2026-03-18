@@ -174,7 +174,7 @@ describe('PATCH /api/reservations/[id]', () => {
 
     expect(res.status).toBe(409);
     const body = await res.json();
-    expect(body.error).toBe('El recurso ya está reservado para este horario');
+    expect(body.error).toBe('El horario seleccionado no está disponible');
     expect(mockUpdate).not.toHaveBeenCalled();
   });
 
@@ -202,6 +202,6 @@ describe('PATCH /api/reservations/[id]', () => {
 
     expect(res.status).toBe(409);
     const body = await res.json();
-    expect(body.error).toContain('solo está disponible');
+    expect(body.error).toBe('El horario seleccionado no está disponible');
   });
 });

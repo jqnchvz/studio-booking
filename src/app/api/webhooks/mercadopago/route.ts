@@ -102,7 +102,6 @@ export async function POST(request: NextRequest) {
       {
         success: false,
         message: 'Webhook received but processing failed',
-        error: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 200 }
     );

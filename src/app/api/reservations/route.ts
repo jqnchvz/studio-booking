@@ -329,7 +329,10 @@ export async function POST(request: NextRequest) {
         error.message.includes('no está disponible') ||
         error.message.includes('no existe')
       ) {
-        return NextResponse.json({ error: error.message }, { status: 409 });
+        return NextResponse.json(
+          { error: 'El horario seleccionado no está disponible' },
+          { status: 409 }
+        );
       }
     }
 

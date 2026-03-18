@@ -127,8 +127,7 @@ export async function POST() {
     return NextResponse.json(
       {
         error: 'Failed to verify subscription status',
-        message:
-          error instanceof Error ? error.message : 'Unknown error',
+        message: 'Ocurrió un error inesperado. Por favor intenta nuevamente.',
       },
       { status: 500 }
     );
