@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { verifyToken } from '@/lib/auth/session';
 import { createOverduePaymentPreference } from '@/lib/services/mercadopago.service';
+import { checkRateLimit, getRateLimitHeaders } from '@/lib/middleware/rate-limit';
 
 /**
  * POST /api/subscriptions/pay-overdue
@@ -19,6 +20,30 @@ import { createOverduePaymentPreference } from '@/lib/services/mercadopago.servi
  */
 export async function POST(request: NextRequest) {
   try {
+    // Rate limit: 10 requests per hour
+    const rateLimit = checkRateLimit(request, {
+      maxAttempts: 10,
+      windowMs: 60 * 60 * 1000,
+    });
+
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        {
+          error: 'Demasiadas solicitudes',
+          message: 'Por favor intenta nuevamente más tarde',
+          resetTime: rateLimit.resetTime.toISOString(),
+        },
+        {
+          status: 429,
+          headers: getRateLimitHeaders(
+            rateLimit.remaining,
+            rateLimit.resetTime,
+            rateLimit.maxAttempts
+          ),
+        }
+      );
+    }
+
     console.log('💳 Overdue payment request received');
 
     // 1. Get session from cookie
