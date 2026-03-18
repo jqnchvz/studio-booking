@@ -249,7 +249,7 @@ export function ReservationTable({
                     onClick={() => handleRowClick(reservation.id)}
                     className="cursor-pointer hover:bg-muted/50"
                   >
-                    <TableCell>
+                    <TableCell suppressHydrationWarning>
                       <div>
                         <p className="font-medium">{date}</p>
                         <p className="text-xs text-muted-foreground">{time}</p>
