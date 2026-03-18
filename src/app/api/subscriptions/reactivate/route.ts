@@ -4,6 +4,7 @@ import { Prisma } from '@prisma/client';
 import { getCurrentUser } from '@/lib/auth/get-current-user';
 import { createSubscriptionPreference } from '@/lib/services/mercadopago.service';
 import { reactivateSubscriptionSchema } from '@/lib/validations/subscription';
+import { checkRateLimit, getRateLimitHeaders } from '@/lib/middleware/rate-limit';
 
 /**
  * POST /api/subscriptions/reactivate
@@ -23,6 +24,30 @@ import { reactivateSubscriptionSchema } from '@/lib/validations/subscription';
  */
 export async function POST(request: NextRequest) {
   try {
+    // Rate limit: 5 requests per hour
+    const rateLimit = checkRateLimit(request, {
+      maxAttempts: 5,
+      windowMs: 60 * 60 * 1000,
+    });
+
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        {
+          error: 'Demasiadas solicitudes',
+          message: 'Por favor intenta nuevamente más tarde',
+          resetTime: rateLimit.resetTime.toISOString(),
+        },
+        {
+          status: 429,
+          headers: getRateLimitHeaders(
+            rateLimit.remaining,
+            rateLimit.resetTime,
+            rateLimit.maxAttempts
+          ),
+        }
+      );
+    }
+
     console.log('🔄 Subscription reactivation request received');
 
     // 1. Get and verify current user
