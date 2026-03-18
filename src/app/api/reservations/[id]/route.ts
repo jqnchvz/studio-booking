@@ -207,7 +207,10 @@ export async function PATCH(
     return NextResponse.json({ reservation: updated });
   } catch (error) {
     if (error instanceof Error && (error as any).statusCode === 409) {
-      return NextResponse.json({ error: error.message }, { status: 409 });
+      return NextResponse.json(
+        { error: 'El horario seleccionado no está disponible' },
+        { status: 409 }
+      );
     }
     console.error('Patch reservation error:', error);
     return NextResponse.json(
