@@ -20,7 +20,7 @@ export default async function AdminLayout({
 }) {
   const user = await getCurrentUser();
 
-  if (!user || !user.isAdmin) {
+  if (!user || user.role !== 'admin') {
     redirect('/dashboard');
   }
 

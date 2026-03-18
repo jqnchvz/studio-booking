@@ -53,8 +53,7 @@ export async function POST(request: NextRequest) {
     const token = generateToken({
       userId: user.id,
       email: user.email,
-      isAdmin: user.isAdmin,
-      isOwner: user.isOwner,
+      role: user.role,
     });
 
     // Set session cookie
@@ -72,8 +71,7 @@ export async function POST(request: NextRequest) {
           email: user.email,
           name: user.name,
           emailVerified: user.emailVerified,
-          isAdmin: user.isAdmin,
-          isOwner: user.isOwner,
+          role: user.role,
         },
       },
       {

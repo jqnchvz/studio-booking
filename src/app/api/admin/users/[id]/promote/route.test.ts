@@ -23,7 +23,7 @@ const adminUser = {
   id: 'admin-1',
   email: 'admin@example.com',
   name: 'Admin User',
-  isAdmin: true,
+  role: 'admin',
 };
 
 function createRequest(body: unknown): NextRequest {
@@ -60,7 +60,7 @@ describe('PATCH /api/admin/users/[id]/promote', () => {
       response: errorResponse,
     });
 
-    const request = createRequest({ isAdmin: true });
+    const request = createRequest({ role: 'admin' });
     const response = await PATCH(request, createParams('user-2'));
 
     expect(response.status).toBe(403);
@@ -79,7 +79,7 @@ describe('PATCH /api/admin/users/[id]/promote', () => {
     expect(body.error).toBe('Invalid JSON body');
   });
 
-  it('should return 400 when isAdmin field is missing', async () => {
+  it('should return 400 when role field is missing', async () => {
     const request = createRequest({});
 
     const response = await PATCH(request, createParams('user-2'));
@@ -89,8 +89,8 @@ describe('PATCH /api/admin/users/[id]/promote', () => {
     expect(body.error).toBe('Invalid input');
   });
 
-  it('should return 400 when isAdmin is not a boolean', async () => {
-    const request = createRequest({ isAdmin: 'yes' });
+  it('should return 400 when role is not a valid enum value', async () => {
+    const request = createRequest({ role: 'superadmin' });
 
     const response = await PATCH(request, createParams('user-2'));
     const body = await response.json();
@@ -100,7 +100,7 @@ describe('PATCH /api/admin/users/[id]/promote', () => {
   });
 
   it('should return 400 when admin tries to remove own admin privileges', async () => {
-    const request = createRequest({ isAdmin: false });
+    const request = createRequest({ role: 'user' });
 
     // Caller is admin-1, target is also admin-1
     const response = await PATCH(request, createParams('admin-1'));
@@ -116,21 +116,21 @@ describe('PATCH /api/admin/users/[id]/promote', () => {
       id: 'admin-1',
       email: 'admin@example.com',
       name: 'Admin User',
-      isAdmin: true,
+      role: 'admin',
     } as never);
 
-    const request = createRequest({ isAdmin: true });
+    const request = createRequest({ role: 'admin' });
     const response = await PATCH(request, createParams('admin-1'));
     const body = await response.json();
 
     expect(response.status).toBe(200);
-    expect(body.user.isAdmin).toBe(true);
+    expect(body.user.role).toBe('admin');
   });
 
   it('should return 404 when target user does not exist', async () => {
     vi.mocked(db.user.findUnique).mockResolvedValue(null);
 
-    const request = createRequest({ isAdmin: true });
+    const request = createRequest({ role: 'admin' });
     const response = await PATCH(request, createParams('nonexistent'));
     const body = await response.json();
 
@@ -144,10 +144,10 @@ describe('PATCH /api/admin/users/[id]/promote', () => {
       id: 'user-2',
       email: 'user@example.com',
       name: 'Regular User',
-      isAdmin: true,
+      role: 'admin',
     } as never);
 
-    const request = createRequest({ isAdmin: true });
+    const request = createRequest({ role: 'admin' });
     const response = await PATCH(request, createParams('user-2'));
     const body = await response.json();
 
@@ -156,12 +156,12 @@ describe('PATCH /api/admin/users/[id]/promote', () => {
       id: 'user-2',
       email: 'user@example.com',
       name: 'Regular User',
-      isAdmin: true,
+      role: 'admin',
     });
     expect(db.user.update).toHaveBeenCalledWith({
       where: { id: 'user-2' },
-      data: { isAdmin: true },
-      select: { id: true, email: true, name: true, isAdmin: true },
+      data: { role: 'admin' },
+      select: { id: true, email: true, name: true, role: true },
     });
   });
 
@@ -171,21 +171,21 @@ describe('PATCH /api/admin/users/[id]/promote', () => {
       id: 'admin-2',
       email: 'admin2@example.com',
       name: 'Other Admin',
-      isAdmin: false,
+      role: 'user',
     } as never);
 
-    const request = createRequest({ isAdmin: false });
+    const request = createRequest({ role: 'user' });
     const response = await PATCH(request, createParams('admin-2'));
     const body = await response.json();
 
     expect(response.status).toBe(200);
-    expect(body.user.isAdmin).toBe(false);
+    expect(body.user.role).toBe('user');
   });
 
   it('should not call db.user.update when target user is not found', async () => {
     vi.mocked(db.user.findUnique).mockResolvedValue(null);
 
-    const request = createRequest({ isAdmin: true });
+    const request = createRequest({ role: 'admin' });
     await PATCH(request, createParams('nonexistent'));
 
     expect(db.user.update).not.toHaveBeenCalled();

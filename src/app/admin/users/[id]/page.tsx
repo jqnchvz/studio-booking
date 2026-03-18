@@ -97,7 +97,7 @@ export default async function UserDetailPage({
           <h1 className="text-3xl font-bold mt-2">{user.name}</h1>
           <p className="text-muted-foreground">{user.email}</p>
         </div>
-        <PromoteUserButton userId={user.id} currentIsAdmin={user.isAdmin} />
+        <PromoteUserButton userId={user.id} currentRole={user.role} />
       </div>
 
       {/* User profile card */}

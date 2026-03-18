@@ -10,8 +10,7 @@ describe('Session Utilities', () => {
   const mockPayload = {
     userId: 'user-123',
     email: 'test@example.com',
-    isAdmin: false,
-    isOwner: false,
+    role: 'user',
   };
 
   describe('generateToken', () => {
@@ -42,7 +41,7 @@ describe('Session Utilities', () => {
       expect(decoded).toBeDefined();
       expect(decoded?.userId).toBe(mockPayload.userId);
       expect(decoded?.email).toBe(mockPayload.email);
-      expect(decoded?.isAdmin).toBe(mockPayload.isAdmin);
+      expect(decoded?.role).toBe(mockPayload.role);
     });
   });
 
@@ -54,7 +53,7 @@ describe('Session Utilities', () => {
       expect(decoded).toBeDefined();
       expect(decoded?.userId).toBe(mockPayload.userId);
       expect(decoded?.email).toBe(mockPayload.email);
-      expect(decoded?.isAdmin).toBe(mockPayload.isAdmin);
+      expect(decoded?.role).toBe(mockPayload.role);
     });
 
     it('should return null for invalid token', () => {

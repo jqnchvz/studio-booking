@@ -15,13 +15,13 @@ import {
 
 interface PromoteUserButtonProps {
   userId: string;
-  currentIsAdmin: boolean;
+  currentRole: string;
 }
 
 /**
  * PromoteUserButton Component
  *
- * Toggle button to promote/demote user admin status.
+ * Toggle button to promote/demote user role.
  * Reuses existing /api/admin/users/[id]/promote endpoint.
  *
  * Features:
@@ -30,10 +30,13 @@ interface PromoteUserButtonProps {
  * - Uses router.refresh() to reload server component data
  * - Prevents self-demotion (handled by API)
  */
-export function PromoteUserButton({ userId, currentIsAdmin }: PromoteUserButtonProps) {
+export function PromoteUserButton({ userId, currentRole }: PromoteUserButtonProps) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  const isAdmin = currentRole === 'admin';
+  const targetRole = isAdmin ? 'user' : 'admin';
 
   const handleConfirm = async () => {
     setIsLoading(true);
@@ -41,7 +44,7 @@ export function PromoteUserButton({ userId, currentIsAdmin }: PromoteUserButtonP
       const response = await fetch(`/api/admin/users/${userId}/promote`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ isAdmin: !currentIsAdmin }),
+        body: JSON.stringify({ role: targetRole }),
       });
 
       if (!response.ok) {
@@ -62,10 +65,10 @@ export function PromoteUserButton({ userId, currentIsAdmin }: PromoteUserButtonP
   return (
     <>
       <Button
-        variant={currentIsAdmin ? 'destructive' : 'default'}
+        variant={isAdmin ? 'destructive' : 'default'}
         onClick={() => setIsOpen(true)}
       >
-        {currentIsAdmin ? (
+        {isAdmin ? (
           <>
             <ShieldAlert className="h-4 w-4 mr-2" />
             Remover Admin
@@ -82,12 +85,12 @@ export function PromoteUserButton({ userId, currentIsAdmin }: PromoteUserButtonP
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {currentIsAdmin
+              {isAdmin
                 ? 'Remover privilegios de administrador'
                 : 'Promover a administrador'}
             </DialogTitle>
             <DialogDescription>
-              {currentIsAdmin
+              {isAdmin
                 ? '¿Estás seguro de que deseas remover los privilegios de administrador a este usuario?'
                 : '¿Estás seguro de que deseas otorgar privilegios de administrador a este usuario?'}
             </DialogDescription>

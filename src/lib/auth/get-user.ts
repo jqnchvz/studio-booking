@@ -31,7 +31,7 @@ export async function getCurrentUser() {
         email: true,
         name: true,
         emailVerified: true,
-        isAdmin: true,
+        role: true,
         createdAt: true,
         updatedAt: true,
       },

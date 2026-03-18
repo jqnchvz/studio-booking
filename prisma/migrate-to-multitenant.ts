@@ -15,7 +15,7 @@ async function main() {
 
   // 1. Find the first admin user — they become the default org owner
   const adminUser = await prisma.user.findFirst({
-    where: { isAdmin: true },
+    where: { role: 'admin' },
     orderBy: { createdAt: 'asc' },
   });
 

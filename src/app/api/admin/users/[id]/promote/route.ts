@@ -39,10 +39,10 @@ export async function PATCH(
       );
     }
 
-    const { isAdmin } = parsed.data;
+    const { role } = parsed.data;
 
     // Prevent self-demotion: an admin cannot remove their own admin status
-    if (caller.id === targetUserId && !isAdmin) {
+    if (caller.id === targetUserId && role !== 'admin') {
       return NextResponse.json(
         { error: 'Cannot remove your own admin privileges' },
         { status: 400 }
@@ -62,11 +62,11 @@ export async function PATCH(
       );
     }
 
-    // Update admin status
+    // Update user role
     const updatedUser = await db.user.update({
       where: { id: targetUserId },
-      data: { isAdmin },
-      select: { id: true, email: true, name: true, isAdmin: true },
+      data: { role: role as any },
+      select: { id: true, email: true, name: true, role: true },
     });
 
     return NextResponse.json({ user: updatedUser });

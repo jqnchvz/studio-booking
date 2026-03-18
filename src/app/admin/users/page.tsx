@@ -14,7 +14,7 @@ import type { UserListResponse } from '@/types/admin';
  * - page: number
  * - search: string
  * - subscriptionStatus: 'active' | 'inactive' | 'none'
- * - isAdmin: 'true' | 'false'
+ * - role: 'user' | 'owner' | 'admin'
  */
 export default async function AdminUsersPage({
   searchParams,
@@ -25,7 +25,7 @@ export default async function AdminUsersPage({
   const page = params.page || '1';
   const search = params.search || '';
   const subscriptionStatus = params.subscriptionStatus || '';
-  const isAdmin = params.isAdmin || '';
+  const role = params.role || '';
 
   let data: UserListResponse | null = null;
   let error: string | null = null;
@@ -42,7 +42,7 @@ export default async function AdminUsersPage({
       page,
       ...(search && { search }),
       ...(subscriptionStatus && { subscriptionStatus }),
-      ...(isAdmin && { isAdmin }),
+      ...(role && { role }),
     });
 
     const response = await fetch(
@@ -96,7 +96,7 @@ export default async function AdminUsersPage({
         pagination={data.pagination}
         initialSearch={search}
         initialSubscriptionFilter={subscriptionStatus}
-        initialAdminFilter={isAdmin}
+        initialRoleFilter={role}
       />
     </div>
   );

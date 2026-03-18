@@ -6,7 +6,7 @@ export interface OwnerUser {
   id: string;
   email: string;
   name: string;
-  isOwner: boolean;
+  role: string;
   organizationId: string; // the org they own
 }
 
@@ -16,7 +16,7 @@ type RequireOwnerResult =
 
 /**
  * Guard helper for owner-only API routes.
- * Checks cookie → verifies JWT → fetches user from DB → checks isOwner
+ * Checks cookie → verifies JWT → fetches user from DB → checks role
  * → resolves owned organization.
  *
  * Usage in an API route:
@@ -54,7 +54,7 @@ export async function requireOwner(request: NextRequest): Promise<RequireOwnerRe
       id: true,
       email: true,
       name: true,
-      isOwner: true,
+      role: true,
       ownedOrganizations: { select: { id: true }, take: 1 },
     },
   });
@@ -66,7 +66,7 @@ export async function requireOwner(request: NextRequest): Promise<RequireOwnerRe
     };
   }
 
-  if (!user.isOwner) {
+  if (user.role !== 'owner') {
     return {
       success: false,
       response: NextResponse.json(
@@ -93,7 +93,7 @@ export async function requireOwner(request: NextRequest): Promise<RequireOwnerRe
       id: user.id,
       email: user.email,
       name: user.name,
-      isOwner: user.isOwner,
+      role: user.role,
       organizationId: org.id,
     },
   };

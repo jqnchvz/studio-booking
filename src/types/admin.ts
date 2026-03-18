@@ -87,7 +87,7 @@ export interface UserListItem {
   id: string;
   name: string;
   email: string;
-  isAdmin: boolean;
+  role: string;
   emailVerified: boolean;
   createdAt: string; // ISO 8601
   subscription: {
@@ -122,7 +122,7 @@ export interface UserDetail {
   id: string;
   name: string;
   email: string;
-  isAdmin: boolean;
+  role: string;
   emailVerified: boolean;
   createdAt: string;
   subscription: {

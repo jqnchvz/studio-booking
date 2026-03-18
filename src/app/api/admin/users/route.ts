@@ -14,7 +14,7 @@ import type { UserListItem } from '@/types/admin';
  * - limit: number (default: 20, max: 100)
  * - search: string (search by name OR email, case-insensitive)
  * - subscriptionStatus: 'active' | 'inactive' | 'none'
- * - isAdmin: 'true' | 'false'
+ * - role: 'user' | 'owner' | 'admin'
  * - sortBy: 'createdAt' | 'name' | 'email' (default: 'createdAt')
  * - sortOrder: 'asc' | 'desc' (default: 'desc')
  */
@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
     const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '20')));
     const search = searchParams.get('search') || undefined;
     const subscriptionStatus = searchParams.get('subscriptionStatus') || undefined;
-    const isAdminFilter = searchParams.get('isAdmin') || undefined;
+    const roleFilter = searchParams.get('role') || undefined;
     const sortBy = (searchParams.get('sortBy') || 'createdAt') as 'createdAt' | 'name' | 'email';
     const sortOrder = (searchParams.get('sortOrder') || 'desc') as 'asc' | 'desc';
 
@@ -45,8 +45,8 @@ export async function GET(request: NextRequest) {
           ],
         } : {},
 
-        // Admin filter
-        isAdminFilter !== undefined ? { isAdmin: isAdminFilter === 'true' } : {},
+        // Role filter
+        roleFilter ? { role: roleFilter } : {},
 
         // Subscription status filter
         subscriptionStatus === 'active' ? { subscription: { status: 'active' } } :
@@ -68,7 +68,7 @@ export async function GET(request: NextRequest) {
           id: true,
           name: true,
           email: true,
-          isAdmin: true,
+          role: true,
           emailVerified: true,
           createdAt: true,
           subscription: {
@@ -92,7 +92,7 @@ export async function GET(request: NextRequest) {
       id: user.id,
       name: user.name,
       email: user.email,
-      isAdmin: user.isAdmin,
+      role: user.role,
       emailVerified: user.emailVerified,
       createdAt: user.createdAt.toISOString(),
       subscription: user.subscription ? {

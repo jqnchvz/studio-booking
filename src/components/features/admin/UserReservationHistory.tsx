@@ -48,7 +48,7 @@ export function UserReservationHistory({ reservations }: UserReservationHistoryP
               <TableBody>
                 {reservations.map((reservation) => (
                   <TableRow key={reservation.id}>
-                    <TableCell className="text-sm">
+                    <TableCell className="text-sm" suppressHydrationWarning>
                       {formatChileanDate(new Date(reservation.startTime))}
                       {' '}
                       {formatChileanTime(new Date(reservation.startTime))}

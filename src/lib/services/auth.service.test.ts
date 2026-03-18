@@ -174,8 +174,7 @@ describe('Auth Service', () => {
       name: 'Test User',
       passwordHash: '', // Will be set in tests
       emailVerified: true,
-      isAdmin: false,
-      isOwner: false,
+      role: 'user' as const,
       organizationId: null,
       createdAt: new Date('2024-01-01'),
       updatedAt: new Date('2024-01-01'),
@@ -202,8 +201,7 @@ describe('Auth Service', () => {
         email: mockUser.email,
         name: mockUser.name,
         emailVerified: mockUser.emailVerified,
-        isAdmin: mockUser.isAdmin,
-        isOwner: mockUser.isOwner,
+        role: mockUser.role,
         createdAt: mockUser.createdAt,
       });
       expect(result).not.toHaveProperty('passwordHash');
@@ -302,8 +300,7 @@ describe('Auth Service', () => {
       name: 'New User',
       passwordHash: 'hashed',
       emailVerified: false,
-      isAdmin: false,
-      isOwner: false,
+      role: 'user' as const,
       organizationId: null,
       createdAt: new Date('2024-01-01'),
       updatedAt: new Date('2024-01-01'),
@@ -314,23 +311,23 @@ describe('Auth Service', () => {
       passwordChangedAt: null,
     };
 
-    it('should set isAdmin to true for the first user', async () => {
+    it('should set role to admin for the first user', async () => {
       vi.mocked(db.user.findUnique).mockResolvedValueOnce(null);
       vi.mocked(db.user.count).mockResolvedValueOnce(0);
       vi.mocked(db.user.create).mockResolvedValueOnce({
         ...createdUser,
-        isAdmin: true,
+        role: 'admin',
       });
       vi.mocked(db.user.update).mockResolvedValueOnce(createdUser as never);
 
       await createUser(registerData);
 
       expect(db.user.create).toHaveBeenCalledWith({
-        data: expect.objectContaining({ isAdmin: true }),
+        data: expect.objectContaining({ role: 'admin' }),
       });
     });
 
-    it('should set isAdmin to false for subsequent users', async () => {
+    it('should set role to user for subsequent users', async () => {
       vi.mocked(db.user.findUnique).mockResolvedValueOnce(null);
       vi.mocked(db.user.count).mockResolvedValueOnce(5);
       vi.mocked(db.user.create).mockResolvedValueOnce(createdUser);
@@ -339,7 +336,7 @@ describe('Auth Service', () => {
       await createUser(registerData);
 
       expect(db.user.create).toHaveBeenCalledWith({
-        data: expect.objectContaining({ isAdmin: false }),
+        data: expect.objectContaining({ role: 'user' }),
       });
     });
 

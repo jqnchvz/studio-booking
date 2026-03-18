@@ -46,8 +46,8 @@ export default async function DashboardPage() {
   if (!user) redirect('/login');
 
   // Admins and owners have their own panels
-  if (user.isAdmin) redirect('/admin');
-  if (user.isOwner) redirect('/owner');
+  if (user.role === 'admin') redirect('/admin');
+  if (user.role === 'owner') redirect('/owner');
 
   // ── User view ───────────────────────────────────────────────────────────
 

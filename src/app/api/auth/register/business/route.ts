@@ -24,7 +24,7 @@ function toSlug(name: string): string {
  * POST /api/auth/register/business
  *
  * Register a business owner. Atomically creates:
- *   - User (isOwner: true)
+ *   - User (role: 'owner')
  *   - Organization (status: "pending" — inactive until payment)
  *   - OrganizationSettings (businessType + timezone)
  *
@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
           name: validatedData.name,
           email: validatedData.email,
           passwordHash,
-          isOwner: true,
+          role: 'owner',
           emailVerified: false,
         },
       });

@@ -34,8 +34,7 @@ const mockUser = {
   email: 'test@example.com',
   name: 'Test User',
   emailVerified: true,
-  isAdmin: false,
-  isOwner: false,
+  role: 'user',
   organizationId: null,
   createdAt: new Date(),
   passwordChangedAt: null as Date | null,
@@ -74,8 +73,7 @@ describe('getCurrentUser', () => {
     mockVerifyToken.mockReturnValue({
       userId: 'user-1',
       email: 'test@example.com',
-      isAdmin: false,
-      isOwner: false,
+      role: 'user',
       iat: Math.floor(Date.now() / 1000),
     });
     mockFindUnique.mockResolvedValue(null);
@@ -89,8 +87,7 @@ describe('getCurrentUser', () => {
     mockVerifyToken.mockReturnValue({
       userId: 'user-1',
       email: 'test@example.com',
-      isAdmin: false,
-      isOwner: false,
+      role: 'user',
       iat: Math.floor(Date.now() / 1000),
     });
     mockFindUnique.mockResolvedValue({ ...mockUser } as any);
@@ -108,8 +105,7 @@ describe('getCurrentUser', () => {
     mockVerifyToken.mockReturnValue({
       userId: 'user-1',
       email: 'test@example.com',
-      isAdmin: false,
-      isOwner: false,
+      role: 'user',
       iat: tokenIat,
     });
     mockFindUnique.mockResolvedValue({ ...mockUser, passwordChangedAt } as any);
@@ -127,8 +123,7 @@ describe('getCurrentUser', () => {
     mockVerifyToken.mockReturnValue({
       userId: 'user-1',
       email: 'test@example.com',
-      isAdmin: false,
-      isOwner: false,
+      role: 'user',
       iat: tokenIat,
     });
     mockFindUnique.mockResolvedValue({ ...mockUser, passwordChangedAt } as any);
@@ -147,8 +142,7 @@ describe('getCurrentUser', () => {
     mockVerifyToken.mockReturnValue({
       userId: 'user-1',
       email: 'test@example.com',
-      isAdmin: false,
-      isOwner: false,
+      role: 'user',
       iat: tokenIat,
     });
     mockFindUnique.mockResolvedValue({

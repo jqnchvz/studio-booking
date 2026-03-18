@@ -48,12 +48,12 @@ export async function middleware(request: NextRequest) {
   }
 
   // Check admin access for admin routes using JWT claim (no DB query needed)
-  if (pathname.startsWith('/admin') && !payload.isAdmin) {
+  if (pathname.startsWith('/admin') && payload.role !== 'admin') {
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
   // Check owner access for owner portal routes
-  if (pathname.startsWith('/owner') && !payload.isOwner) {
+  if (pathname.startsWith('/owner') && payload.role !== 'owner') {
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
