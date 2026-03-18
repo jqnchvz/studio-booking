@@ -15,6 +15,8 @@ export interface SessionPayload {
  */
 const SESSION_TOKEN_EXPIRY = '7d';
 
+const JWT_SECRET_MIN_LENGTH = 32;
+
 /**
  * Session cookie configuration
  */
@@ -22,17 +24,32 @@ const COOKIE_NAME = 'session';
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 7; // 7 days in seconds
 
 /**
- * Generate a JWT session token
- * @param payload - User data to encode in token
- * @returns JWT token string
+ * Retrieve and validate the JWT secret from environment variables.
+ * Throws if the secret is missing or shorter than 32 characters.
  */
-export function generateToken(payload: SessionPayload): string {
+function getJwtSecret(): string {
   const secret = process.env.JWT_SECRET;
 
   if (!secret) {
     throw new Error('JWT_SECRET environment variable is not set');
   }
 
+  if (secret.length < JWT_SECRET_MIN_LENGTH) {
+    throw new Error(
+      `JWT_SECRET must be at least ${JWT_SECRET_MIN_LENGTH} characters (current: ${secret.length}). Generate one with: openssl rand -base64 48`
+    );
+  }
+
+  return secret;
+}
+
+/**
+ * Generate a JWT session token
+ * @param payload - User data to encode in token
+ * @returns JWT token string
+ */
+export function generateToken(payload: SessionPayload): string {
+  const secret = getJwtSecret();
   return jwt.sign(payload, secret, { expiresIn: SESSION_TOKEN_EXPIRY });
 }
 
@@ -42,11 +59,7 @@ export function generateToken(payload: SessionPayload): string {
  * @returns Decoded token payload or null if invalid
  */
 export function verifyToken(token: string): SessionPayload | null {
-  const secret = process.env.JWT_SECRET;
-
-  if (!secret) {
-    throw new Error('JWT_SECRET environment variable is not set');
-  }
+  const secret = getJwtSecret();
 
   try {
     const decoded = jwt.verify(token, secret) as SessionPayload;

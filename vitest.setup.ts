@@ -3,7 +3,7 @@ import '@testing-library/jest-dom/vitest';
 
 // Set test environment variables
 beforeAll(() => {
-  process.env.JWT_SECRET = 'test-jwt-secret-for-testing-only';
+  process.env.JWT_SECRET = 'test-jwt-secret-for-testing-only!!';
   process.env.SESSION_SECRET = 'test-session-secret-for-testing-only';
   (process.env as any).NODE_ENV = 'test';
 });
