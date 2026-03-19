@@ -13,7 +13,7 @@ RUN npm ci
 COPY . .
 RUN npx prisma generate && \
     npm run build && \
-    cp -r public .next/standalone/public && \
+    if [ -d public ]; then cp -r public .next/standalone/public; fi && \
     cp -r .next/static .next/standalone/.next/static
 
 # Production image
@@ -28,7 +28,6 @@ ENV PORT=3000
 
 COPY --from=base /app/.next/standalone ./
 COPY --from=base /app/.next/static ./.next/static
-COPY --from=base /app/public ./public
 # Copy Prisma files for runtime migrations
 COPY --from=base /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=base /app/node_modules/@prisma ./node_modules/@prisma
