@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers';
 import { OwnerProfileForm } from '@/components/features/owner/OwnerProfileForm';
 import { OwnerSettingsNav } from '@/components/features/owner/OwnerSettingsNav';
+import { SubdomainSettings } from '@/components/features/owner/SubdomainSettings';
 
 interface ProfileData {
   name: string;
@@ -53,6 +54,8 @@ export default async function OwnerSettingsPage() {
       <OwnerSettingsNav />
 
       <OwnerProfileForm defaultValues={defaultValues} />
+
+      <SubdomainSettings />
     </div>
   );
 }

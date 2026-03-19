@@ -73,7 +73,13 @@ export async function POST(request: NextRequest) {
     // Build a unique slug from the business name + random suffix
     const baseSlug = toSlug(validatedData.businessName);
     const suffix = Math.random().toString(36).slice(2, 7);
-    const slug = baseSlug ? `${baseSlug}-${suffix}` : suffix;
+    let slug = baseSlug ? `${baseSlug}-${suffix}` : suffix;
+
+    // Ensure auto-generated slug isn't reserved
+    const { isReservedSubdomain } = await import('@/lib/utils/domain');
+    if (isReservedSubdomain(slug)) {
+      slug = `${slug}-${Math.random().toString(36).slice(2, 5)}`;
+    }
 
     // Atomically create User + Organization + OrganizationSettings
     const user = await db.$transaction(async (tx) => {
