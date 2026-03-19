@@ -8,6 +8,10 @@ import {
   checkRateLimit,
   getRateLimitHeaders,
 } from '@/lib/middleware/rate-limit';
+import {
+  generateSessionId,
+  registerSession,
+} from '@/lib/auth/session-store';
 
 /**
  * POST /api/auth/login
@@ -49,12 +53,19 @@ export async function POST(request: NextRequest) {
       validatedData.password
     );
 
-    // Generate JWT session token
+    // Generate JWT session token with unique session ID
+    const sessionId = generateSessionId();
     const token = generateToken({
       userId: user.id,
       email: user.email,
       role: user.role,
+      sessionId,
     });
+
+    // Register session in Redis (evicts oldest if over limit)
+    registerSession(user.id, sessionId).catch((err) =>
+      console.error('Failed to register session:', err)
+    );
 
     // Set session cookie
     const { name, value, ...options } = setSessionCookie(token);

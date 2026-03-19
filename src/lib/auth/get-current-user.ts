@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers';
 import { verifyToken } from './session';
 import { db } from '../db';
+import { isSessionValid } from './session-store';
 
 /**
  * Get the currently authenticated user from the session cookie
@@ -44,6 +45,16 @@ export async function getCurrentUser() {
       const changedAtSeconds = Math.floor(user.passwordChangedAt.getTime() / 1000);
       if (payload.iat < changedAtSeconds) {
         return null;
+      }
+    }
+
+    // Check concurrent session validity in Redis (skip for legacy tokens without sessionId)
+    if (payload.sessionId) {
+      try {
+        const valid = await isSessionValid(payload.userId, payload.sessionId);
+        if (!valid) return null;
+      } catch {
+        // If Redis is unavailable, allow the request (graceful degradation)
       }
     }
 

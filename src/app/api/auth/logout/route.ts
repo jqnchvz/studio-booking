@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { getSessionCookieName } from '@/lib/auth/session';
+import { getSessionCookieName, verifyToken } from '@/lib/auth/session';
+import { removeSession } from '@/lib/auth/session-store';
 
 /**
  * POST /api/auth/logout
@@ -10,6 +11,17 @@ export async function POST() {
   try {
     const cookieStore = await cookies();
     const sessionCookieName = getSessionCookieName();
+    const sessionCookie = cookieStore.get(sessionCookieName);
+
+    // Remove session from Redis tracking before clearing cookie
+    if (sessionCookie) {
+      const payload = verifyToken(sessionCookie.value);
+      if (payload?.sessionId) {
+        removeSession(payload.userId, payload.sessionId).catch((err) =>
+          console.error('Failed to remove session from Redis:', err)
+        );
+      }
+    }
 
     // Delete the session cookie
     cookieStore.delete(sessionCookieName);

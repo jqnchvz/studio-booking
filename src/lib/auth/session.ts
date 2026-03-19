@@ -7,6 +7,7 @@ export interface SessionPayload {
   userId: string;
   email: string;
   role: string;
+  sessionId?: string; // unique session identifier for concurrent session tracking
   iat?: number; // issued-at (added by jwt.sign, used for passwordChangedAt check)
 }
 
