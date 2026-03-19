@@ -48,11 +48,12 @@ export function RevenueChart({ data }: RevenueChartProps) {
       </CardHeader>
       <CardContent>
         {sortedData.length === 0 ? (
-          <div className="flex items-center justify-center h-[350px] text-sm text-muted-foreground">
+          <div className="flex items-center justify-center h-[250px] sm:h-[350px] text-sm text-muted-foreground">
             No hay datos de ingresos disponibles
           </div>
         ) : (
-          <ResponsiveContainer width="100%" height={350}>
+          <div className="h-[250px] sm:h-[350px]">
+          <ResponsiveContainer width="100%" height="100%">
             <BarChart data={sortedData} barCategoryGap="30%">
               {/* Background grid — horizontal lines only for cleaner look */}
               <CartesianGrid
@@ -116,6 +117,7 @@ export function RevenueChart({ data }: RevenueChartProps) {
               />
             </BarChart>
           </ResponsiveContainer>
+          </div>
         )}
       </CardContent>
     </Card>
