@@ -2,15 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 
 /**
- * GET /api/auth/verify-email
- * Verifies a user's email address using a verification token
+ * Shared verification logic used by both GET (backward compat) and POST handlers
  */
-export async function GET(request: NextRequest) {
+async function verifyEmailToken(token: string | null): Promise<NextResponse> {
   try {
-    // Extract token from query parameters
-    const { searchParams } = new URL(request.url);
-    const token = searchParams.get('token');
-
     // Validate token exists
     if (!token) {
       return NextResponse.json(
@@ -97,4 +92,22 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+/**
+ * POST /api/auth/verify-email
+ * Preferred: token submitted in request body
+ */
+export async function POST(request: NextRequest) {
+  const body = await request.json().catch(() => ({}));
+  return verifyEmailToken(body.token ?? null);
+}
+
+/**
+ * GET /api/auth/verify-email
+ * Backward compatibility: token in query params
+ */
+export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  return verifyEmailToken(searchParams.get('token'));
 }
