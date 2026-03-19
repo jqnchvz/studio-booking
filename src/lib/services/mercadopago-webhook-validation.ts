@@ -84,10 +84,11 @@ export function validateWebhookSignature(
     );
 
     if (!isValid) {
-      console.error('❌ Signature mismatch');
-      console.error(`   Manifest: ${manifest}`);
-      console.error(`   Expected: ${expectedHash}`);
-      console.error(`   Received: ${hash}`);
+      console.error('❌ Webhook signature mismatch', {
+        dataId,
+        eventType,
+        timestamp,
+      });
     }
 
     return isValid;
