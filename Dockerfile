@@ -9,7 +9,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
 
-# Copy source and build (no migrations here — they run at startup)
+# Copy source and build
 COPY . .
 RUN npx prisma generate && \
     npm run build && \
@@ -28,15 +28,7 @@ ENV PORT=3000
 
 COPY --from=base /app/.next/standalone ./
 COPY --from=base /app/.next/static ./.next/static
-# Copy Prisma files for runtime migrations
-COPY --from=base /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=base /app/node_modules/@prisma ./node_modules/@prisma
-COPY --from=base /app/node_modules/prisma ./node_modules/prisma
-COPY --from=base /app/node_modules/dotenv ./node_modules/dotenv
-COPY --from=base /app/prisma ./prisma
-COPY --from=base /app/prisma.config.ts ./prisma.config.ts
 
 EXPOSE 3000
 
-# Run migrations then start the server
-CMD ["sh", "-c", "node node_modules/prisma/build/index.js migrate deploy && node server.js"]
+CMD ["node", "server.js"]
