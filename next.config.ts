@@ -1,4 +1,5 @@
 import type { NextConfig } from 'next';
+import { withSentryConfig } from '@sentry/nextjs';
 
 const securityHeaders = [
   {
@@ -25,7 +26,7 @@ const securityHeaders = [
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob:",
       "font-src 'self'",
-      "connect-src 'self' https://api.mercadopago.com https://http2.mlstatic.com",
+      "connect-src 'self' https://api.mercadopago.com https://http2.mlstatic.com https://*.ingest.sentry.io",
       "frame-src 'self' https://www.mercadopago.com.ar",
       "object-src 'none'",
       "base-uri 'self'",
@@ -51,4 +52,15 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withSentryConfig(nextConfig, {
+  // Suppress Sentry CLI logs during build
+  silent: !process.env.CI,
+
+  // Upload source maps for readable stack traces
+  sourcemaps: {
+    deleteSourcemapsAfterUpload: true,
+  },
+
+  // Disable Sentry telemetry
+  telemetry: false,
+});
