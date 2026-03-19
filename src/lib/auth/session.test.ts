@@ -1,9 +1,11 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import {
   generateToken,
   verifyToken,
   setSessionCookie,
   getSessionCookieName,
+  getCookieDomain,
+  getDeleteSessionCookieOptions,
 } from './session';
 
 describe('Session Utilities', () => {
@@ -167,6 +169,98 @@ describe('Session Utilities', () => {
 
       expect(cookieName).toBe('session');
       expect(typeof cookieName).toBe('string');
+    });
+  });
+
+  describe('getCookieDomain', () => {
+    const originalAppDomain = process.env.APP_DOMAIN;
+
+    afterEach(() => {
+      if (originalAppDomain !== undefined) {
+        process.env.APP_DOMAIN = originalAppDomain;
+      } else {
+        delete process.env.APP_DOMAIN;
+      }
+    });
+
+    it('returns .reservapp.com for production domain', () => {
+      process.env.APP_DOMAIN = 'reservapp.com';
+      expect(getCookieDomain()).toBe('.reservapp.com');
+    });
+
+    it('returns undefined for localhost', () => {
+      process.env.APP_DOMAIN = 'localhost:3000';
+      expect(getCookieDomain()).toBeUndefined();
+    });
+
+    it('returns undefined for localhost without port', () => {
+      process.env.APP_DOMAIN = 'localhost';
+      expect(getCookieDomain()).toBeUndefined();
+    });
+
+    it('strips port from production domain', () => {
+      process.env.APP_DOMAIN = 'reservapp.com:443';
+      expect(getCookieDomain()).toBe('.reservapp.com');
+    });
+
+    it('returns undefined when APP_DOMAIN is not set', () => {
+      delete process.env.APP_DOMAIN;
+      expect(getCookieDomain()).toBeUndefined();
+    });
+  });
+
+  describe('setSessionCookie with domain', () => {
+    const originalAppDomain = process.env.APP_DOMAIN;
+
+    afterEach(() => {
+      if (originalAppDomain !== undefined) {
+        process.env.APP_DOMAIN = originalAppDomain;
+      } else {
+        delete process.env.APP_DOMAIN;
+      }
+    });
+
+    it('includes domain in production', () => {
+      process.env.APP_DOMAIN = 'reservapp.com';
+      const cookie = setSessionCookie('test-token');
+      expect(cookie.domain).toBe('.reservapp.com');
+    });
+
+    it('does not include domain for localhost', () => {
+      process.env.APP_DOMAIN = 'localhost:3000';
+      const cookie = setSessionCookie('test-token');
+      expect(cookie).not.toHaveProperty('domain');
+    });
+  });
+
+  describe('getDeleteSessionCookieOptions', () => {
+    const originalAppDomain = process.env.APP_DOMAIN;
+
+    afterEach(() => {
+      if (originalAppDomain !== undefined) {
+        process.env.APP_DOMAIN = originalAppDomain;
+      } else {
+        delete process.env.APP_DOMAIN;
+      }
+    });
+
+    it('includes name and path', () => {
+      process.env.APP_DOMAIN = 'localhost:3000';
+      const opts = getDeleteSessionCookieOptions();
+      expect(opts.name).toBe('session');
+      expect(opts.path).toBe('/');
+    });
+
+    it('includes domain in production', () => {
+      process.env.APP_DOMAIN = 'reservapp.com';
+      const opts = getDeleteSessionCookieOptions();
+      expect(opts.domain).toBe('.reservapp.com');
+    });
+
+    it('does not include domain for localhost', () => {
+      process.env.APP_DOMAIN = 'localhost:3000';
+      const opts = getDeleteSessionCookieOptions();
+      expect(opts).not.toHaveProperty('domain');
     });
   });
 });
