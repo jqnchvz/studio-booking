@@ -148,9 +148,9 @@ export function PaymentTable({
   return (
     <div className="space-y-4">
       {/* Filters row */}
-      <div className="flex gap-4 flex-wrap">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 flex-wrap">
         {/* Search input */}
-        <div className="relative flex-1 min-w-[200px]">
+        <div className="relative flex-1 min-w-0 sm:min-w-[200px]">
           <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Buscar por usuario o email..."
@@ -208,13 +208,13 @@ export function PaymentTable({
       </div>
 
       {/* Table */}
-      <div className="border rounded-md">
-        <Table>
+      <div className="border rounded-md overflow-x-auto">
+        <Table className="min-w-[600px]">
           <TableHeader>
             <TableRow>
               <TableHead>Fecha</TableHead>
               <TableHead>Usuario</TableHead>
-              <TableHead>Plan</TableHead>
+              <TableHead className="hidden sm:table-cell">Plan</TableHead>
               <TableHead>Monto Base</TableHead>
               <TableHead>Penalización</TableHead>
               <TableHead>Total</TableHead>
@@ -245,7 +245,7 @@ export function PaymentTable({
                       <p className="text-xs text-muted-foreground">{payment.user.email}</p>
                     </div>
                   </TableCell>
-                  <TableCell>{payment.plan.name}</TableCell>
+                  <TableCell className="hidden sm:table-cell">{payment.plan.name}</TableCell>
                   <TableCell>{formatCLP(payment.amount)}</TableCell>
                   <TableCell>
                     {payment.penaltyFee > 0 ? (
@@ -273,11 +273,11 @@ export function PaymentTable({
       </div>
 
       {/* Pagination controls */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between">
         <p className="text-sm text-muted-foreground">
           Mostrando {payments.length} de {pagination.total} pagos
         </p>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button
             variant="outline"
             size="sm"
