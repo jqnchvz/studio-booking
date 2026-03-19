@@ -952,7 +952,92 @@ ENCRYPTION_KEY="your-64-character-hex-encryption-key"
 # Application
 NEXT_PUBLIC_APP_URL="http://localhost:3000"
 TZ="America/Santiago"
+
+# Domain (subdomain routing)
+# Root domain without protocol. Controls subdomain URL construction.
+# Dev: localhost:3000 → subdomains become slug.localhost:3000
+# Prod: reservapp.com → subdomains become slug.reservapp.com
+APP_DOMAIN="localhost:3000"
 ```
+
+### Local Subdomain Testing
+
+Subdomains require special setup in local development since browsers handle `localhost` subdomains differently.
+
+**1. Add entries to `/etc/hosts`:**
+```bash
+# Add one entry per business slug you want to test:
+127.0.0.1  test-business.localhost
+127.0.0.1  pilates-studio.localhost
+```
+
+**2. Set `APP_DOMAIN` in `.env`:**
+```bash
+APP_DOMAIN="localhost:3000"
+```
+
+**3. Access subdomain pages:**
+```
+http://test-business.localhost:3000          → tenant landing page
+http://test-business.localhost:3000/resources → tenant resources
+http://test-business.localhost:3000/plans     → tenant plans
+http://test-business.localhost:3000/book      → tenant booking
+```
+
+**How it works:**
+- Middleware extracts the subdomain from the `Host` header (`test-business`)
+- Resolves `Organization` by slug in the database
+- Rewrites internally to `/t/test-business/...` (user never sees this)
+- Cookie domain is `undefined` for localhost (host-only cookies)
+
+**Note:** Cross-subdomain cookie sharing only works in production (`domain=.reservapp.com`). In dev, you may need to re-login when switching between `localhost:3000` and `test-business.localhost:3000`.
+
+### Subdomain Routing Architecture
+
+```
+Request: slug.reservapp.com/resources
+  → middleware.ts: extractSubdomain() → "slug"
+  → db.organization.findUnique({ slug, status: 'active' })
+  → NextResponse.rewrite(/t/slug/resources)
+  → src/app/t/[slug]/resources/page.tsx renders
+
+Reserved subdomains (www, api, admin, etc.) → redirect to main domain
+Invalid/inactive slugs → /tenant-not-found page
+```
+
+**Key files:**
+- `middleware.ts` — subdomain detection + tenant resolution
+- `src/lib/utils/domain.ts` — URL construction + subdomain parsing
+- `src/lib/utils/email-url.ts` — centralized email URL helpers
+- `src/lib/auth/session.ts` — `getCookieDomain()` for cross-subdomain cookies
+- `src/app/t/[slug]/` — tenant route group (layout, pages)
+- `src/components/tenant/` — TenantNavbar, TenantFooter
+
+### Railway Deployment (Subdomain Setup)
+
+**Steps to enable subdomains in production:**
+
+1. **Add wildcard domain in Railway dashboard:**
+   - Go to Service → Settings → Networking → Custom Domains
+   - Add `*.reservapp.com`
+   - Railway will provide a CNAME target
+
+2. **Configure DNS (at domain registrar):**
+   ```
+   *.reservapp.com  CNAME  <railway-cname-target>.up.railway.app
+   ```
+
+3. **Set environment variables in Railway:**
+   ```
+   APP_DOMAIN=reservapp.com
+   NEXT_PUBLIC_APP_URL=https://reservapp.com
+   ```
+
+4. **Verify after DNS propagation:**
+   ```bash
+   dig test-slug.reservapp.com
+   curl -I https://test-slug.reservapp.com
+   ```
 
 ## Deployment Checklist
 
