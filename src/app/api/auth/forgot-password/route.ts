@@ -8,6 +8,7 @@ import {
 } from '@/lib/middleware/rate-limit';
 import { sendEmailWithLogging } from '@/lib/email/send-email';
 import { PasswordReset } from '../../../../../emails/password-reset';
+import { getAppUrl } from '@/lib/utils/email-url';
 
 /**
  * Validation schema for forgot password request
@@ -86,7 +87,7 @@ export async function POST(request: NextRequest) {
       });
 
       // Send reset email
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+      const appUrl = getAppUrl();
       const resetUrl = `${appUrl}/reset-password?token=${resetToken}`;
 
       const emailResult = await sendEmailWithLogging({

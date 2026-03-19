@@ -8,6 +8,7 @@ import {
 import { queueEmail } from '@/lib/queue/email-queue';
 import { db } from '@/lib/db';
 import { Prisma } from '@prisma/client';
+import { getAppUrl } from '@/lib/utils/email-url';
 
 /**
  * GET /api/reservations
@@ -291,7 +292,7 @@ export async function POST(request: NextRequest) {
         startTime: reservation.startTime.toISOString(),
         endTime: reservation.endTime.toISOString(),
         attendees: reservation.attendees,
-        dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/reservations/${reservation.id}`,
+        dashboardUrl: `${getAppUrl()}/dashboard/reservations/${reservation.id}`,
       },
     }).catch((error) => {
       // Log email queue errors but don't fail the reservation

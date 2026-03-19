@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { MercadoPagoConfig, Preference } from 'mercadopago';
 import { db } from '@/lib/db';
 import { decrypt } from '@/lib/utils/encryption';
+import { getAppUrl } from '@/lib/utils/email-url';
 
 /**
  * POST /api/book/[orgSlug]/checkout
@@ -147,7 +148,7 @@ export async function POST(
     });
 
     const preferenceAPI = new Preference(mpClient);
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const appUrl = getAppUrl();
 
     const preference = await preferenceAPI.create({
       body: {

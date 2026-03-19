@@ -6,6 +6,7 @@ import { PaymentOverdue } from '../../../emails/payment-overdue';
 import { SubscriptionActivated } from '../../../emails/subscription-activated';
 import { SubscriptionSuspended } from '../../../emails/subscription-suspended';
 import { SubscriptionCancelled } from '../../../emails/subscription-cancelled';
+import { getAppUrl } from '@/lib/utils/email-url';
 
 /**
  * MercadoPago Webhook Event Types
@@ -164,7 +165,7 @@ async function handleOverduePayment(
     console.log(`   Period: ${currentPeriodStart.toISOString()} - ${currentPeriodEnd.toISOString()}`);
 
     // Send payment success email
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const appUrl = getAppUrl();
     await sendEmailWithLogging({
       userId: internalPayment.subscription.user.id,
       type: 'payment_success',
@@ -421,7 +422,7 @@ export async function handlePaymentUpdated(paymentId: string): Promise<void> {
       });
 
       // Send subscription activated email
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+      const appUrl = getAppUrl();
       await sendEmailWithLogging({
         userId: subscription.user.id,
         type: 'subscription_activated',
@@ -529,7 +530,7 @@ export async function handlePaymentUpdated(paymentId: string): Promise<void> {
           console.log(`⛔ Subscription suspended after ${consecutiveFailures} consecutive failures`);
 
           // Send suspension email (outside transaction to not block)
-          const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+          const appUrl = getAppUrl();
           sendEmailWithLogging({
             userId: subscription.user.id,
             type: 'subscription_suspended',
@@ -563,7 +564,7 @@ export async function handlePaymentUpdated(paymentId: string): Promise<void> {
           console.log(`   Grace period not extended (set on first failure only)`);
 
           // Send urgent overdue email (outside transaction to not block)
-          const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+          const appUrl = getAppUrl();
           const existingGracePeriod = subscription.gracePeriodEnd || new Date();
           sendEmailWithLogging({
             userId: subscription.user.id,
@@ -602,7 +603,7 @@ export async function handlePaymentUpdated(paymentId: string): Promise<void> {
           console.log(`   Grace period set until: ${gracePeriodEnd.toISOString()}`);
 
           // Send payment failed email (outside transaction to not block)
-          const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+          const appUrl = getAppUrl();
           sendEmailWithLogging({
             userId: subscription.user.id,
             type: 'payment_overdue',
@@ -685,7 +686,7 @@ export async function handleSubscriptionUpdated(
     console.log(`   Current DB status: ${subscription.status}`);
 
     const now = new Date();
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const appUrl = getAppUrl();
 
     if (mpStatus === 'authorized') {
       await db.subscription.update({
