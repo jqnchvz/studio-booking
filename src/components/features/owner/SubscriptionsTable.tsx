@@ -99,8 +99,8 @@ export function SubscriptionsTable({ subscriptions }: SubscriptionsTableProps) {
   return (
     <div className="space-y-4">
       {/* Controls */}
-      <div className="flex items-center gap-4 flex-wrap">
-        <div className="relative flex-1 min-w-48 max-w-sm">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+        <div className="relative flex-1 min-w-0 sm:min-w-48 sm:max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Buscar por nombre o email..."
@@ -110,13 +110,13 @@ export function SubscriptionsTable({ subscriptions }: SubscriptionsTableProps) {
           />
         </div>
 
-        <div className="flex gap-1 border border-border rounded-md p-0.5">
+        <div className="flex flex-wrap gap-1 border border-border rounded-md p-0.5">
           {FILTER_TABS.map((tab) => (
             <button
               key={tab.value}
               onClick={() => setFilter(tab.value)}
               className={cn(
-                'px-3 py-1 text-sm rounded transition-colors',
+                'px-3 py-1 text-sm rounded transition-colors whitespace-nowrap',
                 filter === tab.value
                   ? 'bg-primary text-primary-foreground'
                   : 'text-muted-foreground hover:text-foreground'
@@ -134,14 +134,14 @@ export function SubscriptionsTable({ subscriptions }: SubscriptionsTableProps) {
           No se encontraron suscripciones con esos filtros.
         </div>
       ) : (
-        <div className="rounded-md border border-border overflow-hidden">
-          <table className="w-full text-sm">
+        <div className="rounded-md border border-border overflow-x-auto">
+          <table className="w-full min-w-[600px] text-sm">
             <thead className="bg-muted/50 border-b border-border">
               <tr>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Cliente</th>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Plan</th>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Estado</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Inicio</th>
+                <th className="hidden sm:table-cell px-4 py-3 text-left font-medium text-muted-foreground">Inicio</th>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">
                   Próximo cobro
                 </th>
@@ -168,7 +168,7 @@ export function SubscriptionsTable({ subscriptions }: SubscriptionsTableProps) {
                         {statusCfg.label}
                       </Badge>
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground">{fmt(s.startDate)}</td>
+                    <td className="hidden sm:table-cell px-4 py-3 text-muted-foreground">{fmt(s.startDate)}</td>
                     <td className="px-4 py-3 text-muted-foreground">
                       {showNextBilling ? fmt(s.nextBillingDate) : '—'}
                     </td>

@@ -122,8 +122,8 @@ export function PaymentsTable({ payments }: PaymentsTableProps) {
       </div>
 
       {/* Controls */}
-      <div className="flex items-center gap-4 flex-wrap">
-        <div className="relative flex-1 min-w-48 max-w-sm">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+        <div className="relative flex-1 min-w-0 sm:min-w-48 sm:max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Buscar por nombre o email..."
@@ -133,13 +133,13 @@ export function PaymentsTable({ payments }: PaymentsTableProps) {
           />
         </div>
 
-        <div className="flex gap-1 border border-border rounded-md p-0.5">
+        <div className="flex flex-wrap gap-1 border border-border rounded-md p-0.5">
           {FILTER_TABS.map((tab) => (
             <button
               key={tab.value}
               onClick={() => setFilter(tab.value)}
               className={cn(
-                'px-3 py-1 text-sm rounded transition-colors',
+                'px-3 py-1 text-sm rounded transition-colors whitespace-nowrap',
                 filter === tab.value
                   ? 'bg-primary text-primary-foreground'
                   : 'text-muted-foreground hover:text-foreground'
@@ -157,12 +157,12 @@ export function PaymentsTable({ payments }: PaymentsTableProps) {
           No se encontraron pagos con esos filtros.
         </div>
       ) : (
-        <div className="rounded-md border border-border overflow-hidden">
-          <table className="w-full text-sm">
+        <div className="rounded-md border border-border overflow-x-auto">
+          <table className="w-full min-w-[600px] text-sm">
             <thead className="bg-muted/50 border-b border-border">
               <tr>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Cliente</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Concepto</th>
+                <th className="hidden sm:table-cell px-4 py-3 text-left font-medium text-muted-foreground">Concepto</th>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Monto</th>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Estado</th>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Fecha</th>
@@ -181,7 +181,7 @@ export function PaymentsTable({ payments }: PaymentsTableProps) {
                       <p className="font-medium leading-none">{p.client.name}</p>
                       <p className="text-xs text-muted-foreground mt-0.5">{p.client.email}</p>
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground">{p.plan}</td>
+                    <td className="hidden sm:table-cell px-4 py-3 text-muted-foreground">{p.plan}</td>
                     <td className="px-4 py-3 font-medium tabular-nums">{formatCLP(p.amount)}</td>
                     <td className="px-4 py-3">
                       <Badge className={cn('text-xs font-normal', statusCfg.className)}>
