@@ -80,9 +80,9 @@ export function ClientsTable({ clients }: ClientsTableProps) {
   return (
     <div className="space-y-4">
       {/* Controls */}
-      <div className="flex items-center gap-4 flex-wrap">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
         {/* Search */}
-        <div className="relative flex-1 min-w-48 max-w-sm">
+        <div className="relative flex-1 min-w-0 sm:min-w-48 sm:max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Buscar por nombre o email..."
@@ -117,12 +117,12 @@ export function ClientsTable({ clients }: ClientsTableProps) {
           No se encontraron clientes con esos filtros.
         </div>
       ) : (
-        <div className="rounded-md border border-border overflow-hidden">
-          <table className="w-full text-sm">
+        <div className="rounded-md border border-border overflow-x-auto">
+          <table className="w-full min-w-[600px] text-sm">
             <thead className="bg-muted/50 border-b border-border">
               <tr>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Cliente</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Plan</th>
+                <th className="hidden sm:table-cell px-4 py-3 text-left font-medium text-muted-foreground">Plan</th>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Estado</th>
                 <th className="px-4 py-3 text-right font-medium text-muted-foreground">Reservas</th>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Miembro desde</th>
@@ -141,7 +141,7 @@ export function ClientsTable({ clients }: ClientsTableProps) {
                       <p className="font-medium leading-none">{client.name}</p>
                       <p className="text-xs text-muted-foreground mt-0.5">{client.email}</p>
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground">{client.plan}</td>
+                    <td className="hidden sm:table-cell px-4 py-3 text-muted-foreground">{client.plan}</td>
                     <td className="px-4 py-3">
                       <Badge className={cn('text-xs font-normal', statusCfg.className)}>
                         {statusCfg.label}

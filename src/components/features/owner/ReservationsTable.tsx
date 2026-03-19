@@ -108,9 +108,9 @@ export function ReservationsTable({ reservations }: ReservationsTableProps) {
   return (
     <div className="space-y-4">
       {/* Controls */}
-      <div className="flex items-center gap-4 flex-wrap">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
         {/* Search */}
-        <div className="relative flex-1 min-w-48 max-w-sm">
+        <div className="relative flex-1 min-w-0 sm:min-w-48 sm:max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Buscar por cliente, email o recurso..."
@@ -145,12 +145,12 @@ export function ReservationsTable({ reservations }: ReservationsTableProps) {
           No se encontraron reservas con esos filtros.
         </div>
       ) : (
-        <div className="rounded-md border border-border overflow-hidden">
-          <table className="w-full text-sm">
+        <div className="rounded-md border border-border overflow-x-auto">
+          <table className="w-full min-w-[600px] text-sm">
             <thead className="bg-muted/50 border-b border-border">
               <tr>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Cliente</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Recurso</th>
+                <th className="hidden sm:table-cell px-4 py-3 text-left font-medium text-muted-foreground">Recurso</th>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">
                   Fecha y hora
                 </th>
@@ -171,7 +171,7 @@ export function ReservationsTable({ reservations }: ReservationsTableProps) {
                       <p className="font-medium leading-none">{r.client.name}</p>
                       <p className="text-xs text-muted-foreground mt-0.5">{r.client.email}</p>
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground">{r.resource}</td>
+                    <td className="hidden sm:table-cell px-4 py-3 text-muted-foreground">{r.resource}</td>
                     <td className="px-4 py-3 text-muted-foreground tabular-nums">
                       {formatRange(r.startTime, r.endTime)}
                     </td>
