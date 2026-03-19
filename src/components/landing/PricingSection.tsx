@@ -38,7 +38,7 @@ export async function PricingSection() {
           <p className="text-sm font-medium text-primary uppercase tracking-wider">Precios</p>
           <h2 className="text-3xl sm:text-4xl font-bold">Planes simples, sin sorpresas</h2>
           <p className="text-muted-foreground text-lg max-w-xl mx-auto">
-            Elige el plan que se adapte a tu negocio. Cancela cuando quieras.
+            Planes para dueños de negocios. Elige el que se adapte a tu operación. Cancela cuando quieras.
           </p>
         </div>
 
@@ -100,7 +100,7 @@ export async function PricingSection() {
                     size="lg"
                     asChild
                   >
-                    <Link href={`/register?plan=${plan.id}`}>
+                    <Link href={`/register/business?plan=${plan.id}`}>
                       Empezar con {plan.name}
                     </Link>
                   </Button>

@@ -20,23 +20,38 @@ export function Footer() {
           </div>
 
           {/* Links */}
-          <nav className="flex flex-wrap gap-x-8 gap-y-2 text-sm text-muted-foreground">
-            <a href="#features" className="hover:text-foreground transition-colors">
-              Características
-            </a>
-            <a href="#pricing" className="hover:text-foreground transition-colors">
-              Precios
-            </a>
-            <a href="#faq" className="hover:text-foreground transition-colors">
-              FAQ
-            </a>
-            <Link href="/login" className="hover:text-foreground transition-colors">
-              Iniciar sesión
-            </Link>
-            <Link href="/register" className="hover:text-foreground transition-colors">
-              Registrarse
-            </Link>
-          </nav>
+          <div className="flex flex-col sm:flex-row gap-8">
+            <nav className="space-y-2 text-sm text-muted-foreground">
+              <p className="font-medium text-foreground text-xs uppercase tracking-wider">Negocios</p>
+              <a href="#para-negocios" className="block hover:text-foreground transition-colors">
+                Características
+              </a>
+              <a href="#pricing" className="block hover:text-foreground transition-colors">
+                Precios
+              </a>
+              <Link href="/register/business" className="block hover:text-foreground transition-colors">
+                Registrar negocio
+              </Link>
+            </nav>
+            <nav className="space-y-2 text-sm text-muted-foreground">
+              <p className="font-medium text-foreground text-xs uppercase tracking-wider">Usuarios</p>
+              <a href="#para-usuarios" className="block hover:text-foreground transition-colors">
+                Para usuarios
+              </a>
+              <Link href="/register" className="block hover:text-foreground transition-colors">
+                Crear cuenta
+              </Link>
+              <Link href="/login" className="block hover:text-foreground transition-colors">
+                Iniciar sesión
+              </Link>
+            </nav>
+            <nav className="space-y-2 text-sm text-muted-foreground">
+              <p className="font-medium text-foreground text-xs uppercase tracking-wider">Soporte</p>
+              <a href="#faq" className="block hover:text-foreground transition-colors">
+                FAQ
+              </a>
+            </nav>
+          </div>
         </div>
 
         <div className="mt-8 pt-6 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-muted-foreground">

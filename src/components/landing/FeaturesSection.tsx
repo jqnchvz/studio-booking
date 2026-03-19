@@ -48,11 +48,11 @@ const FEATURES = [
 
 export function FeaturesSection() {
   return (
-    <section id="features" className="py-24 px-4 sm:px-6">
+    <section id="para-negocios" className="py-24 px-4 sm:px-6">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="text-center space-y-3 mb-16">
-          <p className="text-sm font-medium text-primary uppercase tracking-wider">Características</p>
+          <p className="text-sm font-medium text-primary uppercase tracking-wider">Para Negocios</p>
           <h2 className="text-3xl sm:text-4xl font-bold">Todo lo que necesita tu negocio</h2>
           <p className="text-muted-foreground text-lg max-w-xl mx-auto">
             Sin integraciones complejas. Sin configuraciones técnicas. Todo funciona desde el primer día.

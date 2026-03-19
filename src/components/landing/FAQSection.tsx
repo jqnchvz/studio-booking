@@ -35,6 +35,21 @@ const FAQS = [
     answer:
       'Sí, tanto el panel de administración como la plataforma de reservas para tus clientes están optimizados para móviles, tablets y escritorio.',
   },
+  {
+    question: '¿Cómo me registro como usuario?',
+    answer:
+      'Solo necesitas crear una cuenta gratuita con tu email. Una vez registrado, puedes buscar negocios en la plataforma, suscribirte a sus planes y comenzar a reservar de inmediato.',
+  },
+  {
+    question: '¿Puedo usar mi cuenta en diferentes negocios?',
+    answer:
+      'Sí. Con una sola cuenta de Reservapp puedes suscribirte y reservar en cualquier negocio de la plataforma. Tu historial de reservas queda centralizado en tu panel personal.',
+  },
+  {
+    question: '¿Cómo cancelo mi suscripción en un negocio?',
+    answer:
+      'Desde tu panel de usuario puedes ver todas tus suscripciones activas y cancelar cualquiera de ellas en cualquier momento. Seguirás teniendo acceso hasta el final del período pagado.',
+  },
 ];
 
 function FAQItem({ question, answer }: { question: string; answer: string }) {

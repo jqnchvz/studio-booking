@@ -4,24 +4,25 @@ import { HeroSection } from '@/components/landing/HeroSection';
 import { FeaturesSection } from '@/components/landing/FeaturesSection';
 import { HowItWorksSection } from '@/components/landing/HowItWorksSection';
 import { PricingSection } from '@/components/landing/PricingSection';
+import { ForUsersSection } from '@/components/landing/ForUsersSection';
 import { FAQSection } from '@/components/landing/FAQSection';
 import { Footer } from '@/components/landing/Footer';
 
 export const metadata: Metadata = {
-  title: 'Reservapp — Plataforma de reservas y suscripciones para tu negocio',
+  title: 'Reservapp — Reservas y suscripciones para negocios y usuarios',
   description:
-    'Gestiona reservas, suscripciones y cobros de tus clientes en un solo lugar. Integración con MercadoPago incluida. Sin configuraciones técnicas.',
+    'Para negocios: gestiona recursos, suscripciones y cobros con MercadoPago. Para usuarios: reserva en cualquier negocio con una sola cuenta.',
   openGraph: {
-    title: 'Reservapp — Plataforma de reservas para tu negocio',
+    title: 'Reservapp — Reservas y suscripciones para negocios y usuarios',
     description:
-      'Gestiona reservas, suscripciones y cobros de tus clientes en un solo lugar. Integración con MercadoPago incluida.',
+      'Para negocios: gestiona recursos y cobros. Para usuarios: reserva en cualquier negocio con una sola cuenta.',
     type: 'website',
     locale: 'es_CL',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Reservapp — Plataforma de reservas para tu negocio',
-    description: 'Gestiona reservas, suscripciones y cobros con MercadoPago en un solo lugar.',
+    title: 'Reservapp — Reservas y suscripciones para negocios y usuarios',
+    description: 'Gestiona tu negocio o reserva como usuario. Todo con MercadoPago.',
   },
 };
 
@@ -34,6 +35,7 @@ export default function LandingPage() {
         <FeaturesSection />
         <HowItWorksSection />
         <PricingSection />
+        <ForUsersSection />
         <FAQSection />
       </main>
       <Footer />

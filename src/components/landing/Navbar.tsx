@@ -17,8 +17,8 @@ export function Navbar() {
   }, []);
 
   const navLinks = [
-    { label: 'Características', href: '#features' },
-    { label: 'Cómo funciona', href: '#how-it-works' },
+    { label: 'Para Negocios', href: '#para-negocios' },
+    { label: 'Para Usuarios', href: '#para-usuarios' },
     { label: 'Precios', href: '#pricing' },
     { label: 'FAQ', href: '#faq' },
   ];
@@ -54,7 +54,7 @@ export function Navbar() {
             <Link href="/login">Iniciar sesión</Link>
           </Button>
           <Button size="sm" asChild>
-            <Link href="/register">Empezar gratis</Link>
+            <Link href="/register/business">Empezar gratis</Link>
           </Button>
         </div>
 
@@ -86,7 +86,7 @@ export function Navbar() {
               <Link href="/login">Iniciar sesión</Link>
             </Button>
             <Button size="sm" asChild>
-              <Link href="/register">Empezar gratis</Link>
+              <Link href="/register/business">Empezar gratis</Link>
             </Button>
           </div>
         </div>
