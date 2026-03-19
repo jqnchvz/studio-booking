@@ -1,13 +1,14 @@
 import { CalendarCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { getMainDomainUrl } from '@/lib/utils/domain';
 
 export const metadata = {
   title: 'Negocio no encontrado — Reservapp',
 };
 
 export default function TenantNotFoundPage() {
-  const mainUrl = getMainDomainUrl();
+  // Use NEXT_PUBLIC_APP_URL (available at build time) instead of getMainDomainUrl()
+  // which depends on APP_DOMAIN (runtime-only) and breaks static prerendering.
+  const mainUrl = process.env.NEXT_PUBLIC_APP_URL || '/';
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4">
