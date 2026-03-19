@@ -109,9 +109,9 @@ export function UserTable({
   return (
     <div className="space-y-4">
       {/* Filters row */}
-      <div className="flex gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
         {/* Search input */}
-        <div className="relative flex-1">
+        <div className="relative flex-1 min-w-0 sm:min-w-48 sm:max-w-sm">
           <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Buscar por nombre o email..."
@@ -159,14 +159,14 @@ export function UserTable({
       </div>
 
       {/* Table */}
-      <div className="border rounded-md">
-        <Table>
+      <div className="border rounded-md overflow-x-auto">
+        <Table className="min-w-[600px]">
           <TableHeader>
             <TableRow>
               <TableHead>Nombre</TableHead>
               <TableHead>Email</TableHead>
               <TableHead>Suscripción</TableHead>
-              <TableHead>Rol</TableHead>
+              <TableHead className="hidden sm:table-cell">Rol</TableHead>
               <TableHead>Registro</TableHead>
             </TableRow>
           </TableHeader>
@@ -197,7 +197,7 @@ export function UserTable({
                       <span className="text-muted-foreground text-sm">Sin suscripción</span>
                     )}
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="hidden sm:table-cell">
                     <Badge variant={user.role === 'admin' ? 'default' : 'outline'}>
                       {user.role === 'admin' ? 'Admin' : user.role === 'owner' ? 'Propietario' : 'Usuario'}
                     </Badge>
@@ -213,11 +213,11 @@ export function UserTable({
       </div>
 
       {/* Pagination controls */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between">
         <p className="text-sm text-muted-foreground">
           Mostrando {users.length} de {pagination.total} usuarios
         </p>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button
             variant="outline"
             size="sm"

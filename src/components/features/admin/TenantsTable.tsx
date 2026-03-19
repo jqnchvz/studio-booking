@@ -104,7 +104,7 @@ export function TenantsTable({ tenants }: TenantsTableProps) {
   return (
     <div className="space-y-4">
       {/* Search */}
-      <div className="relative max-w-sm">
+      <div className="relative min-w-0 sm:min-w-48 sm:max-w-sm">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
           placeholder="Buscar por nombre o email..."
@@ -115,7 +115,7 @@ export function TenantsTable({ tenants }: TenantsTableProps) {
       </div>
 
       {/* Status filter tabs */}
-      <div className="flex gap-1 border-b border-border">
+      <div className="flex flex-wrap gap-1 border-b border-border">
         {STATUS_TABS.map((tab) => {
           const count =
             tab.key === 'all'
@@ -126,7 +126,7 @@ export function TenantsTable({ tenants }: TenantsTableProps) {
               key={tab.key}
               onClick={() => setStatusFilter(tab.key)}
               className={cn(
-                'px-4 py-2 text-sm font-medium border-b-2 transition-colors',
+                'px-4 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap',
                 statusFilter === tab.key
                   ? 'border-primary text-primary'
                   : 'border-transparent text-muted-foreground hover:text-foreground'
@@ -160,13 +160,13 @@ export function TenantsTable({ tenants }: TenantsTableProps) {
           )}
         </div>
       ) : (
-        <div className="rounded-md border border-border overflow-hidden">
-          <Table>
+        <div className="rounded-md border border-border overflow-x-auto">
+          <Table className="min-w-[600px]">
             <TableHeader>
               <TableRow>
                 <TableHead>Empresa</TableHead>
                 <TableHead>Propietario</TableHead>
-                <TableHead>Plan</TableHead>
+                <TableHead className="hidden sm:table-cell">Plan</TableHead>
                 <TableHead>Estado</TableHead>
                 <TableHead className="text-right">Usuarios</TableHead>
                 <TableHead>Creada</TableHead>
@@ -190,7 +190,7 @@ export function TenantsTable({ tenants }: TenantsTableProps) {
                       <p className="text-xs text-muted-foreground">{tenant.owner.email}</p>
                     </div>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="hidden sm:table-cell">
                     <span className="text-sm text-muted-foreground">—</span>
                   </TableCell>
                   <TableCell>

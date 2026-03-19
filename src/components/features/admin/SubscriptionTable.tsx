@@ -136,8 +136,8 @@ export function SubscriptionTable({
   return (
     <div className="space-y-4">
       {/* Filters row */}
-      <div className="flex gap-3 flex-wrap">
-        <div className="relative flex-1 min-w-48">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 flex-wrap">
+        <div className="relative flex-1 min-w-0 sm:min-w-48 sm:max-w-sm">
           <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Buscar por nombre o email..."
@@ -192,8 +192,8 @@ export function SubscriptionTable({
       </div>
 
       {/* Table */}
-      <div className="border rounded-md">
-        <Table>
+      <div className="border rounded-md overflow-x-auto">
+        <Table className="min-w-[600px]">
           <TableHeader>
             <TableRow>
               <TableHead>Usuario</TableHead>
@@ -201,7 +201,7 @@ export function SubscriptionTable({
               <TableHead>Precio</TableHead>
               <TableHead>Estado</TableHead>
               <TableHead>Período Actual</TableHead>
-              <TableHead>Creado</TableHead>
+              <TableHead className="hidden sm:table-cell">Creado</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -240,7 +240,7 @@ export function SubscriptionTable({
                     {formatChileanDate(new Date(sub.currentPeriodStart))} –{' '}
                     {formatChileanDate(new Date(sub.currentPeriodEnd))}
                   </TableCell>
-                  <TableCell className="text-sm text-muted-foreground">
+                  <TableCell className="hidden sm:table-cell text-sm text-muted-foreground">
                     {formatChileanDate(new Date(sub.createdAt))}
                   </TableCell>
                 </TableRow>
@@ -251,11 +251,11 @@ export function SubscriptionTable({
       </div>
 
       {/* Pagination */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between">
         <p className="text-sm text-muted-foreground">
           Mostrando {subscriptions.length} de {pagination.total} suscripciones
         </p>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button
             variant="outline"
             size="sm"
