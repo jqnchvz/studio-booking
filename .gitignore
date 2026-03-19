@@ -54,7 +54,7 @@ firebase-debug.log
 # prisma
 /prisma/*.db
 /prisma/*.db-journal
-/prisma/migrations/*_*/
+# Migration files must be committed for production deployments (prisma migrate deploy)
 
 # redis & cache
 dump.rdb
