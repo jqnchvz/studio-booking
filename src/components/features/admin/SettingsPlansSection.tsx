@@ -445,7 +445,7 @@ export function SettingsPlansSection({ initialPlans }: SettingsPlansSectionProps
 
       {/* Create / Edit Modal */}
       <Dialog open={modalOpen} onOpenChange={closeModal}>
-        <DialogContent className="max-w-lg p-0 gap-0 flex flex-col max-h-[85vh] overflow-hidden">
+        <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-lg p-0 gap-0 flex flex-col max-h-[85vh] overflow-hidden">
           <form onSubmit={handleSave} className="flex flex-col h-full min-h-0">
             <DialogHeader className="px-6 pt-6 pb-4 shrink-0">
               <DialogTitle>
@@ -484,7 +484,7 @@ export function SettingsPlansSection({ initialPlans }: SettingsPlansSectionProps
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="plan-price">Precio (CLP)</Label>
                   <Input
@@ -551,7 +551,7 @@ export function SettingsPlansSection({ initialPlans }: SettingsPlansSectionProps
                   </p>
                 </div>
 
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div className="space-y-2">
                     <Label htmlFor="plan-penalty-base">Base (%)</Label>
                     <Input
