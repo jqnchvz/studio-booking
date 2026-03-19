@@ -1,4 +1,3 @@
 [phases.setup]
 nixPkgs = ["openssl"]
-aptPkgs = ["python3", "make", "g++"]
 nodeVersion = "22"
