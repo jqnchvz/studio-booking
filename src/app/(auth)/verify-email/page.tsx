@@ -37,12 +37,17 @@ function VerifyEmailContent() {
       return;
     }
 
-    // Verify the token
+    // Remove token from URL to prevent it from persisting in browser history
+    window.history.replaceState({}, '', '/verify-email');
+
+    // Verify the token via POST (token in body, not URL)
     async function verifyEmail() {
       try {
-        const response = await fetch(
-          `/api/auth/verify-email?token=${encodeURIComponent(token!)}`
-        );
+        const response = await fetch('/api/auth/verify-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token }),
+        });
 
         const data = await response.json();
 
