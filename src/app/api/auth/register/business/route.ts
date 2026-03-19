@@ -9,6 +9,7 @@ import {
 import { sendEmailWithLogging } from '@/lib/email/send-email';
 import { VerifyEmail } from '../../../../../../emails/verify-email';
 import { db } from '@/lib/db';
+import { getAppUrl } from '@/lib/utils/email-url';
 
 /** Convert a name to a URL-safe slug. */
 function toSlug(name: string): string {
@@ -124,7 +125,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Send verification email (fire-and-forget — don't block the response)
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const appUrl = getAppUrl();
     const verificationUrl = `${appUrl}/verify-email?token=${user.verificationToken}`;
     sendEmailWithLogging({
       userId: user.id,

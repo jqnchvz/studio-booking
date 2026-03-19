@@ -5,6 +5,7 @@ import {
   calculatePenalty,
   GRACE_PERIOD_DAYS,
 } from '@/lib/services/penalty.service';
+import { getAppUrl } from '@/lib/utils/email-url';
 
 /**
  * Apply penalties to overdue payments.
@@ -132,7 +133,7 @@ export async function applyPenalties(): Promise<{
       console.log(`   ✅ Subscription marked as past_due`);
 
       // Send penalty notification email
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+      const appUrl = getAppUrl();
       const paymentUrl = `${appUrl}/subscription/pay`;
 
       const emailResult = await sendEmailWithLogging({

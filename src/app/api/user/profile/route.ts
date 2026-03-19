@@ -5,6 +5,7 @@ import { updateProfileSchema } from '@/lib/validations/auth';
 import { sendEmailWithLogging } from '@/lib/email/send-email';
 import { VerifyEmail } from '../../../../../emails/verify-email';
 import { randomBytes } from 'crypto';
+import { getAppUrl } from '@/lib/utils/email-url';
 
 /**
  * GET /api/user/profile
@@ -212,7 +213,7 @@ export async function PATCH(request: NextRequest) {
 
     // 7. Send verification email if email changed
     if (emailChanged && updateData.verificationToken && email) {
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+      const appUrl = getAppUrl();
       const verificationUrl = `${appUrl}/verify-email?token=${updateData.verificationToken}`;
 
       try {

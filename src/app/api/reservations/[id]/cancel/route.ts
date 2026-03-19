@@ -3,6 +3,7 @@ import { getCurrentUser } from '@/lib/auth/get-current-user';
 import { db } from '@/lib/db';
 import { differenceInHours } from 'date-fns';
 import { queueEmail } from '@/lib/queue/email-queue';
+import { getAppUrl } from '@/lib/utils/email-url';
 
 /**
  * PATCH /api/reservations/[id]/cancel
@@ -131,7 +132,7 @@ export async function PATCH(
         startTime: reservation.startTime.toISOString(),
         endTime: reservation.endTime.toISOString(),
         cancelledAt: new Date().toISOString(),
-        dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/reservations`,
+        dashboardUrl: `${getAppUrl()}/dashboard/reservations`,
       },
     }).catch((error) => {
       // Log email queue errors but don't fail the cancellation

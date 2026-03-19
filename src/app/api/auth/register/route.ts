@@ -8,6 +8,7 @@ import {
 } from '@/lib/middleware/rate-limit';
 import { sendEmailWithLogging } from '@/lib/email/send-email';
 import { VerifyEmail } from '../../../../../emails/verify-email';
+import { getAppUrl } from '@/lib/utils/email-url';
 
 /**
  * POST /api/auth/register
@@ -41,7 +42,7 @@ export async function POST(request: NextRequest) {
 
     // Send verification email
     if (user.verificationToken) {
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+      const appUrl = getAppUrl();
       const verificationUrl = `${appUrl}/verify-email?token=${user.verificationToken}`;
 
       const emailResult = await sendEmailWithLogging({

@@ -1,6 +1,7 @@
 import { db } from '@/lib/db';
 import { sendEmailWithLogging } from '@/lib/email/send-email';
 import { PaymentReminder } from '../../emails/payment-reminder';
+import { getAppUrl } from '@/lib/utils/email-url';
 
 /**
  * Payment reminder intervals (days before due date)
@@ -72,7 +73,7 @@ async function sendPaymentReminder(
   },
   daysUntilDue: number
 ): Promise<boolean> {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const appUrl = getAppUrl();
   const paymentUrl = `${appUrl}/subscription/pay`;
 
   console.log(
