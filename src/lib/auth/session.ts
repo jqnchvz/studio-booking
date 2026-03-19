@@ -25,6 +25,20 @@ const COOKIE_NAME = 'session';
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 7; // 7 days in seconds
 
 /**
+ * Returns the cookie domain for cross-subdomain sharing.
+ * - Production (APP_DOMAIN=reservapp.com): returns '.reservapp.com'
+ * - Development (APP_DOMAIN=localhost:3000): returns undefined (browsers reject explicit localhost domain)
+ */
+export function getCookieDomain(): string | undefined {
+  const domain = process.env.APP_DOMAIN;
+  if (!domain || domain.includes('localhost')) {
+    return undefined;
+  }
+  // Strip port if present, add dot prefix for subdomain sharing
+  return `.${domain.split(':')[0]}`;
+}
+
+/**
  * Retrieve and validate the JWT secret from environment variables.
  * Throws if the secret is missing or shorter than 32 characters.
  */
@@ -76,6 +90,7 @@ export function verifyToken(token: string): SessionPayload | null {
  * @returns Cookie configuration object
  */
 export function setSessionCookie(token: string) {
+  const cookieDomain = getCookieDomain();
   return {
     name: COOKIE_NAME,
     value: token,
@@ -84,6 +99,7 @@ export function setSessionCookie(token: string) {
     sameSite: 'lax' as const,
     maxAge: COOKIE_MAX_AGE,
     path: '/',
+    ...(cookieDomain ? { domain: cookieDomain } : {}),
   };
 }
 
@@ -93,4 +109,18 @@ export function setSessionCookie(token: string) {
  */
 export function getSessionCookieName(): string {
   return COOKIE_NAME;
+}
+
+/**
+ * Get the options needed to delete the session cookie.
+ * Must match the domain/path used when setting the cookie,
+ * otherwise the browser won't delete it.
+ */
+export function getDeleteSessionCookieOptions() {
+  const cookieDomain = getCookieDomain();
+  return {
+    name: COOKIE_NAME,
+    path: '/',
+    ...(cookieDomain ? { domain: cookieDomain } : {}),
+  };
 }

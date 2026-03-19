@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { verifyToken } from './src/lib/auth/session';
+import { verifyToken, getCookieDomain } from './src/lib/auth/session';
 import { extractSubdomain, isReservedSubdomain, getMainDomainUrl } from './src/lib/utils/domain';
 import { db } from './src/lib/db';
 
@@ -73,9 +73,14 @@ export async function middleware(request: NextRequest) {
     const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('from', pathname);
     const response = NextResponse.redirect(loginUrl);
-    // Clear stale cookie if it exists but is invalid
+    // Clear stale cookie if it exists but is invalid (must match domain/path)
     if (sessionCookie) {
-      response.cookies.delete('session');
+      const cookieDomain = getCookieDomain();
+      response.cookies.delete({
+        name: 'session',
+        path: '/',
+        ...(cookieDomain ? { domain: cookieDomain } : {}),
+      });
     }
     return response;
   }

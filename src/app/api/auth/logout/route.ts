@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { getSessionCookieName, verifyToken } from '@/lib/auth/session';
+import { getSessionCookieName, getDeleteSessionCookieOptions, verifyToken } from '@/lib/auth/session';
 import { removeSession } from '@/lib/auth/session-store';
 
 /**
@@ -23,8 +23,8 @@ export async function POST() {
       }
     }
 
-    // Delete the session cookie
-    cookieStore.delete(sessionCookieName);
+    // Delete the session cookie (must match domain/path used when setting)
+    cookieStore.delete(getDeleteSessionCookieOptions());
 
     return NextResponse.json(
       {
