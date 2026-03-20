@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button';
 
 interface TenantNavbarProps {
   orgName: string;
+  /** Prefix for nav links. Defaults to '' (subdomain mode). Use '/b/slug' for path-based mode. */
+  basePath?: string;
 }
 
 const navLinks = [
@@ -15,14 +17,14 @@ const navLinks = [
   { label: 'Reservar', href: '/book' },
 ];
 
-export function TenantNavbar({ orgName }: TenantNavbarProps) {
+export function TenantNavbar({ orgName, basePath = '' }: TenantNavbarProps) {
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
     <header className="sticky top-0 z-50 bg-background/95 backdrop-blur border-b border-border">
       <nav className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
         {/* Business name */}
-        <Link href="/" className="font-bold text-lg truncate max-w-[200px]">
+        <Link href={basePath || '/'} className="font-bold text-lg truncate max-w-[200px]">
           {orgName}
         </Link>
 
@@ -30,7 +32,7 @@ export function TenantNavbar({ orgName }: TenantNavbarProps) {
         <ul className="hidden md:flex items-center gap-6 text-sm text-muted-foreground">
           {navLinks.map((link) => (
             <li key={link.href}>
-              <Link href={link.href} className="hover:text-foreground transition-colors">
+              <Link href={`${basePath}${link.href}`} className="hover:text-foreground transition-colors">
                 {link.label}
               </Link>
             </li>
@@ -63,7 +65,7 @@ export function TenantNavbar({ orgName }: TenantNavbarProps) {
           {navLinks.map((link) => (
             <Link
               key={link.href}
-              href={link.href}
+              href={`${basePath}${link.href}`}
               onClick={() => setMenuOpen(false)}
               className="block py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
             >

@@ -53,16 +53,16 @@ describe('email-url utilities', () => {
       expect(getBusinessUrl('pilates')).toBe('http://pilates.localhost:3000');
     });
 
-    it('falls back to /book/slug path when APP_DOMAIN is not set', () => {
+    it('falls back to /b/slug path when APP_DOMAIN is not set', () => {
       delete process.env.APP_DOMAIN;
       process.env.NEXT_PUBLIC_APP_URL = 'https://reservapp.com';
-      expect(getBusinessUrl('pilates')).toBe('https://reservapp.com/book/pilates');
+      expect(getBusinessUrl('pilates')).toBe('https://reservapp.com/b/pilates');
     });
 
-    it('falls back to localhost /book/slug when nothing is set', () => {
+    it('falls back to localhost /b/slug when nothing is set', () => {
       delete process.env.APP_DOMAIN;
       delete process.env.NEXT_PUBLIC_APP_URL;
-      expect(getBusinessUrl('pilates')).toBe('http://localhost:3000/book/pilates');
+      expect(getBusinessUrl('pilates')).toBe('http://localhost:3000/b/pilates');
     });
   });
 });
