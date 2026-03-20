@@ -32,7 +32,7 @@ export function getBusinessUrl(slug: string): string {
     return `${protocol}://${slug}.${appDomain}`;
   }
 
-  // Fallback: use main domain with /book/slug path
+  // Fallback: use main domain with /b/slug path (path-based tenant access)
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-  return `${appUrl}/book/${slug}`;
+  return `${appUrl}/b/${slug}`;
 }
