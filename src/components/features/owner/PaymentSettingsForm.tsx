@@ -9,7 +9,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle2, AlertCircle, Wifi, KeyRound } from 'lucide-react';
+import { CheckCircle2, AlertCircle, Wifi, KeyRound, HelpCircle } from 'lucide-react';
+import Link from 'next/link';
 
 const PaymentSchema = z.object({
   accessToken: z.string().min(1, 'El Access Token es requerido'),
@@ -140,7 +141,13 @@ export function PaymentSettingsForm({
         <Alert className="border-warning/30 bg-warning/10">
           <AlertCircle className="h-4 w-4 text-warning" />
           <AlertDescription className="text-warning">
-            Conecta tu cuenta de MercadoPago para empezar a recibir pagos de tus clientes.
+            Conecta tu cuenta de MercadoPago para empezar a recibir pagos de tus clientes.{' '}
+            <Link
+              href="/owner/settings/payment/guide"
+              className="underline font-medium hover:text-warning/80"
+            >
+              Ver guia paso a paso
+            </Link>
           </AlertDescription>
         </Alert>
       )}
@@ -231,6 +238,16 @@ export function PaymentSettingsForm({
           <Button type="submit" disabled={isSubmitting || testStatus === 'loading'}>
             {isSubmitting ? 'Guardando...' : configured ? 'Actualizar' : 'Guardar'}
           </Button>
+        </div>
+
+        <div className="pt-1">
+          <Link
+            href="/owner/settings/payment/guide"
+            className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <HelpCircle className="h-3.5 w-3.5" />
+            No sabes donde obtener estas credenciales? Ver guia
+          </Link>
         </div>
       </form>
     </div>
