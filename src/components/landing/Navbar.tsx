@@ -35,6 +35,9 @@ export function Navbar() {
         <Link href="/" className="flex items-center gap-2 font-bold text-lg">
           <CalendarCheck className="h-5 w-5 text-primary" />
           <span>Reservapp</span>
+          <span className="ml-1 rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-semibold leading-none text-primary">
+            Beta
+          </span>
         </Link>
 
         {/* Desktop nav */}
