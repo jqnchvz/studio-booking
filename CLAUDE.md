@@ -5,12 +5,13 @@
 **Reservapp** is a subscription-based studio booking system built with modern web technologies. The application enables users to register, authenticate, reserve studio time slots, manage subscriptions, and process payments through MercadoPago.
 
 ### Key Features
-- User authentication and management
-- Studio booking and reservation system
-- Subscription management
-- Payment processing with MercadoPago
-- Email notifications
-- Admin dashboard
+- Multi-tenant SaaS: business owners register organizations, end-users book through tenant subdomains
+- Three roles: `admin` (platform), `owner` (business), `user` (end-user)
+- Studio booking and reservation system with double-booking prevention
+- Subscription management (tenant-level plans + platform-level plans for owners)
+- Payment processing with MercadoPago (per-organization credentials)
+- Email notifications via React Email + BullMQ queue
+- Background workers for grace periods, payment reminders, penalties
 
 ## Tech Stack
 
@@ -32,7 +33,8 @@
 - **ORM**: Prisma 7.x
 - **Authentication**: JWT + bcrypt
 - **Session Store**: Redis
-- **Email**: Resend
+- **Email**: Resend + React Email templates
+- **Job Queue**: BullMQ (Redis-backed)
 - **Payment Gateway**: MercadoPago
 
 ### Development Tools
@@ -47,37 +49,56 @@
 ```
 src/
 ├── app/                    # Next.js App Router
-│   ├── (auth)/            # Auth-related routes group
-│   ├── (dashboard)/       # Dashboard routes group
+│   ├── (auth)/            # Auth routes (login, register) — no /auth/ URL prefix
+│   ├── admin/             # Platform admin panel (role: admin)
+│   ├── owner/             # Business owner panel (role: owner)
+│   ├── dashboard/         # End-user dashboard (role: user)
+│   ├── onboarding/        # Owner onboarding flow
+│   ├── t/[slug]/          # Tenant public pages (subdomain rewrite target)
+│   ├── b/[slug]/          # Public booking pages
+│   ├── pricing/           # Platform pricing page
+│   ├── subscription/      # Subscription management
 │   ├── api/               # API routes
 │   ├── layout.tsx         # Root layout
-│   ├── page.tsx           # Home page
+│   ├── page.tsx           # Landing page
 │   └── globals.css        # Global styles
 ├── components/
 │   ├── ui/                # shadcn/ui components (auto-generated)
-│   └── features/          # Feature-specific components
-│       ├── auth/          # Authentication components
-│       ├── booking/       # Booking components
-│       ├── subscription/  # Subscription components
-│       └── admin/         # Admin components
+│   ├── features/          # Feature-specific components
+│   │   ├── auth/          # Authentication components
+│   │   ├── booking/       # Booking components
+│   │   ├── subscription/  # Subscription components
+│   │   └── admin/         # Admin components
+│   ├── landing/           # Landing page components
+│   └── tenant/            # TenantNavbar, TenantFooter
 ├── lib/
 │   ├── services/          # Business logic services
-│   │   ├── auth.ts        # Authentication service
-│   │   ├── booking.ts     # Booking service
-│   │   ├── payment.ts     # Payment service
-│   │   └── email.ts       # Email service
+│   │   ├── auth.service.ts       # Authentication service
+│   │   ├── reservation.service.ts # Reservation logic + double-booking prevention
+│   │   ├── mercadopago.service.ts # MercadoPago payment integration
+│   │   ├── webhook-handlers.service.ts # Payment webhook processing
+│   │   └── penalty.service.ts    # Penalty/grace period logic
+│   ├── auth/              # Auth utilities
+│   │   ├── session.ts     # Session management + cookie domain
+│   │   ├── get-current-user.ts   # Current user retrieval
+│   │   └── get-user.ts    # User lookup
+│   ├── queue/             # BullMQ job infrastructure
+│   │   ├── email-queue.ts # Email queue producer
+│   │   ├── scheduler-queue.ts    # Scheduled jobs queue
+│   │   └── redis.ts       # Queue Redis connection
 │   ├── validations/       # Zod validation schemas
-│   │   ├── auth.ts        # Auth schemas
-│   │   ├── booking.ts     # Booking schemas
-│   │   └── payment.ts     # Payment schemas
 │   ├── utils/             # Utility functions
 │   ├── db.ts              # Prisma client instance
 │   └── redis.ts           # Redis client instance
+├── workers/               # Background workers (BullMQ)
+│   ├── email-worker.ts    # Processes email queue
+│   ├── scheduler-worker.ts # Cron-triggered jobs
+│   ├── check-grace-periods.ts    # Subscription grace period checks
+│   ├── payment-reminders.ts      # Payment reminder emails
+│   └── apply-penalties.ts        # Penalty application
 ├── types/                 # TypeScript type definitions
-│   ├── auth.ts
-│   ├── booking.ts
-│   └── payment.ts
-└── middleware.ts          # Next.js middleware (auth, etc.)
+└── middleware.ts          # Subdomain detection + auth + tenant resolution
+emails/                    # React Email templates (resend)
 ```
 
 ## Pre-Commit Checklist
@@ -264,12 +285,14 @@ env:
      name: 'Test User',
      passwordHash: 'hash',
      emailVerified: true,
-     isAdmin: false,
+     role: 'user',            // UserRole enum: 'user' | 'owner' | 'admin'
+     organizationId: null,
+     passwordChangedAt: null,
      createdAt: new Date(),
      updatedAt: new Date(),
      verificationToken: null,
      verificationTokenExpiry: null,
-     resetToken: null,      // Don't forget these!
+     resetToken: null,
      resetTokenExpiry: null,
    };
 
@@ -788,7 +811,7 @@ src/
 
 ### Test Coverage Status
 
-**Current**: 242 tests passing across 16 test files
+**Current**: 385 tests passing across 25 test files
 - **Coverage**: 79% statements, 72% functions, 79% lines, 72% branches
 - **Key areas covered**: Auth services, payment processing, reservation system, webhooks
 - **Run**: `npm run test:coverage` to view detailed report
@@ -1360,13 +1383,33 @@ When replacing hardcoded Tailwind colors with design system tokens:
 Profile page is at `src/app/dashboard/profile/page.tsx` — URL is `/dashboard/profile`.
 The `(auth)` route group (`src/app/(auth)/`) still exists for login/register — URL has no `/auth/` prefix.
 
+### Multi-Role Architecture
+
+The app uses a `UserRole` enum (`user`, `owner`, `admin`) — NOT a boolean `isAdmin` field:
+
+| Role | Panel | Route prefix | Purpose |
+|------|-------|-------------|---------|
+| `admin` | Platform admin | `/admin` | Platform-wide settings, tenant management |
+| `owner` | Business owner | `/owner` | Per-organization resources, plans, reservations |
+| `user` | End-user dashboard | `/dashboard` | Personal bookings, subscriptions |
+
+- Routing: `if (user.role === 'admin') redirect('/admin')` in `/dashboard/page.tsx`
+- Unsubscribed users are redirected from `/dashboard` to `/dashboard/subscribe`
+- Owner and admin share same sidebar layout pattern (collapsible on mobile via `MobileSidebar`)
+
 ### Admin Panel Architecture
 
 - Sidebar CSS tokens: `bg-sidebar`, `text-sidebar-foreground`, `text-sidebar-muted`, `border-sidebar-border`
 - `src/app/admin/layout.tsx` is a Server Component — interactive sidebar elements (e.g., logout button) must be extracted into a separate `'use client'` component (see `AdminLogoutButton.tsx`)
-- `/admin` is the admin dashboard; `if (user.isAdmin) redirect('/admin')` in `/dashboard/page.tsx` handles routing
-- Unsubscribed users are redirected from `/dashboard` to `/dashboard/subscribe` (plan selection page)
+- `/admin/settings` manages **platform-level** config (PlatformSettings singleton + PlatformPlan CRUD), NOT tenant-level plans/resources
+- Owner manages tenant-level plans/resources at `/owner/plans` and `/owner/resources`
+
+### Platform Models (Admin Scope)
+
+- **`PlatformSettings`**: Singleton (id = `"singleton"`) — platform name, support email, org approval mode, trial days, max orgs, maintenance mode. Table: `platform_settings`
+- **`PlatformPlan`**: Plans that business owners subscribe to (fixed monthly price + resource/user limits). Linked to `Organization` via `platformPlanId` FK
+- **`Organization`**: Multi-tenant entity — has `slug` (subdomain), `ownerId`, optional `platformPlanId`
 
 ---
 
-**Last Updated:** 2026-03-02 - Fixed route group note (profile is at `/dashboard/profile`), added admin panel architecture, git staging gotcha, Jira transition note, updated test count and raw SQL audit outcome (RES-82).
+**Last Updated:** 2026-03-25 - Updated project structure to reflect actual routes (admin, owner, onboarding, tenant, workers, queue), fixed isAdmin→role enum, updated test count (385/25), added multi-role architecture + platform models (PlatformSettings, PlatformPlan), fixed service filenames, added BullMQ to tech stack.
