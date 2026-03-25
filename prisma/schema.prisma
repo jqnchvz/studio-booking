@@ -205,20 +205,23 @@ model PlanResourceAccess {
 }
 
 model Organization {
-  id        String                @id @default(cuid())
-  name      String
-  slug      String                @unique // URL-safe identifier, e.g. "pilates-studio-xyz"
-  status    String                @default("active") // active | suspended | pending
-  ownerId   String
-  owner     User                  @relation("OwnedOrganizations", fields: [ownerId], references: [id])
-  settings  OrganizationSettings?
-  resources Resource[]
-  plans     SubscriptionPlan[]
-  users     User[]                @relation("OrganizationUsers")
-  createdAt DateTime              @default(now())
-  updatedAt DateTime              @updatedAt
+  id             String                @id @default(cuid())
+  name           String
+  slug           String                @unique // URL-safe identifier, e.g. "pilates-studio-xyz"
+  status         String                @default("active") // active | suspended | pending
+  ownerId        String
+  owner          User                  @relation("OwnedOrganizations", fields: [ownerId], references: [id])
+  platformPlanId String?
+  platformPlan   PlatformPlan?         @relation(fields: [platformPlanId], references: [id])
+  settings       OrganizationSettings?
+  resources      Resource[]
+  plans          SubscriptionPlan[]
+  users          User[]                @relation("OrganizationUsers")
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
 
   @@index([ownerId])
+  @@index([platformPlanId])
   @@map("organizations")
 }
 
@@ -243,17 +246,32 @@ model OrganizationSettings {
 }
 
 model PlatformPlan {
-  id           String   @id @default(cuid())
-  name         String   // "Básico" | "Pro"
-  price        Int      // monthly price in CLP (0 for free tier)
-  maxResources Int      // max resources the org can create
-  maxUsers     Int      // max end-users per org
-  features     Json     // array of feature strings
-  isActive     Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id            String         @id @default(cuid())
+  name          String         // "Básico" | "Pro"
+  price         Int            // monthly price in CLP (0 for free tier)
+  maxResources  Int            // max resources the org can create
+  maxUsers      Int            // max end-users per org
+  features      Json           // array of feature strings
+  isActive      Boolean        @default(true)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  organizations Organization[]
 
   @@map("platform_plans")
+}
+
+model PlatformSettings {
+  id               String   @id @default("singleton")
+  platformName     String   @default("Reservapp")
+  supportEmail     String   @default("soporte@reservapp.com")
+  orgApprovalMode  String   @default("auto")    // "auto" | "manual"
+  defaultTrialDays Int      @default(0)          // 0 = no trial
+  maxOrganizations Int      @default(0)          // 0 = unlimited
+  maintenanceMode  Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@map("platform_settings")
 }
 
 model EmailLog {
