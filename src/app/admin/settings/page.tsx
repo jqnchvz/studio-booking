@@ -2,20 +2,20 @@ import { cookies } from 'next/headers';
 import { AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { SettingsPlansSection } from '@/components/features/admin/SettingsPlansSection';
-import { SettingsResourcesSection } from '@/components/features/admin/SettingsResourcesSection';
+import { PlatformSettingsSection } from '@/components/features/admin/PlatformSettingsSection';
+import { PlatformPlansSection } from '@/components/features/admin/PlatformPlansSection';
 
 /**
  * Admin Settings Page
  *
- * Server component that fetches subscription plans and studio resources in parallel,
+ * Server component that fetches platform settings and platform plans in parallel,
  * then renders two management sections:
- * - Planes de Suscripción: view/toggle active status
- * - Recursos del Estudio: view availability schedule, toggle active status
+ * - Configuración General: singleton platform settings form
+ * - Planes de Plataforma: CRUD table for platform plans
  */
 export default async function AdminSettingsPage() {
+  let settings = null;
   let plans = null;
-  let resources = null;
   let error: string | null = null;
 
   try {
@@ -30,22 +30,22 @@ export default async function AdminSettingsPage() {
       headers: { Cookie: cookieHeader },
     };
 
-    const [plansRes, resourcesRes] = await Promise.all([
-      fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/admin/settings/plans`, headers),
-      fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/admin/settings/resources`, headers),
+    const [settingsRes, plansRes] = await Promise.all([
+      fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/admin/settings/platform`, headers),
+      fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/admin/settings/platform-plans`, headers),
     ]);
 
-    if (!plansRes.ok || !resourcesRes.ok) {
+    if (!settingsRes.ok || !plansRes.ok) {
       throw new Error('Failed to fetch settings data');
     }
 
-    const [plansData, resourcesData] = await Promise.all([
+    const [settingsData, plansData] = await Promise.all([
+      settingsRes.json(),
       plansRes.json(),
-      resourcesRes.json(),
     ]);
 
+    settings = settingsData.settings;
     plans = plansData.plans;
-    resources = resourcesData.resources;
   } catch (err) {
     console.error('Error loading settings:', err);
     error = 'No se pudo cargar la configuración. Por favor, recarga la página.';
@@ -56,7 +56,7 @@ export default async function AdminSettingsPage() {
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Configuración</h1>
         <p className="text-muted-foreground">
-          Gestión de planes de suscripción y recursos del estudio
+          Configuración general de la plataforma y planes para dueños de negocio
         </p>
       </div>
 
@@ -67,36 +67,35 @@ export default async function AdminSettingsPage() {
         </Alert>
       )}
 
-      {/* Subscription Plans */}
+      {/* Platform Settings */}
       <Card>
         <CardHeader>
-          <CardTitle>Planes de Suscripción</CardTitle>
+          <CardTitle>Configuración General</CardTitle>
           <CardDescription>
-            Administra los planes disponibles para los usuarios. Desactivar un plan impide nuevas
-            suscripciones pero no afecta a suscriptores existentes.
+            Ajustes generales de la plataforma que afectan a todas las empresas
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {plans ? (
-            <SettingsPlansSection initialPlans={plans} />
+          {settings ? (
+            <PlatformSettingsSection initialSettings={settings} />
           ) : !error ? (
             <div className="h-32 bg-muted rounded animate-pulse" />
           ) : null}
         </CardContent>
       </Card>
 
-      {/* Studio Resources */}
+      {/* Platform Plans */}
       <Card>
         <CardHeader>
-          <CardTitle>Recursos del Estudio</CardTitle>
+          <CardTitle>Planes de Plataforma</CardTitle>
           <CardDescription>
-            Administra los recursos disponibles para reservas. Desactivar un recurso impide nuevas
-            reservas pero no cancela las existentes.
+            Administra los planes disponibles para dueños de negocio. Desactivar un plan
+            impide nuevas suscripciones pero no afecta a empresas existentes.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {resources ? (
-            <SettingsResourcesSection initialResources={resources} />
+          {plans ? (
+            <PlatformPlansSection initialPlans={plans} />
           ) : !error ? (
             <div className="h-32 bg-muted rounded animate-pulse" />
           ) : null}
